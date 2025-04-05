@@ -8,33 +8,47 @@ function HomePage() {
   const mapInstanceRef = useRef(null); // Ref to store the map instance
 
   useEffect(() => {
-    // Initialize map only if the container exists and map hasn't been initialized yet
-    if (mapContainerRef.current && !mapInstanceRef.current) {
-      // Create map instance
-      mapInstanceRef.current = L.map(mapContainerRef.current, { // Use the ref here
-        center: [40, -95], // Centered roughly on the US
-        zoom: 4, // Initial zoom level
-      });
+    const loadMapAndFacilities = async () => {
+      if (mapContainerRef.current && !mapInstanceRef.current) {
+        // Create map instance
+        mapInstanceRef.current = L.map(mapContainerRef.current, {
+          center: [40, -95],
+          zoom: 4,
+        });
 
-      // Add Tile Layer (OpenStreetMap)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(mapInstanceRef.current);
+        // Add Tile Layer (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mapInstanceRef.current);
 
-      // --- Placeholder for adding markers/data ---
-      // In a real app, you would fetch data here and add markers/clusters
-      // Example: L.marker([51.5, -0.09]).addTo(mapInstanceRef.current).bindPopup('A sample marker.');
-      // --- End Placeholder ---
-    }
+        try {
+          const { getFacilities } = await import('../firebase');
+          const facilities = await getFacilities();
 
-    // Cleanup function: Remove map when component unmounts
+          facilities.forEach(facility => {
+            const coords = facility.geometry?.coordinates;
+            if (coords && coords.length === 2) {
+              const [lng, lat] = coords; // GeoJSON order: [lng, lat]
+              L.marker([lat, lng])
+                .addTo(mapInstanceRef.current)
+                .bindPopup(`<strong>${facility.properties?.company || 'Unknown'}</strong><br>${facility.properties?.name || ''}`);
+            }
+          });
+        } catch (error) {
+          console.error('Error loading facilities for map:', error);
+        }
+      }
+    };
+
+    loadMapAndFacilities();
+
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   return (
     <div className="row" style={{ margin: 0, width: '100%' }}>

@@ -164,13 +164,13 @@ function FacilitiesPage() {
                 <div key={facility.id} className="facility-item">
                   <div className="facility-item-content">
                     <span className="col-company">
-                      <a href={`/facilities/${facility.id}`}>{facility.company}</a>
+                      <a href={`/facilities/${facility.id}`}>{facility.properties?.company || 'N/A'}</a>
                     </span>
-                    <span className="col-location">{facility.location}</span>
-                    <span className="col-volume">{facility.volume.toLocaleString()}</span>
-                    <span className="col-method">{facility.method}</span>
+                    <span className="col-location">{facility.properties?.address || 'N/A'}</span>
+                    <span className="col-volume">{facility.properties?.capacity || 'N/A'}</span>
+                    <span className="col-method">{facility.properties?.technology || 'N/A'}</span>
                     <span className="col-status">
-                      {renderStatusBadge(facility.status)}
+                      {renderStatusBadge(facility.properties?.status || 'unknown')}
                     </span>
                     <span className="col-actions">
                       <button className="btn btn-sm btn-outline-primary edit-link">
