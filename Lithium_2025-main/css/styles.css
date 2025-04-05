@@ -1,0 +1,925 @@
+/* Global Variables */
+:root {
+    --primary-color: #0d6efd; /* Updated Bootstrap Blue */
+    --secondary-color: #6c757d; /* Muted grey */
+    --light-bg: #f8f9fa; /* Standard light background */
+    --white-bg: #ffffff;
+    --card-bg: var(--white-bg); /* Default card background */
+    --text-color: #212529; /* Default text */
+    --text-muted-color: var(--secondary-color);
+    --border-color: #dee2e6;
+    --subtle-shadow: 0 2px 4px rgba(0, 0, 0, 0.075);
+    --card-border-radius: 8px;
+    --link-color: var(--primary-color);
+    --link-hover-color: #0a58ca; /* Darker blue for hover */
+    --navbar-bg: var(--white-bg);
+    --navbar-link-color: var(--secondary-color);
+    --navbar-link-hover-bg: rgba(0, 86, 179, 0.05);
+    --navbar-link-active-color: var(--primary-color);
+    --navbar-link-active-bg: rgba(0, 86, 179, 0.1);
+    --legend-bg: rgba(255, 255, 255, 0.95);
+    --timeline-line-color: var(--border-color);
+    --timeline-dot-border: var(--primary-color);
+    --timeline-arrow-bg: var(--card-bg);
+    --map-bg: var(--white-bg); /* Explicit map background */
+    --tab-bg: var(--light-bg);
+    --tab-active-bg: var(--white-bg);
+    --tab-border: var(--border-color);
+    --tab-color: var(--secondary-color);
+    --tab-active-color: var(--primary-color);
+    --facility-item-hover-bg: var(--light-bg);
+    --form-switch-bg: #eee; /* Default switch background */
+}
+
+/* Dashboard Styles */
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    background-color: var(--light-bg);
+    color: var(--text-color);
+    line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Add transition */
+}
+
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 25px;
+}
+
+.dashboard-header {
+    background-color: var(--card-bg);
+    border-radius: var(--card-border-radius);
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: var(--subtle-shadow);
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.dashboard-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.dashboard-header .text-muted {
+    color: var(--text-muted-color) !important;
+}
+
+/* --- Navigation Menu Refinements --- */
+.navbar {
+    background-color: var(--navbar-bg) !important;
+    box-shadow: none;
+    padding: 0.5rem 1rem !important;
+    transition: background-color 0.3s ease;
+}
+
+.navbar .nav-link {
+    color: var(--navbar-link-color);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.navbar .nav-link:hover {
+    color: var(--link-hover-color);
+    background-color: var(--navbar-link-hover-bg);
+}
+
+.navbar .nav-link.active {
+    color: var(--navbar-link-active-color);
+    font-weight: 600;
+    background-color: var(--navbar-link-active-bg);
+}
+
+#authStatus .btn {
+    font-size: 0.85rem;
+}
+
+/* Theme Toggle Styles */
+.form-switch .form-check-input {
+    background-color: var(--form-switch-bg);
+    border-color: rgba(0, 0, 0, 0.25);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
+}
+.form-switch .form-check-input:focus {
+    border-color: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(211, 212, 213, 0.5);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
+}
+.form-switch .form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+}
+.form-switch .form-check-label {
+    color: var(--text-color); /* Ensure label color matches theme */
+}
+.form-switch .form-check-label i {
+    transition: color 0.3s ease;
+}
+/* --- End Navigation Menu Refinements --- */
+
+
+/* Stats Cards (If used elsewhere, kept for consistency) */
+.stats-card {
+    background-color: var(--card-bg);
+    border-radius: var(--card-border-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--subtle-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card .icon {
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+    color: var(--primary-color);
+}
+
+.stats-card .number {
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+/* Map Styles */
+.map-container {
+    height: 70vh; /* Adjusted height to 70% of viewport height */
+    border-radius: var(--card-border-radius);
+    overflow: hidden;
+    box-shadow: var(--subtle-shadow);
+    position: relative;
+    border: 1px solid var(--border-color);
+    background-color: var(--map-bg); /* Use variable */
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+#map {
+    height: 100%;
+    line-height: normal; /* Prevent body line-height from affecting map tiles */
+}
+
+/* Facilities List (If used elsewhere) */
+.facilities-list {
+    background-color: var(--card-bg);
+    border-radius: var(--card-border-radius);
+    padding: 15px 20px;
+    box-shadow: var(--subtle-shadow);
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.facility-item {
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 5px;
+    transition: background-color 0.2s ease, border-color 0.3s ease;
+}
+
+.facility-item:last-child {
+    border-bottom: none;
+}
+
+.facility-item:hover {
+    background-color: var(--facility-item-hover-bg);
+}
+
+.facility-item a {
+    text-decoration: none;
+    color: var(--text-color);
+    display: block;
+}
+
+.facility-item a:hover {
+    text-decoration: none;
+    color: var(--link-hover-color);
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Keep existing status colors, but ensure contrast */
+.status-operating { background-color: #198754; } /* Updated Bootstrap success green */
+.status-construction { background-color: #ffc107; color: #000; } /* Ensure black text on yellow */
+.status-planned { background-color: #0dcaf0; } /* Updated Bootstrap info cyan */
+.status-pilot { background-color: #6f42c1; } /* Bootstrap purple */
+
+
+/* Tab Navigation (If used elsewhere) */
+.tabs-container {
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    padding: 10px 18px;
+    border: 1px solid var(--tab-border);
+    border-bottom: none;
+    background-color: var(--tab-bg);
+    border-radius: 5px 5px 0 0;
+    margin-right: 3px;
+    cursor: pointer;
+    color: var(--tab-color);
+    font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.3s ease;
+}
+
+.tab-button:hover {
+    background-color: rgba(0,0,0,0.05); /* Generic subtle hover */
+    color: var(--link-hover-color);
+}
+
+.tab-button.active {
+    background-color: var(--tab-active-bg);
+    color: var(--tab-active-color);
+    font-weight: 600;
+    border-color: var(--tab-border);
+    position: relative;
+    top: 1px;
+}
+
+/* Company Logos */
+.company-logo {
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+/* Legend styles */
+.legend {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    z-index: 1000;
+    background-color: var(--legend-bg);
+    padding: 12px 15px;
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--subtle-shadow);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.legend h6 {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color); /* Ensure text color matches theme */
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    color: var(--text-color); /* Ensure text color matches theme */
+}
+
+.legend-item:last-child {
+    margin-bottom: 0;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Legend Toggle Switch */
+.legend .form-check-label {
+    font-size: 0.85rem;
+    margin-left: 5px;
+    color: var(--text-color); /* Ensure text color matches theme */
+}
+.legend .form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+}
+.legend hr {
+    margin: 10px 0;
+    border-top: 1px solid var(--border-color);
+    transition: border-color 0.3s ease;
+}
+
+
+/* Individual Facility Page Styles */
+.facility-header {
+    background-size: cover;
+    background-position: center;
+    color: white; /* Keep text white */
+    padding: 25px 25px; /* Reduced vertical padding */
+    border-radius: var(--card-border-radius);
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.facility-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7));
+    border-radius: var(--card-border-radius);
+}
+
+.facility-header-content {
+    position: relative;
+    z-index: 1;
+}
+
+.facility-header-content h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: white; /* Ensure header text is white */
+}
+.facility-header-content p {
+    color: rgba(255, 255, 255, 0.85); /* Lighter text for subtitle */
+}
+
+.facility-detail-card {
+    background-color: var(--card-bg);
+    border-radius: var(--card-border-radius);
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: var(--subtle-shadow);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.facility-detail-card h5 {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.facility-stat {
+    border-right: 1px solid var(--border-color);
+    padding: 0 15px;
+    text-align: center;
+    transition: border-color 0.3s ease;
+}
+
+.facility-stat:last-child {
+    border-right: none;
+}
+
+.facility-stat .stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--text-color); /* Use theme text color */
+}
+
+.facility-stat .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted-color);
+    text-transform: uppercase;
+}
+
+
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    max-width: 1200px;
+    margin: 30px auto;
+}
+
+.timeline::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    background-color: var(--timeline-line-color);
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    margin-left: -2px;
+    transition: background-color 0.3s ease;
+}
+
+.timeline-container {
+    padding: 10px 40px;
+    position: relative;
+    background-color: inherit; /* Keep transparent */
+    width: 50%;
+}
+
+/* Timeline Dot */
+.timeline-container::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    right: -8px;
+    background-color: var(--card-bg); /* Match card background */
+    border: 3px solid var(--timeline-dot-border);
+    top: 18px;
+    border-radius: 50%;
+    z-index: 1;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.left { left: 0; }
+.right { left: 50%; }
+.right::after { left: -8px; }
+
+/* Timeline Arrows */
+.left::before {
+    content: " ";
+    height: 0;
+    position: absolute;
+    top: 22px;
+    width: 0;
+    z-index: 1;
+    right: 30px;
+    border: medium solid var(--timeline-arrow-bg);
+    border-width: 10px 0 10px 10px;
+    border-color: transparent transparent transparent var(--timeline-arrow-bg);
+    transition: border-color 0.3s ease;
+}
+
+.right::before {
+    content: " ";
+    height: 0;
+    position: absolute;
+    top: 22px;
+    width: 0;
+    z-index: 1;
+    left: 30px;
+    border: medium solid var(--timeline-arrow-bg);
+    border-width: 10px 10px 10px 0;
+    border-color: transparent var(--timeline-arrow-bg) transparent transparent;
+    transition: border-color 0.3s ease;
+}
+
+.timeline-content {
+    padding: 20px;
+    background-color: var(--card-bg);
+    position: relative;
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--subtle-shadow);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.timeline-content h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 0;
+    color: var(--primary-color);
+}
+
+.timeline-content p {
+    font-size: 0.95rem;
+    margin-bottom: 0;
+    color: var(--text-color); /* Use theme text color */
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .dashboard-header { text-align: center; }
+    .navbar .container-fluid { justify-content: center; }
+    #authStatus { margin-top: 10px; justify-content: center; width: 100%; }
+    .navbar .form-switch { margin-top: 10px; } /* Add space for toggle on mobile */
+
+    .facility-stat {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+    }
+    .facility-stat:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .timeline::after { left: 20px; margin-left: 0; }
+    .timeline-container { width: 100%; padding-left: 50px; padding-right: 15px; }
+    .timeline-container::after { left: 12px; }
+    .timeline-container::before { left: 40px; border-width: 10px 10px 10px 0; border-color: transparent var(--timeline-arrow-bg) transparent transparent; }
+    .left, .right { left: 0%; }
+    .right::after { left: 12px; }
+    .right::before { left: 40px; }
+}
+
+/* Animation */
+.fade-in { animation: fadeIn 0.5s ease-in-out; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ensure map popup button text is visible */
+.leaflet-popup-content .info-box .btn-primary { color: #ffffff !important; }
+
+/* ==================== FACILITY DETAIL REDESIGN STYLES ==================== */
+
+/* Basic styles for sections (replace card styles) */
+.facility-detail-section {
+    margin-bottom: 2rem; /* Increased space between sections */
+    padding-top: 1rem; /* Add some top padding */
+}
+
+.section-title {
+    margin-bottom: 1rem; /* Space below title */
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+    font-size: 1.5rem; /* Slightly larger title */
+    font-weight: 600;
+    color: var(--primary-color); /* Use primary color for titles */
+    transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Sticky Sidebar Navigation */
+#sticky-nav-placeholder {
+    /* position: sticky; */ /* Removed for left-nav approach */
+    /* top: 20px; */
+    /* z-index: 1020; */
+    /* max-height: calc(100vh - 40px); */
+    /* overflow-y: auto; */
+     /* Consider adding max-height and overflow-y if the nav list can get very long */
+}
+
+#page-navigation .nav-link {
+    padding: 0.4rem 0.75rem; /* Slightly more padding */
+    color: var(--text-muted-color);
+    font-size: 0.9rem;
+    border-left: 3px solid transparent; /* Indicator for active state */
+    transition: color 0.2s ease, border-left-color 0.2s ease, background-color 0.2s ease;
+    cursor: pointer; /* Indicate clickable */
+}
+
+#page-navigation .nav-link:hover {
+    color: var(--link-hover-color);
+    background-color: var(--navbar-link-hover-bg);
+}
+
+/* Active state for nav links (will need JS to add/remove this class) */
+#page-navigation .nav-link.active {
+    color: var(--primary-color);
+    font-weight: 500;
+    border-left-color: var(--primary-color);
+    background-color: var(--navbar-link-active-bg); /* Add subtle background for active */
+}
+
+/* Optional: Style the card holding the nav */
+#sticky-nav-placeholder .card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--subtle-shadow);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+#sticky-nav-placeholder .card-title {
+    color: var(--text-color); /* Ensure title matches theme */
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Adjust list group styling within sections */
+.facility-detail-section .list-group-flush .list-group-item {
+    background-color: transparent; /* Remove background if inside a section */
+    border-color: var(--border-color); /* Ensure border matches theme */
+    padding-left: 0; /* Align with section content */
+    padding-right: 0;
+}
+
+/* Styles for Content Swapping */
+.content-section {
+    display: none; /* Hide content sections by default */
+}
+
+.content-section.active {
+    display: block; /* Show the active content section */
+    animation: fadeIn 0.3s ease-in-out; /* Optional fade-in */
+}
+
+/* ==================== END FACILITY DETAIL REDESIGN STYLES ==================== */
+
+/* ==================== DARK THEME STYLES ==================== */
+body.dark-theme {
+    /* Redefine variables for dark mode */
+    --primary-color: #4dabf7; /* Lighter blue for dark mode */
+    --secondary-color: #adb5bd; /* Lighter grey */
+    --light-bg: #1a1a1a; /* Dark background */
+    --white-bg: #2c2c2c; /* Darker card/container background */
+    --card-bg: var(--white-bg);
+    --text-color: #e9ecef; /* Light text */
+    --text-muted-color: var(--secondary-color);
+    --border-color: #444; /* Darker border */
+    --subtle-shadow: 0 2px 4px rgba(0, 0, 0, 0.25); /* Adjusted shadow for dark */
+    --link-color: var(--primary-color);
+    --link-hover-color: #74c0fc; /* Even lighter blue for hover */
+    --navbar-bg: #212121; /* Slightly darker navbar */
+    --navbar-link-color: var(--secondary-color);
+    --navbar-link-hover-bg: rgba(255, 255, 255, 0.08);
+    --navbar-link-active-color: var(--primary-color);
+    --navbar-link-active-bg: rgba(77, 171, 247, 0.15);
+    --legend-bg: rgba(44, 44, 44, 0.9); /* Dark legend background */
+    --timeline-line-color: var(--border-color);
+    --timeline-dot-border: var(--primary-color);
+    --timeline-arrow-bg: var(--card-bg);
+    --map-bg: #333; /* Darker map background */
+    --tab-bg: #343a40; /* Dark tab background */
+    --tab-active-bg: var(--card-bg);
+    --tab-border: var(--border-color);
+    --tab-color: var(--secondary-color);
+    --tab-active-color: var(--primary-color);
+    --facility-item-hover-bg: #343a40; /* Darker hover for list items */
+    --form-switch-bg: #555; /* Dark switch background */
+}
+
+/* Specific overrides for dark theme */
+body.dark-theme .dashboard-header h1 {
+    color: var(--primary-color); /* Ensure header uses dark theme primary */
+}
+
+body.dark-theme .stats-card .icon {
+    color: var(--primary-color); /* Ensure icon uses dark theme primary */
+}
+
+body.dark-theme .status-construction {
+    color: #000; /* Ensure black text on yellow */
+}
+
+body.dark-theme .company-logo {
+    filter: brightness(0.9) contrast(1.1); /* Adjust logo brightness/contrast */
+}
+
+body.dark-theme .legend-color {
+    border-color: rgba(255, 255, 255, 0.3); /* Lighter border for color swatches */
+}
+
+body.dark-theme .facility-header::before {
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)); /* Darker overlay */
+}
+
+body.dark-theme .facility-detail-card h5 {
+    color: var(--primary-color); /* Ensure heading uses dark theme primary */
+}
+
+body.dark-theme .timeline-content h2 {
+    color: var(--primary-color); /* Ensure heading uses dark theme primary */
+}
+
+/* Adjust form switch for dark mode */
+body.dark-theme .form-switch .form-check-input {
+    background-color: var(--form-switch-bg);
+    border-color: rgba(255, 255, 255, 0.25);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(255,255,255,0.25)'/%3e%3c/svg%3e");
+}
+body.dark-theme .form-switch .form-check-input:focus {
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(77, 171, 247, 0.25);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(255,255,255,0.25)'/%3e%3c/svg%3e");
+}
+body.dark-theme .form-switch .form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e"); /* White circle */
+}
+body.dark-theme .form-switch .form-check-label {
+    color: var(--text-color); /* Light text for label */
+}
+body.dark-theme .form-switch .form-check-label i.fa-moon {
+    color: #f0e68c; /* Khaki color for moon icon */
+}
+body.dark-theme .form-switch .form-check-label i.fa-sun {
+    color: #ffcc00; /* Yellow color for sun icon */
+}
+
+
+/* --- Documents Page - File Explorer Tree View --- */
+
+#folderTreeViewContainer {
+    /* Styles for the container if needed, e.g., padding */
+    padding-top: 0.5rem; /* Align with main content heading */
+}
+
+#folderTreeView {
+    /* Styles for the scrollable area */
+    max-height: 65vh; /* Adjust as needed */
+    overflow-y: auto;
+    padding-right: 5px; /* Space for scrollbar */
+}
+
+.tree-node {
+    /* Spacing for tree items */
+    margin-bottom: 2px;
+}
+
+.tree-link {
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tree-link:hover {
+    background-color: var(--navbar-link-hover-bg);
+    color: var(--link-hover-color);
+}
+
+.tree-link.active {
+    background-color: var(--primary-color);
+    color: var(--white-bg);
+    font-weight: 500;
+}
+
+.tree-link.active i {
+    color: var(--white-bg); /* Ensure icon color matches active text */
+}
+
+
+
+#fileExplorerView {
+    min-height: 300px; /* Adjust value as needed */
+    /* Removed flex properties to allow table to flow naturally */
+}
+
+#fileExplorerView > p {
+     /* Keep centering for placeholder messages */
+     width: 100%;
+     text-align: center;
+     /* Add some padding if needed when centered */
+     padding-top: 50px; /* Example padding */
+     padding-bottom: 50px; /* Example padding */
+}
+
+/* Removed rule for table as flex is removed from parent */
+/* #fileExplorerView > .table-responsive, ... */
+
+/* Indentation for nested levels (already handled by ps-3 on ul in JS) */
+/* .tree-node ul { */
+/*     padding-left: 1rem; */ /* Bootstrap's ps-3 is 1rem */
+/* } */
+
+/* Optional: Add expand/collapse icons later */
+/* .tree-node .toggle-icon { */
+/*     cursor: pointer; */
+/*     margin-right: 5px; */
+/* } */
+
+
+
+
+/* Drag and Drop Highlighting */
+.drag-over-target {
+    background-color: #e0f7ff !important; /* Light blue background */
+    outline: 2px dashed #007bff; /* Blue dashed outline */
+    outline-offset: -2px;
+}
+
+/* Style for dragged item (optional) */
+tr[draggable="true"]:active,
+li.tree-node[draggable="true"]:active {
+    cursor: grabbing; /* Indicate dragging */
+}
+
+/* Facilities List - Column Layout */
+.facility-list-header,
+.facility-item-content {
+    display: flex;
+    align-items: center; /* Vertically align items in the center */
+    padding: 0.5rem 0.75rem; /* Consistent padding */
+    border-bottom: 1px solid var(--border-color); /* Separator line */
+    gap: 0.5rem; /* Reduced space between columns */
+}
+
+.facility-list-header {
+    font-weight: bold;
+    color: var(--text-muted-color); /* Bootstrap secondary text color */
+    background-color: var(--light-bg); /* Light background for header */
+    border-top: 1px solid var(--border-color);
+    border-bottom: 2px solid var(--border-color); /* Stronger bottom border for header */
+}
+
+.facility-item {
+    /* Remove default padding if any, handled by facility-item-content */
+    padding: 0;
+    border-bottom: none; /* Remove default item border, handled by content */
+}
+
+.facility-item:hover {
+     background-color: var(--facility-item-hover-bg); /* Apply hover to the whole item */
+}
+
+.facility-item:last-child .facility-item-content {
+    border-bottom: none; /* Remove border for the last item */
+}
+
+.facility-item-content span {
+    /* Default behavior for columns */
+    flex-shrink: 0; /* Prevent shrinking */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ellipsis for overflow */
+    white-space: nowrap; /* Prevent wrapping */
+    display: block; /* Ensure spans behave like blocks for width/overflow */
+}
+
+/* Define column widths (adjust percentages as needed) */
+.col-company { flex-basis: 20%; }
+.col-location { flex-basis: 18%; } /* Reverted reduction */
+.col-volume { flex-basis: 17%; text-align: right; } /* Increased */
+.col-method { flex-basis: 20%; } /* Increased */
+.col-status { flex-basis: 10%; text-align: center; } /* Center status */
+.col-actions { flex-basis: 8%; text-align: right; } /* Minimal space for actions */
+
+/* Ensure status badge fits */
+.col-status .status-badge {
+    display: inline-block; /* Allow centering */
+    padding: 0.25em 0.6em; /* Adjust padding if needed */
+}
+
+/* Link styling within company column */
+.col-company a {
+    text-decoration: none;
+    color: inherit;
+    font-weight: 500; /* Make company name slightly bolder */
+}
+.col-company a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) { /* Adjust breakpoint as needed */
+    .facility-list-header .col-volume,
+    .facility-list-header .col-method,
+    .facility-item-content .col-volume,
+    .facility-item-content .col-method {
+        display: none; /* Hide less critical columns on smaller screens */
+    }
+    .col-company { flex-basis: 30%; }
+    .col-location { flex-basis: 40%; }
+    .col-status { flex-basis: 15%; }
+    .col-actions { flex-basis: 15%; }
+}
+
+@media (max-width: 767px) { /* Below medium breakpoint where header hides */
+     /* Revert to simpler stacking layout if header is hidden */
+    .facility-item-content {
+        flex-direction: column; /* Stack items vertically */
+        align-items: flex-start; /* Align items to the start */
+        gap: 0.25rem; /* Reduce gap */
+        padding: 0.75rem; /* Restore padding */
+        border-bottom: 1px solid var(--border-color); /* Add border back for stacked items */
+    }
+    .facility-item:last-child .facility-item-content {
+        border-bottom: 1px solid var(--border-color); /* Ensure last item also has border in stacked view */
+    }
+    .facility-item-content span {
+        flex-basis: auto !important; /* Reset flex-basis */
+        width: 100%; /* Take full width */
+        text-align: left !important; /* Reset text alignment */
+        white-space: normal; /* Allow wrapping */
+        margin-bottom: 0.25rem;
+        overflow: visible; /* Show full text */
+        text-overflow: clip; /* Remove ellipsis */
+    }
+    .col-actions {
+        text-align: left !important; /* Align actions left */
+        margin-top: 0.5rem;
+    }
+    .col-status .status-badge {
+       display: inline-block; /* Keep badge inline */
+       margin-bottom: 0.5rem;
+    }
+    /* Show hidden columns again if needed in stacked view */
+     .col-volume, .col-method {
+        display: block;
+    }
+     /* Add labels for clarity in stacked view */
+    .col-company a::before { content: "Company: "; font-weight: bold; }
+    .col-location::before { content: "Location: "; font-weight: bold; }
+    .col-volume::before { content: "Volume: "; font-weight: bold; }
+    .col-method::before { content: "Method: "; font-weight: bold; }
+    .col-status::before { content: "Status: "; font-weight: bold; }
+
+}
+
+/* Reduce padding and size on edit button in facility list */
+.facility-item-content .col-actions .edit-link {
+    padding: 0.1rem 0.4rem; /* Restore some horizontal padding */
+    font-size: 0.9em;      /* Slightly larger icon */
+    line-height: 1;        /* Adjust line height for smaller size */
+    /* max-width: 30px; Removed width limit */
+}
+
+

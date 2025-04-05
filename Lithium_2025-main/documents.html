@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Documents - Lithium Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header Placeholder -->
+        <div id="header-placeholder"></div>
+        <!-- Hidden Subtitle for this page -->
+        <p id="page-subtitle-main" style="display: none;">Manage Documents</p>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+             <div id="errorMessage" class="alert alert-danger d-none mt-4" role="alert"></div> <!-- Added mt-4 -->
+             <div id="successMessage" class="alert alert-success d-none mt-4" role="alert"></div> <!-- Added mt-4 -->
+
+            <!-- [REMOVED] Facility Selector Card -->
+
+            <!-- Document Management Section (Now always visible, potentially) -->
+            <!-- Consider removing d-none if section should always show -->
+            <div id="documentManagementSection" class="mt-4">
+                <div class="row">
+                    <!-- Tree View Column -->
+                    <div class="col-md-3 border-end" id="folderTreeViewContainer">
+                        <h5>Folder Structure</h5>
+                        <hr>
+                        <div id="folderTreeView" style="max-height: 60vh; overflow-y: auto;">
+                            <!-- Tree view will be populated by JS -->
+                            <p class="text-muted small">Select a facility to view folders.</p>
+                        </div>
+                    </div>
+
+                    <!-- Main Content Column -->
+                    <div class="col-md-9" id="mainDocumentArea">
+                        <h4 id="selectedFacilityName">Files for: </h4>
+                        <hr>
+                        <!-- Breadcrumb Navigation -->
+                        <!-- Back/Forward Navigation -->
+                        <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Folder navigation">
+                            <button type="button" class="btn btn-outline-secondary" id="folderNavBackButton" title="Back" disabled>
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="folderNavForwardButton" title="Forward" disabled>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+
+
+                        <nav aria-label="breadcrumb" id="breadcrumbNav" class="mb-3" style="display: none;">
+                            <ol class="breadcrumb" id="breadcrumbList">
+                                <!-- Breadcrumbs will be populated by JS -->
+                                <li class="breadcrumb-item"><a href="#" data-folder-id="root-placeholder"><i class="fas fa-home"></i></a></li>
+                            </ol>
+                        </nav>
+
+                        <!-- File Explorer Card -->
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>Current Folder Contents</span>
+                                <!-- Filter Controls -->
+                                <div class="row mb-2 g-2 align-items-center">
+                                    <div class="col-md-auto">
+                                        <label for="filterTypeSelect" class="col-form-label col-form-label-sm">Type:</label>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select class="form-select form-select-sm" id="filterTypeSelect">
+                                            <option value="all" selected>All Types</option>
+                                            <option value="folder">Folder</option>
+                                            <option value="file">File</option>
+                                            <option value="link">Link</option>
+                                        </select>
+                                    </div>
+                                    <!-- Date range inputs removed based on feedback -->
+                                </div>
+                                <!-- Action Buttons -->
+
+                                <div class="btn-group" role="group" aria-label="File actions">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="newFolderButton" title="New Folder"><i class="fas fa-folder-plus"></i> New Folder</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="uploadFileButton" title="Upload File"><i class="fas fa-upload"></i> Upload File</button>
+                                    <button type="button" class="btn btn-sm btn-outline-info" id="addLinkButton" title="Add Link"><i class="fas fa-link"></i> Add Link</button>
+                                </div>
+                            </div>
+                            <div class="card-body p-0"> <!-- Remove padding for table -->
+                                <!-- File Explorer View Area -->
+                                <div id="fileExplorerView" class="table-responsive">
+                                    <!-- Table or Grid will be populated by JS -->
+                                    <p class="text-muted p-3" id="loadingMessage">Loading...</p>
+                                    <p class="text-muted p-3 d-none" id="emptyFolderMessage">This folder is empty.</p>
+                                </div>
+                                <!-- TODO: Add Modals for Upload/Add Link/New Folder forms -->
+                            </div>
+                        </div>
+                        <!-- End File Explorer Card -->
+                    </div> <!-- End Main Content Column -->
+                </div> <!-- End row -->
+            </div>
+            <!-- End Document Management Section -->
+        </main> <!-- End Main Content Area -->
+
+    </div> <!-- End dashboard-container -->
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Documents Page JS -->
+    <script src="js/documents.js" data-page-script="true"></script> <!-- Link to new JS file -->
+    <!-- Common JS (Loads Header, Handles Theme/Auth, SPA Routing) -->
+    <script src="js/common.js"></script>
+
+    <!-- Removed inline theme and auth scripts -->
+
+    <!-- Footer Placeholder -->
+    <div id="footer-placeholder"></div>
+</body>
+</html>

@@ -1,0 +1,144 @@
+/* Global Variables */
+:root {
+  --primary-color: #0d6efd; /* Updated Bootstrap Blue */
+  --secondary-color: #6c757d; /* Muted grey */
+  --light-bg: #f8f9fa; /* Standard light background */
+  --white-bg: #ffffff;
+  --card-bg: var(--white-bg); /* Default card background */
+  --text-color: #212529; /* Default text */
+  --text-muted-color: var(--secondary-color);
+  --border-color: #dee2e6;
+  --subtle-shadow: 0 2px 4px rgba(0, 0, 0, 0.075);
+  --card-border-radius: 8px;
+  --link-color: var(--primary-color);
+  --link-hover-color: #0a58ca; /* Darker blue for hover */
+  --navbar-bg: var(--white-bg);
+  --navbar-link-color: var(--secondary-color);
+  --navbar-link-hover-bg: rgba(0, 86, 179, 0.05);
+  --navbar-link-active-color: var(--primary-color);
+  --navbar-link-active-bg: rgba(0, 86, 179, 0.1);
+  --legend-bg: rgba(255, 255, 255, 0.95);
+  --timeline-line-color: var(--border-color);
+  --timeline-dot-border: var(--primary-color);
+  --timeline-arrow-bg: var(--card-bg);
+  --map-bg: var(--white-bg); /* Explicit map background */
+  --tab-bg: var(--light-bg);
+  --tab-active-bg: var(--white-bg);
+  --tab-border: var(--border-color);
+  --tab-color: var(--secondary-color);
+  --tab-active-color: var(--primary-color);
+  --facility-item-hover-bg: var(--light-bg);
+  --form-switch-bg: #eee; /* Default switch background */
+}
+
+/* Dashboard Styles */
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  background-color: var(--light-bg);
+  color: var(--text-color);
+  line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+.dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 25px;
+}
+
+/* Map Styles */
+.map-container {
+  height: 70vh; /* Adjusted height to 70% of viewport height */
+  border-radius: var(--card-border-radius);
+  overflow: hidden;
+  box-shadow: var(--subtle-shadow);
+  position: relative;
+  border: 1px solid var(--border-color);
+  background-color: var(--map-bg); /* Use variable */
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+#map {
+  height: 100%;
+  line-height: normal; /* Prevent body line-height from affecting map tiles */
+}
+
+/* Legend styles */
+.legend {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  z-index: 1000;
+  background-color: var(--legend-bg);
+  padding: 12px 15px;
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--subtle-shadow);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.legend h6 {
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-color); /* Ensure text color matches theme */
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: var(--text-color); /* Ensure text color matches theme */
+}
+
+.legend-item:last-child {
+  margin-bottom: 0;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Legend Toggle Switch */
+.legend .form-check-label {
+  font-size: 0.85rem;
+  margin-left: 5px;
+  color: var(--text-color); /* Ensure text color matches theme */
+}
+
+.legend .form-check-input {
+  width: 2.5em;
+  height: 1.25em;
+}
+
+.legend hr {
+  margin: 10px 0;
+  border-top: 1px solid var(--border-color);
+  transition: border-color 0.3s ease;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  .dashboard-header {
+    text-align: center;
+  }
+  
+  .navbar .container-fluid {
+    justify-content: center;
+  }
+  
+  #authStatus {
+    margin-top: 10px;
+    justify-content: center;
+    width: 100%;
+  }
+}

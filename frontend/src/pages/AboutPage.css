@@ -1,0 +1,170 @@
+/* Styles migrated from css/styles.css relevant to AboutPage */
+
+/* Using CSS variables from the original styles.css */
+:root {
+  --primary-color: #0d6efd; /* Updated Bootstrap Blue */
+  --secondary-color: #6c757d; /* Muted grey */
+  --light-bg: #f8f9fa; /* Standard light background */
+  --white-bg: #ffffff;
+  --card-bg: var(--white-bg); /* Default card background */
+  --text-color: #212529; /* Default text */
+  --text-muted-color: var(--secondary-color);
+  --border-color: #dee2e6;
+  --subtle-shadow: 0 2px 4px rgba(0, 0, 0, 0.075);
+  --card-border-radius: 8px;
+  --link-color: var(--primary-color);
+  --link-hover-color: #0a58ca; /* Darker blue for hover */
+}
+
+/* Container styles */
+.container {
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+/* Card styles */
+.card {
+  background-color: var(--card-bg);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--subtle-shadow);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-body {
+  padding: 25px;
+}
+
+.card-title {
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+/* Row and column styles */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+}
+
+.col-12 {
+  position: relative;
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+/* Utility classes */
+.mt-4 {
+  margin-top: 1.5rem !important;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem !important;
+}
+
+/* List styles */
+ul {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--link-color);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--link-hover-color);
+  text-decoration: underline;
+}
+
+/* Animation */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply fade-in animation to cards */
+.card {
+  animation: fadeIn 0.5s ease-in-out;
+  animation-fill-mode: both;
+}
+
+.row:nth-child(1) .card {
+  animation-delay: 0.1s;
+}
+
+.row:nth-child(2) .card {
+  animation-delay: 0.2s;
+}
+
+.row:nth-child(3) .card {
+  animation-delay: 0.3s;
+}
+
+/* Responsive styles */
+@media (min-width: 576px) {
+  .container {
+    max-width: 540px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 720px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container {
+    max-width: 960px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1140px;
+  }
+}
+
+/* Dark theme support */
+body.dark-theme .card {
+  background-color: var(--card-bg);
+}
+
+body.dark-theme .card-title {
+  color: var(--primary-color);
+}
