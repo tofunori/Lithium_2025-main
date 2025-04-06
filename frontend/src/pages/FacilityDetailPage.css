@@ -45,7 +45,7 @@
 }
 
 .status-operating {
-  background-color: #28a745; /* Green */
+  background-color: #4CAF50; /* Green (Matches map) */
 }
 
 .status-construction {
@@ -54,11 +54,11 @@
 }
 
 .status-planned {
-  background-color: #17a2b8; /* Teal */
+  background-color: #2196F3; /* Blue (Matches map) */
 }
 
 .status-pilot {
-  background-color: #6c757d; /* Gray */
+  background-color: #9C27B0; /* Purple (Matches map) */
 }
 
 .status-unknown {

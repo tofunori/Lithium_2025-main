@@ -71,16 +71,19 @@ function FacilityDetailPage() {
   const renderStatusBadge = (status) => {
     const statusKey = status?.replace(/\s+/g, '')?.toLowerCase() || 'unknown';
     const statusClasses = {
-      planning: 'status-badge status-planned',
-      underconstruction: 'status-badge status-construction',
-      operational: 'status-badge status-operating',
+      planned: 'status-badge status-planned', // Corrected key
+      underconstruction: 'status-badge status-construction', // Corrected key to match generated key
+      operating: 'status-badge status-operating', // Corrected key
       onhold: 'status-badge status-onhold',
       cancelled: 'status-badge status-cancelled',
       decommissioned: 'status-badge status-decommissioned',
       unknown: 'status-badge status-unknown',
     };
     const label = status || 'Unknown';
-    return <span className={statusClasses[statusKey] || statusClasses.unknown}>{label}</span>;
+    const className = statusClasses[statusKey] || statusClasses.unknown;
+    // Add console log for debugging
+    console.log(`Status: "${status}", Key: "${statusKey}", Class: "${className}"`);
+    return <span className={className}>{label}</span>;
   };
 
   // Renamed from handleEditClick

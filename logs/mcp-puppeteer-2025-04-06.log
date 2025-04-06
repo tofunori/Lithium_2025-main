@@ -7,3 +7,4 @@
 {"arguments":{},"level":"debug","message":"Tool call received","service":"mcp-puppeteer","timestamp":"2025-04-06 13:15:19.322","tool":"puppeteer_connect_active_tab"}
 {"0":"n","1":"p","2":"x","level":"info","message":"Launching browser with config:","service":"mcp-puppeteer","timestamp":"2025-04-06 13:15:19.323"}
 {"level":"info","message":"Browser launched successfully","service":"mcp-puppeteer","timestamp":"2025-04-06 13:15:19.990"}
+{"arguments":{},"level":"debug","message":"Tool call received","service":"mcp-puppeteer","timestamp":"2025-04-06 13:49:37.605","tool":"puppeteer_connect_active_tab"}
