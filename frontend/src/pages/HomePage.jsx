@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'; // Added useState, useCallback
-import L from 'leaflet'; // Import Leaflet
-import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
-import './HomePage.css'; // Import component-specific CSS
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { useTheme } from '../context/ThemeContext'; // Import useTheme hook
+import './HomePage.css';
 
 function HomePage() {
   const mapContainerRef = useRef(null); // Ref for the map container div
   const mapInstanceRef = useRef(null); // Ref to store the map instance
-  const markersRef = useRef({}); // Ref to store markers { facilityId: markerInstance }
-  const [sizeByCapacity, setSizeByCapacity] = useState(false); // State for the toggle
-  const [facilitiesData, setFacilitiesData] = useState([]); // Store fetched facilities data
+  const markersRef = useRef({});
+  const tileLayerRef = useRef(null); // Ref to store the current tile layer
+  const [sizeByCapacity, setSizeByCapacity] = useState(false);
+  const [facilitiesData, setFacilitiesData] = useState([]);
+  const { isDarkMode } = useTheme(); // Get theme state
 
   useEffect(() => {
     const loadMapAndFacilities = async () => {
@@ -19,9 +22,19 @@ function HomePage() {
           zoom: 4,
         });
 
-        // Add Tile Layer (OpenStreetMap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        // Tile Layer URLs
+        const lightTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        const lightTileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+        const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        const darkTileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+        // Initial Tile Layer based on theme
+        const initialTileUrl = isDarkMode ? darkTileUrl : lightTileUrl;
+        const initialAttribution = isDarkMode ? darkTileAttribution : lightTileAttribution;
+
+        tileLayerRef.current = L.tileLayer(initialTileUrl, {
+          attribution: initialAttribution,
+          maxZoom: 19, // CartoDB max zoom
         }).addTo(mapInstanceRef.current);
 
         try {
@@ -150,13 +163,39 @@ function HomePage() {
     if (mapInstanceRef.current && Object.keys(markersRef.current).length > 0) {
        updateMarkerSizes();
     }
-  }, [sizeByCapacity, facilitiesData, updateMarkerSizes]); // Run when toggle or data changes
+  }, [sizeByCapacity, facilitiesData, updateMarkerSizes]);
 
 
   // Handler for the toggle switch
   const handleSizeToggle = (event) => {
     setSizeByCapacity(event.target.checked);
   };
+  
+    // Effect to update tile layer when theme changes
+    useEffect(() => {
+      if (!mapInstanceRef.current) return; // Map not yet initialized
+  
+      // Tile Layer URLs (repeated for clarity, could be defined outside)
+      const lightTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      const lightTileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+      const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+      const darkTileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  
+      const newTileUrl = isDarkMode ? darkTileUrl : lightTileUrl;
+      const newAttribution = isDarkMode ? darkTileAttribution : lightTileAttribution;
+  
+      // Remove old layer if it exists
+      if (tileLayerRef.current) {
+        mapInstanceRef.current.removeLayer(tileLayerRef.current);
+      }
+  
+      // Add new layer and update ref
+      tileLayerRef.current = L.tileLayer(newTileUrl, {
+        attribution: newAttribution,
+        maxZoom: 19,
+      }).addTo(mapInstanceRef.current);
+  
+    }, [isDarkMode]); // Dependency on theme state
 
 
   return (

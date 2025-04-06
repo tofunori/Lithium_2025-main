@@ -1,16 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react'; // Removed useState
 import { Link, useLocation } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext'; // Import useTheme hook
 import './Header.css';
 
 const Header = () => {
   const location = useLocation();
-  const [darkMode, setDarkMode] = useState(false);
-  
-  // Function to toggle dark mode
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    // You would implement actual theme switching logic here
-  };
+  const { isDarkMode, toggleDarkMode } = useTheme(); // Get theme state and toggle function from context
 
   // Set active class for navigation links
   const isActive = (path) => {
@@ -51,8 +46,8 @@ const Header = () => {
                   type="checkbox" 
                   role="switch" 
                   id="themeSwitch"
-                  checked={darkMode}
-                  onChange={toggleDarkMode}
+                  checked={isDarkMode}  // Use context state
+                  onChange={toggleDarkMode} // Use context toggle function
                 />
                 <label className="form-check-label" htmlFor="themeSwitch">
                   <i className="fas fa-moon"></i>

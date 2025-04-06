@@ -92,6 +92,7 @@
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--border-color);
   gap: 0.5rem;
+  color: var(--text-color); /* Explicitly set text color for table rows */
 }
 
 .facility-list-header {
@@ -276,7 +277,7 @@
   display: inline-block;
   font-weight: 400;
   line-height: 1.5;
-  color: #212529;
+  color: var(--text-color); /* Use theme variable */
   text-align: center;
   text-decoration: none;
   vertical-align: middle;
@@ -334,11 +335,11 @@
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #212529;
+  color: var(--text-color); /* Use theme variable */
   text-align: center;
   white-space: nowrap;
-  background-color: #e9ecef;
-  border: 1px solid #ced4da;
+  background-color: var(--input-group-bg); /* Use theme variable */
+  border: 1px solid var(--border-color); /* Use theme variable */
   border-radius: 0.25rem 0 0 0.25rem;
 }
 
@@ -349,28 +350,28 @@
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #212529;
-  background-color: #fff;
+  color: var(--text-color); /* Use theme variable */
+  background-color: var(--card-bg); /* Use theme variable (same as card background) */
   background-clip: padding-box;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--border-color); /* Use theme variable */
   appearance: none;
   border-radius: 0 0.25rem 0.25rem 0;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .form-control:focus {
-  color: #212529;
-  background-color: #fff;
-  border-color: #86b7fe;
+  color: var(--text-color); /* Use theme variable */
+  background-color: var(--card-bg); /* Use theme variable */
+  border-color: var(--form-focus-border-color); /* Use theme variable */
   outline: 0;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  box-shadow: 0 0 0 0.25rem var(--form-focus-shadow-color); /* Use theme variable */
 }
 
 
 /* Add vertical lines between columns */
 .facility-list-header span,
 .facility-item-content span {
-  border-right: 1px solid #ccc;
+  border-right: 1px solid var(--border-color); /* Use theme variable */
   padding-right: 10px; /* Add some padding for spacing */
 }
 

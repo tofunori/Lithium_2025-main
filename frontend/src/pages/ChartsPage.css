@@ -3,10 +3,10 @@
 }
 
 .stats-card {
-  background-color: #fff;
+  background-color: var(--card-bg); /* Use theme variable */
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--subtle-shadow); /* Use theme variable */
   height: 100%;
   transition: transform 0.2s;
 }
@@ -28,7 +28,7 @@
 
 .stats-card .label {
   font-size: 1rem;
-  color: #6c757d;
+  color: var(--text-muted-color); /* Use theme variable */
 }
 
 .chart-container {

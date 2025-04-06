@@ -19,20 +19,38 @@
   color: var(--text-muted-color, #6c757d) !important;
 }
 
+/* Dark Mode Header Overrides */
+.dark-mode .dashboard-header h1 {
+  color: var(--text-color); /* Use main light text color for title in dark mode */
+}
+
+
 /* Navigation Menu Styles */
 .navbar {
   background-color: var(--navbar-bg, #ffffff) !important;
   box-shadow: none;
-  padding: 0.5rem 1rem !important;
+  padding: 0.5rem 1rem !important; /* Keep overall navbar padding */
   transition: background-color 0.3s ease;
+}
+
+/* Ensure container aligns items and adds space between main sections */
+.navbar .container-fluid {
+  display: flex; /* Ensure flex behavior */
+  align-items: center; /* Vertically align items */
+  gap: 1.5rem; /* Space between nav links block, theme switch, auth status */
 }
 
 .navbar .nav-link {
   color: var(--navbar-link-color, #6c757d);
   font-weight: 500;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.8rem; /* Adjusted padding within links */
   border-radius: 5px;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Add space between the navigation links themselves */
+.navbar-nav {
+  gap: 0.6rem; /* Space between each nav item */
 }
 
 .navbar .nav-link:hover {
@@ -53,13 +71,13 @@
 /* Theme Toggle Styles */
 .form-switch .form-check-input {
   background-color: var(--form-switch-bg, #eee);
-  border-color: rgba(0, 0, 0, 0.25);
+  border-color: var(--border-color); /* Use variable */
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
 }
 
 .form-switch .form-check-input:focus {
-  border-color: rgba(0, 0, 0, 0.25);
-  box-shadow: 0 0 0 0.25rem rgba(211, 212, 213, 0.5);
+  border-color: var(--border-color); /* Use variable */
+  box-shadow: 0 0 0 0.25rem var(--form-switch-focus-shadow-color); /* Use variable */
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
 }
 
@@ -83,8 +101,10 @@
     text-align: center; 
   }
   
-  .navbar .container-fluid { 
-    justify-content: center; 
+  .navbar .container-fluid {
+    justify-content: center;
+    flex-wrap: wrap; /* Allow items to wrap on small screens */
+    gap: 1rem; /* Adjust gap for smaller screens */
   }
   
   #authStatus { 

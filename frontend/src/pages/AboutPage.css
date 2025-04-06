@@ -37,7 +37,7 @@
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--subtle-shadow); /* Use theme variable */
 }
 
 .card-body {
@@ -46,7 +46,7 @@
 
 .card-title {
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--text-color); /* Use main text color for titles */
   margin-bottom: 1rem;
   font-size: 1.5rem;
   border-bottom: 2px solid var(--border-color);
@@ -160,11 +160,4 @@ a:hover {
   }
 }
 
-/* Dark theme support */
-body.dark-theme .card {
-  background-color: var(--card-bg);
-}
-
-body.dark-theme .card-title {
-  color: var(--primary-color);
-}
+/* Redundant dark theme rules removed as .dark-mode is applied higher up */
