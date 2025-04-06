@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react'; // Added useState, useCallback
 import L from 'leaflet'; // Import Leaflet
 import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
 import './HomePage.css'; // Import component-specific CSS
@@ -6,6 +6,9 @@ import './HomePage.css'; // Import component-specific CSS
 function HomePage() {
   const mapContainerRef = useRef(null); // Ref for the map container div
   const mapInstanceRef = useRef(null); // Ref to store the map instance
+  const markersRef = useRef({}); // Ref to store markers { facilityId: markerInstance }
+  const [sizeByCapacity, setSizeByCapacity] = useState(false); // State for the toggle
+  const [facilitiesData, setFacilitiesData] = useState([]); // Store fetched facilities data
 
   useEffect(() => {
     const loadMapAndFacilities = async () => {
@@ -24,6 +27,7 @@ function HomePage() {
         try {
           const { getFacilities } = await import('../firebase');
           const facilities = await getFacilities();
+          setFacilitiesData(facilities); // Store facilities data in state
 
           // Define status colors based on the legend
           const statusColors = {
@@ -50,11 +54,25 @@ function HomePage() {
                 iconAnchor: [10, 10] // Point of the icon which will correspond to marker's location
               });
 
-              L.marker([lat, lng], { icon: customIcon }) // Use the custom icon
-                .addTo(mapInstanceRef.current)
-                .bindPopup(`<strong>${facility.properties?.company || 'Unknown'}</strong><br>${facility.properties?.name || ''}<br>Status: ${facility.properties?.status || 'N/A'}`);
+              // Create the marker and assign it to a variable
+              const marker = L.marker([lat, lng], { icon: customIcon });
+
+              // Add to map and bind popup
+              marker.addTo(mapInstanceRef.current)
+                    .bindPopup(`
+                      <strong>${facility.properties?.company || 'Unknown'}</strong><br>
+                      ${facility.properties?.name || ''}<br>
+                      Location: ${facility.properties?.address || 'N/A'}<br>
+                      Status: ${facility.properties?.status || 'N/A'}<br>
+                      <a href="/facilities/${facility.id}">View Details</a>
+                    `); // Removed target="_blank"
+    
+                  // Store the marker instance *after* it's created, using the correct variable
+              markersRef.current[facility.id] = marker;
             }
           });
+          // Initial marker size update after loading all markers
+          updateMarkerSizes();
         } catch (error) {
           console.error('Error loading facilities for map:', error);
         }
@@ -69,7 +87,77 @@ function HomePage() {
         mapInstanceRef.current = null;
       }
     };
+  }, []); // Initial map load
+
+  // Function to calculate marker size based on capacity
+  const calculateMarkerSize = useCallback((capacityString) => {
+    const baseSize = 16; // Base size for the circle diameter
+    const maxSize = 50; // Max size for the largest capacity
+    const minSize = 10; // Min size for zero or small capacity
+
+    // Extract number from string like "20,000 tonnes per year" or just "20000"
+    const capacity = parseInt(String(capacityString).replace(/[^0-9]/g, ''), 10);
+
+    if (isNaN(capacity) || capacity <= 0) {
+      return minSize;
+    }
+
+    // Use a logarithmic scale for better visual differentiation
+    // Adjust the scaling factor (e.g., 5) and base (e.g., 1000) as needed
+    const scaledSize = baseSize + Math.log(capacity / 1000 + 1) * 5;
+
+    return Math.max(minSize, Math.min(maxSize, Math.round(scaledSize)));
   }, []);
+
+
+  // Function to create the icon HTML
+  const createIconHtml = (color, size) => {
+    return `<div style="background-color: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%;"></div>`; // Removed border, shadow, and opacity for uniform color
+  };
+
+  // Function to update all marker sizes
+  const updateMarkerSizes = useCallback(() => {
+    const statusColors = { /* Re-define or access from scope */
+      operating: '#4CAF50', construction: '#FFC107', planned: '#2196F3', pilot: '#9C27B0', default: '#2196F3'
+    };
+
+    facilitiesData.forEach(facility => {
+      const marker = markersRef.current[facility.id];
+      if (!marker) return;
+
+      const status = facility.properties?.status?.toLowerCase() || 'default';
+      const color = statusColors[status] || statusColors.default;
+      let size = 16; // Default fixed size
+
+      if (sizeByCapacity) {
+        size = calculateMarkerSize(facility.properties?.capacity);
+      }
+
+      const newIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: createIconHtml(color, size),
+        iconSize: [size + 4, size + 4], // Add padding for border/shadow
+        iconAnchor: [(size + 4) / 2, (size + 4) / 2]
+      });
+
+      marker.setIcon(newIcon);
+    });
+  }, [sizeByCapacity, facilitiesData, calculateMarkerSize]); // Dependencies
+
+  // Effect to update markers when toggle changes or data loads
+  useEffect(() => {
+    // Ensure map and markers are loaded before updating
+    if (mapInstanceRef.current && Object.keys(markersRef.current).length > 0) {
+       updateMarkerSizes();
+    }
+  }, [sizeByCapacity, facilitiesData, updateMarkerSizes]); // Run when toggle or data changes
+
+
+  // Handler for the toggle switch
+  const handleSizeToggle = (event) => {
+    setSizeByCapacity(event.target.checked);
+  };
+
 
   return (
     <div className="row" style={{ margin: 0, width: '100%' }}>
@@ -81,25 +169,33 @@ function HomePage() {
           {/* Legend remains the same */}
           <div className="legend">
             <h6 className="mb-2">Facility Status</h6>
-            <div className="legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#4CAF50' }}></div>
-              <span>Operating</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#FFC107' }}></div>
-              <span>Under Construction</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#2196F3' }}></div>
-              <span>Planned</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#9C27B0' }}></div>
-              <span>Pilot</span>
-            </div>
+            {/* ... legend items ... */}
+             <div className="legend-item">
+               <div className="legend-color" style={{ backgroundColor: '#4CAF50' }}></div>
+               <span>Operating</span>
+             </div>
+             <div className="legend-item">
+               <div className="legend-color" style={{ backgroundColor: '#FFC107' }}></div>
+               <span>Under Construction</span>
+             </div>
+             <div className="legend-item">
+               <div className="legend-color" style={{ backgroundColor: '#2196F3' }}></div>
+               <span>Planned</span>
+             </div>
+             <div className="legend-item">
+               <div className="legend-color" style={{ backgroundColor: '#9C27B0' }}></div>
+               <span>Pilot</span>
+             </div>
             <hr style={{ margin: '8px 0' }} />
             <div className="form-check form-switch form-check-sm">
-              <input className="form-check-input" type="checkbox" role="switch" id="sizeByCapacityToggle" />
+              <input
+                className="form-check-input"
+                type="checkbox"
+                role="switch"
+                id="sizeByCapacityToggle"
+                checked={sizeByCapacity} // Control component state
+                onChange={handleSizeToggle} // Attach handler
+              />
               <label className="form-check-label" htmlFor="sizeByCapacityToggle" style={{ fontSize: '0.9em' }}>Size by Capacity</label>
             </div>
           </div>
