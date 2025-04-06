@@ -1,2 +1,4 @@
 {"level":"info","message":"Starting MCP server","service":"mcp-puppeteer","timestamp":"2025-04-06 10:43:22.865"}
 {"level":"info","message":"MCP server started successfully","service":"mcp-puppeteer","timestamp":"2025-04-06 10:43:22.867"}
+{"level":"info","message":"Starting MCP server","service":"mcp-puppeteer","timestamp":"2025-04-06 10:50:10.443"}
+{"level":"info","message":"MCP server started successfully","service":"mcp-puppeteer","timestamp":"2025-04-06 10:50:10.446"}
