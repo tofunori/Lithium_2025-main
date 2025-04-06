@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getFolderStructure, getFolderContents, getStorageFiles } from '../firebase';
 import { collection, addDoc, doc, updateDoc, deleteDoc, getFirestore, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject, getStorage } from 'firebase/storage';
+import { useAuth } from '../context/AuthContext.jsx'; // Import useAuth
 import './DocumentsPage.css';
 
 function DocumentsPage() {
@@ -17,6 +18,7 @@ function DocumentsPage() {
   const [showNewFolderForm, setShowNewFolderForm] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const { user } = useAuth(); // Get user from auth context
   
   const db = getFirestore();
   const storage = getStorage();
@@ -437,16 +439,18 @@ function DocumentsPage() {
             <i className={`fas fa-folder${currentFolder === node.id ? '-open' : ''} explorer-folder-icon`}></i>
             <span className="folder-name">{node.name}</span>
           </div>
-          <button
-            className="btn btn-sm btn-link text-danger p-0 ms-auto tree-delete-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteItem(node);
-            }}
-            title="Delete folder"
-          >
-            <i className="fas fa-trash-alt" style={{ fontSize: '0.75rem' }}></i>
-          </button>
+          {user && (
+            <button
+              className="btn btn-sm btn-link text-danger p-0 ms-auto tree-delete-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteItem(node);
+              }}
+              title="Delete folder"
+            >
+              <i className="fas fa-trash-alt" style={{ fontSize: '0.75rem' }}></i>
+            </button>
+          )}
         </div>
         {node.children && node.children.length > 0 && expandedFolders[node.id] && (
           <div style={{ paddingLeft: '20px' }}>
@@ -525,16 +529,18 @@ function DocumentsPage() {
               <i className="fas fa-folder-tree me-2 text-primary"></i>
               <strong>Folder Structure</strong>
             </div>
-            <button
-              className="btn btn-sm btn-outline-primary"
-              onClick={() => setShowNewFolderForm(!showNewFolderForm)}
-              title="Add Root Folder"
-            >
-              <i className="fas fa-folder-plus"></i>
-            </button>
+            {user && (
+              <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={() => setShowNewFolderForm(!showNewFolderForm)}
+                title="Add Root Folder"
+              >
+                <i className="fas fa-folder-plus"></i>
+              </button>
+            )}
           </div>
           
-          {showNewFolderForm && currentFolder === 'root' && (
+          {user && showNewFolderForm && currentFolder === 'root' && (
             <div className="p-2 border-bottom">
               <form onSubmit={handleCreateFolder}>
                 <div className="input-group input-group-sm">
@@ -620,40 +626,42 @@ function DocumentsPage() {
               />
             </div>
             <div className="ms-auto">
-              <div className="btn-group">
-                <button 
-                  className="btn btn-sm btn-outline-primary" 
-                  onClick={() => setShowNewFolderForm(!showNewFolderForm)}
-                  title="New Folder"
-                >
-                  <i className="fas fa-folder-plus me-1"></i> New Folder
-                </button>
-                <label className="btn btn-sm btn-outline-secondary" title="Upload File">
-                  <i className="fas fa-upload me-1"></i> Upload File
-                  <input 
-                    type="file" 
-                    style={{ display: 'none' }} 
-                    onChange={handleFileUpload}
-                  />
-                </label>
-              </div>
+              {user && (
+                <div className="btn-group">
+                  <button
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => setShowNewFolderForm(!showNewFolderForm)}
+                    title="New Folder"
+                  >
+                    <i className="fas fa-folder-plus me-1"></i> New Folder
+                  </button>
+                  <label className="btn btn-sm btn-outline-secondary" title="Upload File">
+                    <i className="fas fa-upload me-1"></i> Upload File
+                    <input
+                      type="file"
+                      style={{ display: 'none' }}
+                      onChange={handleFileUpload}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
           </div>
           
-          {showNewFolderForm && (
+          {user && showNewFolderForm && (
             <div className="p-2 border-bottom">
               <form onSubmit={handleCreateFolder} className="d-flex">
-                <input 
-                  type="text" 
-                  className="form-control form-control-sm me-2" 
-                  placeholder="New folder name" 
+                <input
+                  type="text"
+                  className="form-control form-control-sm me-2"
+                  placeholder="New folder name"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   required
                 />
                 <button type="submit" className="btn btn-sm btn-primary me-1">Create</button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn btn-sm btn-secondary"
                   onClick={() => {
                     setShowNewFolderForm(false);
@@ -755,13 +763,15 @@ function DocumentsPage() {
                                 <i className="fas fa-eye"></i>
                               </a>
                             )}
-                            <button 
-                              className="btn btn-sm btn-outline-danger"
-                              title="Delete"
-                              onClick={() => handleDeleteItem(item)}
-                            >
-                              <i className="fas fa-trash"></i>
-                            </button>
+                            {user && (
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                title="Delete"
+                                onClick={() => handleDeleteItem(item)}
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, updateDoc, deleteDoc } from 'firebase/firestore';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth'; // Added GoogleAuthProvider
 import { getStorage, ref, listAll, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage'; // Added deleteObject
 
 // Your Firebase configuration
@@ -21,6 +21,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
+const googleProvider = new GoogleAuthProvider();
 
 // Firestore service functions
 export const getFacilities = async () => {
@@ -340,7 +341,7 @@ export const getCurrentUser = () => {
 };
 
 // Export Firebase instances
-export { db, auth, storage };
+export { db, auth, storage, googleProvider };
 export default app;
 
 // Storage functions

@@ -3,11 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
+import { useAuth } from '../context/AuthContext.jsx'; // Import useAuth
 import { addFacility } from '../firebase'; // Assuming this function exists to add data
 import './FacilityDetailPage.css'; // Reuse detail page styles for consistency
 
 function FacilityCreatePage() {
   const navigate = useNavigate();
+  const { user } = useAuth(); // Get user from auth context
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
@@ -36,6 +38,14 @@ function FacilityCreatePage() {
     feedstock: '',
     product: '',
   });
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user) {
+      console.log("No user found, redirecting from FacilityCreatePage.");
+      navigate('/facilities'); // Or to login page: navigate('/login');
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -250,6 +260,11 @@ const removeImageField = (index) => {
   const statusOptions = [
     'Planning', 'Under Construction', 'Operational', 'On Hold', 'Cancelled', 'Decommissioned'
   ];
+
+  // Render nothing or a loading indicator until user status is confirmed and redirection happens
+  if (!user) {
+    return <p>Loading or redirecting...</p>; // Or null, or a spinner
+  }
 
   return (
     <div className="container mt-4 facility-detail-page"> {/* Reuse class for styling */}

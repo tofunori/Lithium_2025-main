@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom'; // Import Link
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx'; // Import useAuth
 import { getFacilities, getFacilitiesByStatus, deleteFacility } from '../firebase';
 import './FacilitiesPage.css';
 
 function FacilitiesPage() {
+  const { user } = useAuth(); // Get user from auth context
   const [activeFilter, setActiveFilter] = useState('all');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -145,11 +147,13 @@ function FacilitiesPage() {
             </button>
           </div>
 
-          <div className="text-end mb-3">
-            <button className="btn btn-success" onClick={() => navigate('/facilities/new')}>
-              <i className="fas fa-plus"></i> Add New Facility
-            </button>
-          </div>
+          {user && (
+            <div className="text-end mb-3">
+              <button className="btn btn-success" onClick={() => navigate('/facilities/new')}>
+                <i className="fas fa-plus"></i> Add New Facility
+              </button>
+            </div>
+          )}
 
           <div className="input-group mb-3">
             <span className="input-group-text"><i className="fas fa-search"></i></span>
@@ -192,12 +196,14 @@ function FacilitiesPage() {
                       {renderStatusBadge(facility.status || 'unknown')}
                     </span>
                     <span className="col-actions actions-column">
-                      <button
-                        className="btn btn-sm btn-outline-danger delete-button" // Changed class for styling
-                        onClick={() => handleDelete(facility.id)} // Call handleDelete
-                      >
-                        <i className="fas fa-trash-alt"></i> {/* Changed icon to trash */}
-                      </button>
+                      {user && (
+                        <button
+                          className="btn btn-sm btn-outline-danger delete-button" // Changed class for styling
+                          onClick={() => handleDelete(facility.id)} // Call handleDelete
+                        >
+                          <i className="fas fa-trash-alt"></i> {/* Changed icon to trash */}
+                        </button>
+                      )}
                     </span>
                   </div>
                 </div>
