@@ -1,3 +1,26 @@
+/* Add basic styling for Tiptap editor */
+.tiptap-editor .ProseMirror {
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  min-height: 150px; /* Adjust as needed */
+}
+
+.tiptap-editor .ProseMirror:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Style for the menu bar */
+.tiptap-menu-bar {
+  background-color: #f8f9fa; /* Light background */
+}
+
+.tiptap-menu-bar button i {
+  vertical-align: middle; /* Align icons nicely */
+}
+
 /* Styles migrated from css/styles.css relevant to AboutPage */
 
 /* Using CSS variables from the original styles.css */
