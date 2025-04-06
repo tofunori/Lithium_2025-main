@@ -27,10 +27,31 @@ export const getFacilities = async () => {
   try {
     const facilitiesCollection = collection(db, 'facilities');
     const facilitiesSnapshot = await getDocs(facilitiesCollection);
-    return facilitiesSnapshot.docs.map(doc => ({
+    const facilities = facilitiesSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    
+    console.log('Raw facilities data from Firebase:', facilities);
+    
+    // Check if facilities have the expected structure
+    if (facilities.length > 0) {
+      console.log('Sample facility structure:', facilities[0]);
+      
+      // Check if status field exists
+      const missingStatus = facilities.filter(f => !f.status);
+      if (missingStatus.length > 0) {
+        console.warn(`${missingStatus.length} facilities missing status field`);
+      }
+      
+      // Check if volume field exists
+      const missingVolume = facilities.filter(f => !f.volume && f.volume !== 0);
+      if (missingVolume.length > 0) {
+        console.warn(`${missingVolume.length} facilities missing volume field`);
+      }
+    }
+    
+    return facilities;
   } catch (error) {
     console.error("Error fetching facilities:", error);
     throw error;
