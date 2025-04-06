@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import { addFacility } from '../firebase'; // Assuming this function exists to add data
 import './FacilityDetailPage.css'; // Reuse detail page styles for consistency
 
@@ -13,7 +16,9 @@ function FacilityCreatePage() {
   const [facilityData, setFacilityData] = useState({
     id: '', // Add the ID field
     company: '',
-    address: '',
+    address: '', // Keep address for context, but coordinates will be primary
+    latitude: null, // Add latitude state
+    longitude: null, // Add longitude state
     status: 'Planning', // Default status
     capacity: '',
     technology: '',
@@ -78,6 +83,97 @@ const removeImageField = (index) => {
     setFacilityData(prevData => ({ ...prevData, images: updatedImages.length > 0 ? updatedImages : [''] }));
 };
 
+// --- Search Component Logic ---
+  const SearchField = () => {
+    const map = useMap();
+    // Use OpenStreetMapProvider or another provider like Esri, etc.
+    const provider = new OpenStreetMapProvider();
+
+    useEffect(() => {
+      const searchControl = new GeoSearchControl({
+        provider: provider,
+        style: 'bar', // Use 'bar' style for the search input
+        showMarker: false, // We handle the marker ourselves
+        showPopup: false, // No popup on search result
+        autoClose: true, // Close results on selection
+        keepResult: true, // Keep the search input filled with the result
+        searchLabel: 'Search for location...', // Placeholder text
+        // position: 'topright', // Optional: control position
+      });
+
+      map.addControl(searchControl);
+
+      // Event listener for when a location is selected from search
+      map.on('geosearch/showlocation', (result) => {
+        const { x: lng, y: lat, label } = result.location;
+        // Update state with new coordinates and address label
+        setFacilityData(prevData => ({
+          ...prevData,
+          latitude: lat,
+          longitude: lng,
+          address: label // Update address field with the search result label
+        }));
+        // The map automatically flies to the result, and LocationMarker updates
+      });
+
+      // Cleanup function to remove control and listener on unmount
+      return () => {
+        map.removeControl(searchControl);
+        map.off('geosearch/showlocation');
+      };
+    }, [map]); // Re-run effect if map instance changes
+
+    return null; // This component adds the control to the map, doesn't render directly
+  };
+  // --- End Search Component Logic ---
+
+  // --- Map Component Logic ---
+  const LocationMarker = () => {
+    const map = useMapEvents({
+      click(e) {
+        const { lat, lng } = e.latlng;
+        setFacilityData(prevData => ({
+          ...prevData,
+          latitude: lat,
+          longitude: lng,
+        }));
+        map.flyTo(e.latlng, map.getZoom()); // Center map on click
+      },
+    });
+
+    // Custom Icon (Optional - requires Leaflet 'L' import)
+    // const customIcon = new L.Icon({
+    //   iconUrl: 'path/to/your/marker-icon.png',
+    //   iconSize: [25, 41],
+    //   iconAnchor: [12, 41],
+    //   popupAnchor: [1, -34],
+    //   shadowUrl: 'path/to/your/marker-shadow.png',
+    //   shadowSize: [41, 41]
+    // });
+
+    return facilityData.latitude === null ? null : (
+      <Marker
+        position={[facilityData.latitude, facilityData.longitude]}
+        draggable={true}
+        eventHandlers={{
+          dragend: (e) => {
+            const marker = e.target;
+            const position = marker.getLatLng();
+             setFacilityData(prevData => ({
+                ...prevData,
+                latitude: position.lat,
+                longitude: position.lng,
+             }));
+          },
+        }}
+        // icon={customIcon} // Uncomment to use custom icon
+      >
+        {/* Optional: Add a Popup */}
+        {/* <Popup>You selected this location.</Popup> */}
+      </Marker>
+    );
+  };
+  // --- End Map Component Logic ---
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,11 +207,17 @@ const removeImageField = (index) => {
         timeline: propertiesData.timeline.filter(item => item.year || item.event),
         images: propertiesData.images.filter(url => url && url.trim() !== ''),
         documents: propertiesData.documents.filter(doc => (doc.title && doc.title.trim() !== '') || (doc.url && doc.url.trim() !== '')),
-        // Adjust nesting if necessary based on your Firestore structure
         environmentalImpact: { details: propertiesData.environmentalImpact },
         investment: { total: propertiesData.fundingDetails },
+        // Add coordinates
+        latitude: propertiesData.latitude,
+        longitude: propertiesData.longitude,
       }
-      // Add any other top-level fields if necessary (e.g., geometry)
+      // Consider adding a GeoJSON geometry field later if needed:
+      // geometry: propertiesData.latitude && propertiesData.longitude ? {
+      //   type: "Point",
+      //   coordinates: [propertiesData.longitude, propertiesData.latitude]
+      // } : null,
     };
 
 
@@ -204,10 +306,32 @@ const removeImageField = (index) => {
                   </div>
                 </div>
                 <div className="row mb-3">
+                   {/* Keep Address field for context/manual entry */}
                    <div className="col-md-6">
-                    <label htmlFor="address" className="form-label"><strong>Location (Address)</strong></label>
-                    <input type="text" id="address" name="address" className="form-control" value={facilityData.address} onChange={handleChange} />
+                    <label htmlFor="address" className="form-label"><strong>Location (Address / Description)</strong></label>
+                    <input type="text" id="address" name="address" className="form-control" value={facilityData.address} onChange={handleChange} placeholder="Optional: Enter address or description"/>
                   </div>
+                   {/* Map Component */}
+                   <div className="col-md-6">
+                     <label className="form-label"><strong>Location (Click map or drag marker)</strong></label>
+                     <div style={{ height: '400px', width: '100%' }}> {/* Increased height */}
+                       {/* Update MapContainer to center on existing coords or default */}
+                       <MapContainer center={facilityData.latitude ? [facilityData.latitude, facilityData.longitude] : [40, -95]} zoom={facilityData.latitude ? 13 : 4} style={{ height: '100%', width: '100%' }}>
+                         {/* Switched to Esri World Imagery */}
+                         <TileLayer
+                           attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                         />
+                         <SearchField /> {/* Add the search control component */}
+                         <LocationMarker />
+                       </MapContainer>
+                     </div>
+                     {facilityData.latitude && facilityData.longitude && (
+                       <div className="mt-2">
+                         Selected Coordinates: {facilityData.latitude.toFixed(5)}, {facilityData.longitude.toFixed(5)}
+                       </div>
+                     )}
+                   </div>
                 </div>
                 <div className="row mb-3">
                   <div className="col-md-6">

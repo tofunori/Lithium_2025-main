@@ -9,6 +9,10 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 // Import Font Awesome
 import '@fortawesome/fontawesome-free/css/all.min.css'
 
+import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
+import 'leaflet-geosearch/dist/geosearch.css'; // Import GeoSearch CSS
+
+
 import './index.css'
 import App from './App.jsx'
 
