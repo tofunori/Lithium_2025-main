@@ -103,61 +103,43 @@ export const getFacilityStats = async () => {
 // Document management functions
 export const getFolderContents = async (folderId) => {
   try {
-    // Get subfolders
-    const foldersCollection = collection(db, 'folders');
-    const foldersQuery = query(
-      foldersCollection,
-      where("parentId", "==", folderId)
-    );
-    const foldersSnapshot = await getDocs(foldersQuery);
-    const folders = foldersSnapshot.docs.map(doc => ({
+    // Query 'doc_items' for all items with the matching parentId
+    const docItemsCollection = collection(db, 'doc_items');
+    const contentsQuery = query(docItemsCollection, where("parentId", "==", folderId));
+    const contentsSnapshot = await getDocs(contentsQuery);
+    
+    const contents = contentsSnapshot.docs.map(doc => ({
       id: doc.id,
-      type: 'folder',
-      ...doc.data()
+      ...doc.data() // The 'type' field should already be in the document data
     }));
     
-    // Get files
-    const filesCollection = collection(db, 'files');
-    const filesQuery = query(
-      filesCollection,
-      where("folderId", "==", folderId)
-    );
-    const filesSnapshot = await getDocs(filesQuery);
-    const files = filesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      type: 'file',
-      ...doc.data()
-    }));
-    
-    // Get links
-    const linksCollection = collection(db, 'links');
-    const linksQuery = query(
-      linksCollection,
-      where("folderId", "==", folderId)
-    );
-    const linksSnapshot = await getDocs(linksQuery);
-    const links = linksSnapshot.docs.map(doc => ({
-      id: doc.id,
-      type: 'link',
-      ...doc.data()
-    }));
-    
-    // Combine and return all items
-    return [...folders, ...files, ...links];
+    // Sort contents: folders first, then by name
+    contents.sort((a, b) => {
+      if (a.type === 'folder' && b.type !== 'folder') return -1;
+      if (a.type !== 'folder' && b.type === 'folder') return 1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+
+    return contents;
   } catch (error) {
-    console.error("Error fetching folder contents:", error);
+    console.error("Error fetching folder contents for parentId:", folderId, error);
     throw error;
   }
 };
 
 export const getFolderStructure = async () => {
+  console.log("Getting folder structure...");
   try {
-    const foldersCollection = collection(db, 'folders');
-    const foldersSnapshot = await getDocs(foldersCollection);
+    // Query 'doc_items' for folders only
+    const docItemsCollection = collection(db, 'doc_items');
+    const folderQuery = query(docItemsCollection, where("type", "==", "folder"));
+    const foldersSnapshot = await getDocs(folderQuery);
     const folders = foldersSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    
+    console.log("Folders from Firestore:", folders);
     
     // Build folder tree
     const folderMap = {};
@@ -171,15 +153,17 @@ export const getFolderStructure = async () => {
     const rootFolders = [];
     
     folders.forEach(folder => {
-      if (folder.parentId) {
+      if (folder.parentId && folder.parentId !== 'root') {
         if (folderMap[folder.parentId]) {
           folderMap[folder.parentId].children.push(folderMap[folder.id]);
         }
       } else {
+        // Consider folders with parentId 'root' or no parentId as root folders
         rootFolders.push(folderMap[folder.id]);
       }
     });
     
+    console.log("Root folders:", rootFolders);
     return rootFolders;
   } catch (error) {
     console.error("Error fetching folder structure:", error);
@@ -213,9 +197,34 @@ export const getCurrentUser = () => {
       unsubscribe();
       resolve(user);
     }, reject);
+
   });
 };
 
 // Export Firebase instances
 export { db, auth, storage };
 export default app;
+
+// Storage functions
+export const getStorageFiles = async (path) => {
+  try {
+    const listRef = ref(storage, path);
+    const res = await listAll(listRef);
+    
+    const files = await Promise.all(
+      res.items.map(async (itemRef) => {
+        const downloadURL = await getDownloadURL(itemRef);
+        return {
+          name: itemRef.name,
+          url: downloadURL,
+          path: itemRef.fullPath
+        };
+      })
+    );
+    
+    return files;
+  } catch (error) {
+    console.error(`Error listing files in ${path}:`, error);
+    throw error;
+  }
+};
