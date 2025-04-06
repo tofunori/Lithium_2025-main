@@ -18,7 +18,10 @@ function DocumentsPage() {
   const [showNewFolderForm, setShowNewFolderForm] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const { user } = useAuth(); // Get user from auth context
+  const { currentUser } = useAuth(); // Get user from auth context
+  const [showAddLinkForm, setShowAddLinkForm] = useState(false);
+  const [newLinkName, setNewLinkName] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
   
   const db = getFirestore();
   const storage = getStorage();
@@ -305,6 +308,51 @@ function DocumentsPage() {
     }
   };
 
+
+  const handleAddLink = async (e) => {
+    e.preventDefault();
+
+    if (!newLinkName.trim() || !newLinkUrl.trim()) {
+      alert("Please enter both a name and a valid URL for the link.");
+      return;
+    }
+
+    // Basic URL validation (can be improved)
+    try {
+      new URL(newLinkUrl);
+    } catch (_) {
+      alert("Please enter a valid URL (e.g., https://example.com).");
+      return;
+    }
+
+    try {
+      // Add new link to Firestore
+      const linkData = {
+        name: newLinkName.trim(),
+        url: newLinkUrl.trim(),
+        type: 'link',
+        parentId: currentFolder,
+        createdAt: new Date(),
+        // Optionally add createdBy if user info is available and needed
+        // createdBy: user ? user.uid : null 
+      };
+
+      await addDoc(collection(db, 'doc_items'), linkData);
+
+      // Reset form
+      setNewLinkName('');
+      setNewLinkUrl('');
+      setShowAddLinkForm(false);
+
+      // Refresh current folder contents
+      await updateCurrentFolderContents(currentFolder);
+
+    } catch (error) {
+      console.error("Error adding link:", error);
+      alert("Failed to add link. Please try again.");
+    }
+  };
+
   const handleDeleteItem = async (item) => {
     // Single confirmation dialog for folder deletion
     if (item.type === 'folder') {
@@ -439,7 +487,7 @@ function DocumentsPage() {
             <i className={`fas fa-folder${currentFolder === node.id ? '-open' : ''} explorer-folder-icon`}></i>
             <span className="folder-name">{node.name}</span>
           </div>
-          {user && (
+          {currentUser && (
             <button
               className="btn btn-sm btn-link text-danger p-0 ms-auto tree-delete-btn"
               onClick={(e) => {
@@ -529,7 +577,7 @@ function DocumentsPage() {
               <i className="fas fa-folder-tree me-2 text-primary"></i>
               <strong>Folder Structure</strong>
             </div>
-            {user && (
+            {currentUser && (
               <button
                 className="btn btn-sm btn-outline-primary"
                 onClick={() => setShowNewFolderForm(!showNewFolderForm)}
@@ -540,7 +588,7 @@ function DocumentsPage() {
             )}
           </div>
           
-          {user && showNewFolderForm && currentFolder === 'root' && (
+          {currentUser && showNewFolderForm && currentFolder === 'root' && (
             <div className="p-2 border-bottom">
               <form onSubmit={handleCreateFolder}>
                 <div className="input-group input-group-sm">
@@ -626,7 +674,7 @@ function DocumentsPage() {
               />
             </div>
             <div className="ms-auto">
-              {user && (
+              {currentUser && (
                 <div className="btn-group">
                   <button
                     className="btn btn-sm btn-outline-primary"
@@ -643,12 +691,19 @@ function DocumentsPage() {
                       onChange={handleFileUpload}
                     />
                   </label>
+                  <button
+                    className="btn btn-sm btn-outline-info"
+                    onClick={() => setShowAddLinkForm(!showAddLinkForm)}
+                    title="Add Link"
+                  >
+                    <i className="fas fa-link me-1"></i> Add Link
+                  </button>
                 </div>
               )}
             </div>
           </div>
           
-          {user && showNewFolderForm && (
+          {currentUser && showNewFolderForm && (
             <div className="p-2 border-bottom">
               <form onSubmit={handleCreateFolder} className="d-flex">
                 <input
@@ -692,6 +747,42 @@ function DocumentsPage() {
             </div>
           )}
           
+
+          {currentUser && showAddLinkForm && (
+            <div className="p-2 border-bottom">
+              <form onSubmit={handleAddLink} className="d-flex">
+                <input
+                  type="text"
+                  className="form-control form-control-sm me-2"
+                  placeholder="Link Name"
+                  value={newLinkName}
+                  onChange={(e) => setNewLinkName(e.target.value)}
+                  required
+                />
+                <input
+                  type="url"
+                  className="form-control form-control-sm me-2"
+                  placeholder="Link URL (e.g., https://...)"
+                  value={newLinkUrl}
+                  onChange={(e) => setNewLinkUrl(e.target.value)}
+                  required
+                />
+                <button type="submit" className="btn btn-sm btn-primary me-1">Add</button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => {
+                    setShowAddLinkForm(false);
+                    setNewLinkName('');
+                    setNewLinkUrl('');
+                  }}
+                >
+                  Cancel
+                </button>
+              </form>
+            </div>
+          )}
+
           <div className="explorer-content">
             {loading ? (
               <div className="text-center p-5">
@@ -763,7 +854,7 @@ function DocumentsPage() {
                                 <i className="fas fa-eye"></i>
                               </a>
                             )}
-                            {user && (
+                            {currentUser && (
                               <button
                                 className="btn btn-sm btn-outline-danger"
                                 title="Delete"

@@ -36,7 +36,7 @@ const Header = () => {
       <div className="dashboard-header">
         <div className="row align-items-center">
           <div className="col-md-6">
-            <h1>Lithium Battery Recycling in North America</h1>
+            <h1>Lithium Battery Recycling Networks in North America: Structure & Capacity</h1>
             <p id="page-subtitle" className="text-muted"></p>
           </div>
           <div className="col-md-6">
