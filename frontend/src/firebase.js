@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getStorage, ref, listAll, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, listAll, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage'; // Added deleteObject
 
 // Your Firebase configuration
 // Replace these values with your actual Firebase project configuration
@@ -154,7 +154,7 @@ export const addFacility = async (facilityData) => {
 };
 
 
-export const updateFacility = async (facilityId, updatedData) => {
+export const updateFacility = async (facilityId, updatedData, originalImages = []) => { // Added originalImages argument
   try {
     const facilityRef = doc(db, 'facilities', facilityId);
 
@@ -183,7 +183,9 @@ export const updateFacility = async (facilityId, updatedData) => {
             contactEmail: updatedData.contactEmail || '',
             contactPhone: updatedData.contactPhone || '',
             documents: updatedData.documents || [],
-            environmentalImpact: updatedData.environmentalImpact?.details || '', // Un-nest if needed
+            environmentalImpact: { // Save as a nested object
+              details: updatedData.environmentalImpact?.details || ''
+            },
             fundingDetails: updatedData.investment?.total || '', // Map form 'investment.total' back to 'fundingDetails'
             website: updatedData.website || '',
             feedstock: updatedData.feedstock || '',
@@ -196,8 +198,27 @@ export const updateFacility = async (facilityId, updatedData) => {
         // status: updatedData.status || 'Planning',
         // ...etc
     };
+// --- Image Deletion Logic ---
+const updatedImages = dataToUpdate.properties.images || [];
+const imagesToDelete = originalImages.filter(url => !updatedImages.includes(url));
 
-    await updateDoc(facilityRef, dataToUpdate);
+if (imagesToDelete.length > 0) {
+  console.log(`Deleting ${imagesToDelete.length} image(s) from Storage...`);
+  // Use Promise.allSettled to attempt all deletions even if some fail
+  const deletionPromises = imagesToDelete.map(url => deleteFacilityImage(url));
+  const results = await Promise.allSettled(deletionPromises);
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.error(`Failed to delete image ${imagesToDelete[index]}:`, result.reason);
+      // Decide if you want to alert the user or handle this error differently
+    }
+  });
+  console.log("Finished attempting image deletions.");
+}
+// --- End Image Deletion Logic ---
+
+await updateDoc(facilityRef, dataToUpdate);
+console.log("Facility updated successfully (Firestore document):", facilityId);
     console.log("Facility updated successfully:", facilityId);
   } catch (error) {
     console.error("Error updating facility:", facilityId, error);
@@ -343,5 +364,46 @@ export const getStorageFiles = async (path) => {
   } catch (error) {
     console.error(`Error listing files in ${path}:`, error);
     throw error;
+  }
+};
+
+// Function to delete an image file from Firebase Storage using its download URL
+export const deleteFacilityImage = async (imageUrl) => {
+  if (!imageUrl) {
+    console.warn("Attempted to delete image with empty URL.");
+    return; // Or throw an error if preferred
+  }
+  try {
+    // Create a reference from the download URL
+    const storageRef = ref(storage, imageUrl);
+    await deleteObject(storageRef);
+    console.log(`Successfully deleted image from Storage: ${imageUrl}`);
+  } catch (error) {
+    // It's common for 'object-not-found' errors if deletion is attempted twice or the URL is wrong.
+    // You might want to specifically handle or ignore error.code === 'storage/object-not-found'
+    console.error(`Error deleting image ${imageUrl} from Storage:`, error);
+    // Decide if you want to re-throw the error or just log it
+    // throw error; // Uncomment to propagate the error
+  }
+};
+
+// Function to upload an image file to Firebase Storage for a specific facility
+export const uploadFacilityImage = async (facilityId, file) => {
+  if (!facilityId || !file) {
+    throw new Error("Facility ID and file are required for upload.");
+  }
+  // Create a unique path for the image within the facility's folder
+  const imagePath = `facilities/${facilityId}/images/${Date.now()}_${file.name}`;
+  const storageRef = ref(storage, imagePath);
+
+  try {
+    console.log(`Uploading ${file.name} to ${imagePath}...`);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    console.log(`File uploaded successfully. URL: ${downloadURL}`);
+    return downloadURL; // Return the public URL of the uploaded file
+  } catch (error) {
+    console.error(`Error uploading file ${file.name} to ${imagePath}:`, error);
+    throw error; // Re-throw for the caller to handle
   }
 };
