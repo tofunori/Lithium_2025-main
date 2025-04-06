@@ -1,0 +1,152 @@
+/* Basic Modal Styling */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's above other content */
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  width: 80%;
+  max-width: 700px; /* Limit maximum width */
+  max-height: 85vh; /* Limit maximum height */
+  overflow-y: auto; /* Allow scrolling if content exceeds height */
+  position: relative;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 25px;
+  color: #333;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+/* Form Styling */
+.modal-content form fieldset {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.modal-content form legend {
+  font-weight: bold;
+  color: #555;
+  padding: 0 10px;
+}
+
+.modal-content form label {
+  display: block;
+  margin-bottom: 15px;
+  font-weight: 500;
+  color: #444;
+}
+
+.modal-content form input[type="text"],
+.modal-content form input[type="number"],
+.modal-content form input[type="email"],
+.modal-content form input[type="url"],
+.modal-content form select,
+.modal-content form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box; /* Include padding and border in element's total width and height */
+  margin-top: 5px;
+  font-size: 0.95rem;
+}
+
+.modal-content form textarea {
+  resize: vertical; /* Allow vertical resizing */
+  min-height: 80px;
+}
+
+/* Form Actions (Buttons) */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px; /* Space between buttons */
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.form-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.form-actions button[type="submit"] {
+  background-color: #007bff; /* Blue */
+  color: white;
+}
+
+.form-actions button[type="submit"]:hover {
+  background-color: #0056b3;
+}
+
+.form-actions button[type="button"] {
+  background-color: #f0f0f0; /* Light gray */
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+.form-actions button[type="button"]:hover {
+  background-color: #e0e0e0;
+}
+
+.form-actions button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Error Message Styling */
+.error-message {
+  color: #dc3545; /* Red */
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Placeholder for array item styling (if needed later) */
+.array-item {
+  border: 1px dashed #eee;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+.array-item-actions {
+  text-align: right;
+  margin-top: 5px;
+}
+
+.array-item-actions button {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 0.9em;
+}

@@ -25,13 +25,34 @@ function HomePage() {
           const { getFacilities } = await import('../firebase');
           const facilities = await getFacilities();
 
+          // Define status colors based on the legend
+          const statusColors = {
+            operating: '#4CAF50', // Green
+            construction: '#FFC107', // Yellow
+            planned: '#2196F3', // Blue
+            pilot: '#9C27B0', // Purple
+            default: '#2196F3' // Default blue for unknown/missing status
+          };
+
           facilities.forEach(facility => {
             const coords = facility.geometry?.coordinates;
+            const status = facility.properties?.status?.toLowerCase() || 'default';
+            const color = statusColors[status] || statusColors.default;
+
             if (coords && coords.length === 2) {
               const [lng, lat] = coords; // GeoJSON order: [lng, lat]
-              L.marker([lat, lng])
+
+              // Create a custom DivIcon for the marker
+              const customIcon = L.divIcon({
+                className: 'custom-div-icon', // Add a class for potential global styling
+                html: `<div style="background-color: ${color}; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
+                iconSize: [20, 20], // Size of the icon
+                iconAnchor: [10, 10] // Point of the icon which will correspond to marker's location
+              });
+
+              L.marker([lat, lng], { icon: customIcon }) // Use the custom icon
                 .addTo(mapInstanceRef.current)
-                .bindPopup(`<strong>${facility.properties?.company || 'Unknown'}</strong><br>${facility.properties?.name || ''}`);
+                .bindPopup(`<strong>${facility.properties?.company || 'Unknown'}</strong><br>${facility.properties?.name || ''}<br>Status: ${facility.properties?.status || 'N/A'}`);
             }
           });
         } catch (error) {

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getFacilities, getFacilitiesByStatus } from '../firebase';
+import { Link } from 'react-router-dom'; // Import Link
+import { useNavigate } from 'react-router-dom';
+import { getFacilities, getFacilitiesByStatus, deleteFacility } from '../firebase';
 import './FacilitiesPage.css';
 
 function FacilitiesPage() {
   const [activeFilter, setActiveFilter] = useState('all');
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [facilities, setFacilities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +98,22 @@ function FacilitiesPage() {
     return <span className={statusClasses[status]}>{statusLabels[status]}</span>;
   };
 
+
+  const handleDelete = async (facilityId) => {
+    if (window.confirm('Are you sure you want to delete this facility?')) {
+      try {
+        await deleteFacility(facilityId);
+        // Update the state to remove the deleted facility
+        setFacilities(prevFacilities => prevFacilities.filter(f => f.id !== facilityId));
+        console.log(`Facility ${facilityId} deleted successfully.`);
+      } catch (error) {
+        console.error(`Error deleting facility ${facilityId}:`, error);
+        // Optionally, show an error message to the user
+        alert('Failed to delete facility. Please try again.');
+      }
+    }
+  };
+
   return (
     <div className="row mt-4">
       <div className="col-12">
@@ -127,7 +146,7 @@ function FacilitiesPage() {
           </div>
 
           <div className="text-end mb-3">
-            <button className="btn btn-success">
+            <button className="btn btn-success" onClick={() => navigate('/facilities/new')}>
               <i className="fas fa-plus"></i> Add New Facility
             </button>
           </div>
@@ -148,9 +167,9 @@ function FacilitiesPage() {
             <span className="col-company">Company</span>
             <span className="col-location">Location</span>
             <span className="col-volume">Volume (tons/year)</span>
-            <span className="col-method">Method</span>
+            <span className="col-method method-column">Method</span>
             <span className="col-status">Status</span>
-            <span className="col-actions">Actions</span>
+            <span className="col-actions actions-column">Actions</span>
           </div>
 
           {/* Facilities List */}
@@ -164,17 +183,20 @@ function FacilitiesPage() {
                 <div key={facility.id} className="facility-item">
                   <div className="facility-item-content">
                     <span className="col-company">
-                      <a href={`/facilities/${facility.id}`}>{facility.properties?.company || 'N/A'}</a>
+                      <Link to={`/facilities/${facility.id}`}>{facility.properties?.company || 'N/A'}</Link> {/* Use Link component */}
                     </span>
                     <span className="col-location">{facility.properties?.address || 'N/A'}</span>
                     <span className="col-volume">{facility.properties?.capacity || 'N/A'}</span>
-                    <span className="col-method">{facility.properties?.technology || 'N/A'}</span>
+                    <span className="col-method method-column">{facility.properties?.technology || 'N/A'}</span>
                     <span className="col-status">
-                      {renderStatusBadge(facility.properties?.status || 'unknown')}
+                      {renderStatusBadge(facility.status || 'unknown')}
                     </span>
-                    <span className="col-actions">
-                      <button className="btn btn-sm btn-outline-primary edit-link">
-                        <i className="fas fa-edit"></i>
+                    <span className="col-actions actions-column">
+                      <button
+                        className="btn btn-sm btn-outline-danger delete-button" // Changed class for styling
+                        onClick={() => handleDelete(facility.id)} // Call handleDelete
+                      >
+                        <i className="fas fa-trash-alt"></i> {/* Changed icon to trash */}
                       </button>
                     </span>
                   </div>

@@ -1,4 +1,4 @@
-/* Styles migrated from css/styles.css relevant to FacilitiesPage */
+ page/* Styles migrated from css/styles.css relevant to FacilitiesPage */
 
 /* Variables */
 :root {
@@ -364,4 +364,45 @@
   border-color: #86b7fe;
   outline: 0;
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+
+/* Add vertical lines between columns */
+.facility-list-header span,
+.facility-item-content span {
+  border-right: 1px solid #ccc;
+  padding-right: 10px; /* Add some padding for spacing */
+}
+
+/* Remove border from the last column */
+.facility-list-header span:last-child,
+.facility-item-content span:last-child {
+  border-right: none;
+  padding-right: 0; /* Remove padding for the last item */
+}
+
+
+/* Style for the Actions column width */
+.actions-column {
+  width: 30px; /* Significantly narrower for icon */
+  flex: 0 0 30px; /* Ensure flex basis matches width */
+  display: flex; /* Enable flexbox for centering */
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
+  padding: 0; /* Remove any default padding */
+}
+
+/* Style for buttons within the Actions column */
+.actions-column button {
+  padding: 2px 4px; /* Reduced padding for compactness */
+  margin: 0; /* Remove margins */
+  line-height: 1; /* Adjust line height if needed */
+  font-size: 0.9em; /* Optional: slightly smaller icon/text */
+}
+
+/* Increase width for the Method column */
+.method-column {
+  min-width: 200px; /* Adjust as needed */
+  flex-grow: 1; /* Allow it to grow if there's extra space */
+  flex-shrink: 0; /* Prevent shrinking below min-width */
 }

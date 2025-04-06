@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, getDoc, query, where, orderBy } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getStorage, ref, listAll, getDownloadURL } from 'firebase/storage';
 
@@ -69,7 +69,8 @@ export const getFacilityById = async (facilityId) => {
         ...facilitySnapshot.data()
       };
     } else {
-      throw new Error("Facility not found");
+      console.log(`Facility with ID ${facilityId} not found.`); // Log instead of throwing
+      return null; // Return null if facility doesn't exist
     }
   } catch (error) {
     console.error("Error fetching facility:", error);
@@ -118,6 +119,101 @@ export const getFacilityStats = async () => {
   } catch (error) {
     console.error("Error fetching facility statistics:", error);
     throw error;
+  }
+};
+
+
+export const addFacility = async (facilityData) => {
+  try {
+    // Use the 'id' provided in the form data as the document ID
+    // Validate that facilityData.id exists and is a non-empty string
+    if (!facilityData || typeof facilityData.id !== 'string' || facilityData.id.trim() === '') {
+      throw new Error('Facility ID is missing or invalid.');
+    }
+
+    const facilityRef = doc(db, 'facilities', facilityData.id);
+    
+    // Check if a facility with this ID already exists (optional but recommended)
+    const docSnap = await getDoc(facilityRef);
+    if (docSnap.exists()) {
+      throw new Error(`Facility with ID ${facilityData.id} already exists.`);
+    }
+
+    // Remove the 'id' field from the data object before saving,
+    // as it's used as the document ID, not a field within the document.
+    const { id, ...dataToSave } = facilityData;
+
+    // Save the document with the specified ID
+    await setDoc(facilityRef, dataToSave); 
+    console.log("Facility added successfully with ID:", id);
+    return facilityRef; // Return the document reference
+  } catch (error) {
+    console.error("Error adding facility:", error);
+    throw error; // Re-throw the error for the calling component to handle
+  }
+};
+
+
+export const updateFacility = async (facilityId, updatedData) => {
+  try {
+    const facilityRef = doc(db, 'facilities', facilityId);
+
+    // Prepare the data for update.
+    // We need to map the form data back to the expected Firestore structure.
+    // This assumes the Firestore structure might have nested 'properties'.
+    // Adjust this mapping based on your actual Firestore data structure.
+    const dataToUpdate = {
+        // Map fields directly if they are top-level in Firestore
+        // status: updatedData.status,
+        // company: updatedData.company,
+        // ... other top-level fields
+
+        // If most data is nested under 'properties':
+        properties: {
+            company: updatedData.company || '',
+            address: updatedData.location || '', // Map form 'location' back to 'address'
+            status: updatedData.status || 'Planning',
+            capacity: updatedData.capacity || '',
+            technology: updatedData.technology || '',
+            description: updatedData.description || '',
+            technicalSpecs: updatedData.technicalSpecs || '',
+            timeline: updatedData.timeline || [],
+            images: updatedData.images || [],
+            contactPerson: updatedData.contactPerson || '',
+            contactEmail: updatedData.contactEmail || '',
+            contactPhone: updatedData.contactPhone || '',
+            documents: updatedData.documents || [],
+            environmentalImpact: updatedData.environmentalImpact?.details || '', // Un-nest if needed
+            fundingDetails: updatedData.investment?.total || '', // Map form 'investment.total' back to 'fundingDetails'
+            website: updatedData.website || '',
+            feedstock: updatedData.feedstock || '',
+            product: updatedData.product || '',
+            // Add any other properties fields
+        }
+        // If your structure is flat (no 'properties' object), adjust accordingly:
+        // company: updatedData.company || '',
+        // address: updatedData.location || '',
+        // status: updatedData.status || 'Planning',
+        // ...etc
+    };
+
+    await updateDoc(facilityRef, dataToUpdate);
+    console.log("Facility updated successfully:", facilityId);
+  } catch (error) {
+    console.error("Error updating facility:", facilityId, error);
+    throw error;
+  }
+};
+
+
+export const deleteFacility = async (facilityId) => {
+  try {
+    const facilityRef = doc(db, 'facilities', facilityId);
+    await deleteDoc(facilityRef);
+    console.log("Facility deleted successfully:", facilityId);
+  } catch (error) {
+    console.error("Error deleting facility:", facilityId, error);
+    throw error; // Re-throw the error so the calling code can handle it
   }
 };
 

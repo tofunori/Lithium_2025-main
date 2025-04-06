@@ -1,0 +1,126 @@
+.facility-detail-page {
+  padding-bottom: 2rem; /* Add some padding at the bottom */
+}
+
+.facility-detail-page h1 {
+  color: #333;
+  margin-bottom: 0; /* Adjust spacing */
+}
+
+.facility-detail-page .card {
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.facility-detail-page .card-body {
+  padding: 2rem;
+}
+
+.facility-detail-page strong {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #555;
+  font-weight: 600; /* Slightly bolder */
+}
+
+.facility-detail-page p {
+  margin-bottom: 1rem; /* Consistent spacing below paragraphs */
+  color: #444;
+}
+
+.facility-detail-page .btn-outline-secondary {
+  display: inline-flex; /* Align icon and text */
+  align-items: center;
+}
+
+/* Status Badge Styles (copied and adapted from FacilitiesPage.css for consistency) */
+.status-badge {
+  padding: 0.3em 0.6em;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+  font-weight: bold;
+  text-transform: capitalize;
+  display: inline-block; /* Ensure badges behave correctly */
+  color: #fff; /* Default text color */
+}
+
+.status-operating {
+  background-color: #28a745; /* Green */
+}
+
+.status-construction {
+  background-color: #ffc107; /* Yellow */
+  color: #333; /* Darker text for yellow */
+}
+
+.status-planned {
+  background-color: #17a2b8; /* Teal */
+}
+
+.status-pilot {
+  background-color: #6c757d; /* Gray */
+}
+
+.status-unknown {
+  background-color: #dc3545; /* Red for unknown/error */
+}
+
+/* Ensure consistent spacing for rows */
+.facility-detail-page .row {
+  margin-bottom: 1rem;
+}
+
+.facility-detail-page .row:last-child {
+  margin-bottom: 0; /* Remove margin from the last row inside card-body */
+}
+
+/* Link styling */
+.facility-detail-page a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.facility-detail-page a:hover {
+  text-decoration: underline;
+}
+
+/* Styles for New Sections */
+.section-heading {
+  font-size: 1.5rem; /* Larger heading for sections */
+  color: #495057;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #dee2e6; /* Separator line */
+}
+
+.facility-detail-page pre {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid #e9ecef;
+  white-space: pre-wrap; /* Wrap long lines */
+  word-wrap: break-word;
+}
+
+.image-gallery-placeholder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px; /* Spacing between images */
+}
+
+.image-gallery-placeholder .img-thumbnail {
+  border: 1px solid #ddd;
+  padding: 4px;
+  background-color: #fff;
+  max-width: 150px; /* Control image size */
+  height: auto;
+}
+
+.facility-detail-page ul {
+  padding-left: 20px; /* Indent list items */
+  margin-bottom: 1rem;
+}
+
+.facility-detail-page li {
+  margin-bottom: 0.5rem;
+}
