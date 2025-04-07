@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTheme } from '../context/ThemeContext'; // Import useTheme hook
 import './HomePage.css';
 
 function HomePage() {
+  const navigate = useNavigate(); // Get navigate function
   const mapContainerRef = useRef(null); // Ref for the map container div
   const mapInstanceRef = useRef(null); // Ref to store the map instance
   const markersRef = useRef({});
@@ -70,16 +72,29 @@ function HomePage() {
               // Create the marker and assign it to a variable
               const marker = L.marker([lat, lng], { icon: customIcon });
 
-              // Add to map and bind popup
+              // Create popup content dynamically
+              const popupContent = document.createElement('div');
+              popupContent.innerHTML = `
+                <strong>${facility.properties?.company || 'Unknown'}</strong><br>
+                ${facility.properties?.name || ''}<br>
+                Location: ${facility.properties?.address || 'N/A'}<br>
+                Status: ${facility.properties?.status || 'N/A'}<br>
+              `;
+        
+              // Create View Details button/link
+              const viewDetailsButton = document.createElement('button');
+              viewDetailsButton.innerText = 'View Details';
+              viewDetailsButton.className = 'popup-details-link'; // Add CSS class for styling
+              // Inline styles removed, handled by CSS class now
+              // viewDetailsButton.style.cursor = 'pointer'; // Handled by CSS
+              viewDetailsButton.onclick = () => navigate(`/facilities/${facility.id}`); // Use navigate
+        
+              popupContent.appendChild(viewDetailsButton);
+        
+              // Add to map and bind the DOM element popup
               marker.addTo(mapInstanceRef.current)
-                    .bindPopup(`
-                      <strong>${facility.properties?.company || 'Unknown'}</strong><br>
-                      ${facility.properties?.name || ''}<br>
-                      Location: ${facility.properties?.address || 'N/A'}<br>
-                      Status: ${facility.properties?.status || 'N/A'}<br>
-                      <a href="/facilities/${facility.id}">View Details</a>
-                    `); // Removed target="_blank"
-    
+                    .bindPopup(popupContent); // Bind the created DOM element
+        
                   // Store the marker instance *after* it's created, using the correct variable
               markersRef.current[facility.id] = marker;
             }
