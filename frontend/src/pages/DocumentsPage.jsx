@@ -22,6 +22,7 @@ function DocumentsPage() {
   const [showAddLinkForm, setShowAddLinkForm] = useState(false);
   const [newLinkName, setNewLinkName] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [dynamicUrls, setDynamicUrls] = useState({}); // State to store dynamically fetched URLs
   
   const db = getFirestore();
   const storage = getStorage();
@@ -158,6 +159,7 @@ function DocumentsPage() {
         : contents;
       
       console.log("Folder contents fetched:", filteredContents);
+      
       setCurrentFolderContents(filteredContents);
       return contents;
     } catch (error) {
@@ -808,65 +810,73 @@ function DocumentsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {currentFolderContents.map((item) => (
-                      <tr key={item.id} className={item.type === 'folder' ? 'table-row-folder' : ''}>
-                        <td className="px-3">
-                          <div className="d-flex align-items-center">
-                            <span className="me-3">{getFileIcon(item.type, item.name)}</span>
-                            {item.type === 'folder' ? (
-                              <span
-                                className="folder-link"
-                                style={{ cursor: 'pointer', fontWeight: 'bold' }}
-                                onClick={() => navigateToFolder(item.id, item.name)}
-                              >
-                                {item.name}
-                              </span>
-                            ) : item.type === 'link' ? (
-                              <a href={item.url} target="_blank" rel="noopener noreferrer">
-                                {item.name}
-                              </a>
-                            ) : (
-                              <a href={item.url} target="_blank" rel="noopener noreferrer">
-                                {item.name}
-                              </a>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          {item.type === 'folder' ? 'Folder' : 
-                           item.type === 'link' ? 'Link' : 
-                           item.name.split('.').pop().toUpperCase()}
-                        </td>
-                        <td>
-                          {item.type === 'folder' ? '-' : 
-                           item.size ? `${(item.size / 1024 / 1024).toFixed(2)} MB` : '-'}
-                        </td>
-                        <td>
-                          <div className="btn-group">
-                            {item.type !== 'folder' && (
-                              <a 
-                                href={item.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="btn btn-sm btn-outline-primary"
-                                title="View/Download"
-                              >
-                                <i className="fas fa-eye"></i>
-                              </a>
-                            )}
-                            {currentUser && (
-                              <button
-                                className="btn btn-sm btn-outline-danger"
-                                title="Delete"
-                                onClick={() => handleDeleteItem(item)}
-                              >
-                                <i className="fas fa-trash"></i>
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {currentFolderContents.map((item) => {
+                      return (
+                        <tr key={item.id} className={item.type === 'folder' ? 'table-row-folder' : ''}>
+                          <td className="px-3">
+                            <div className="d-flex align-items-center">
+                              <span className="me-3">{getFileIcon(item.type, item.name)}</span>
+                              {item.type === 'folder' ? (
+                                <span
+                                  className="folder-link"
+                                  style={{ cursor: 'pointer', fontWeight: 'bold' }}
+                                  onClick={() => navigateToFolder(item.id, item.name)}
+                                >
+                                  {item.name}
+                                </span>
+                              ) : item.type === 'link' ? (
+                                <a href={item.url} target="_blank" rel="noopener noreferrer" className="document-link">
+                                  {item.name}
+                                </a>
+                              ) : ( // Handle files (including PDFs)
+                                <a
+                                  href={item.url || '#'} // Ensure fallback href
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="document-link" // Add class for styling consistency
+                                >
+                                  {item.name}
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            {item.type === 'folder' ? 'Folder' :
+                             item.type === 'link' ? 'Link' :
+                             item.name.split('.').pop().toUpperCase()}
+                          </td>
+                          <td>
+                            {item.type === 'folder' ? '-' :
+                             item.size ? `${(item.size / 1024 / 1024).toFixed(2)} MB` : '-'}
+                          </td>
+                          <td>
+                            <div className="btn-group">
+                              {item.type !== 'folder' && (
+                                <a
+                                  href={item.url || '#'} // Use '#' if URL is missing
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-sm btn-outline-primary" // Always enabled
+                                  title="View/Download" // Consistent title
+                                  // onClick removed - default link behavior is sufficient
+                                >
+                                  <i className="fas fa-eye"></i>
+                                </a>
+                              )}
+                              {currentUser && (
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  title="Delete"
+                                  onClick={() => handleDeleteItem(item)}
+                                >
+                                  <i className="fas fa-trash"></i>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
