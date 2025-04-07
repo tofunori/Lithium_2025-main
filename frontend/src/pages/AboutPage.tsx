@@ -1,18 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase'; // Import Firestore instance
-// Removed ReactQuill import
-import { useAuth } from '../context/AuthContext.jsx';
-import { useEditor, EditorContent } from '@tiptap/react'; // Tiptap imports
+import { useAuth } from '../context/AuthContext'; // Updated import path if necessary
+import { useEditor, EditorContent, Editor } from '@tiptap/react'; // Tiptap imports
 import StarterKit from '@tiptap/starter-kit'; // Tiptap basic extensions
 import TiptapMenuBar from '../components/TiptapMenuBar'; // Import the menu bar
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, DocumentData } from 'firebase/firestore';
+import { User } from 'firebase/auth'; // Import User type
 import './AboutPage.css';
 
-function AboutPage() {
-  const { currentUser } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
-  // Refactored state for rich text content
-  const [pageContent, setPageContent] = useState({
+// Interface for the page content state and Firestore data
+interface PageContentState {
+  projectSectionHTML: string;
+  dataSourcesSectionHTML: string;
+  teamSectionHTML: string;
+}
+
+const AboutPage: React.FC = () => {
+  // Type the currentUser from context
+  const { currentUser }: { currentUser: User | null } = useAuth();
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  // Type the page content state
+  const [pageContent, setPageContent] = useState<PageContentState>({
     projectSectionHTML: `<h2>About This Project</h2><p>This dashboard provides an interactive overview of lithium battery recycling facilities across North America. It aims to consolidate information about facility locations, operational status, processing capacities, and more.</p><p>[Add more detailed project description here...]</p>`,
     dataSourcesSectionHTML: `<h2>Data Sources</h2><p>The data presented in this dashboard is compiled from various public sources, including company press releases, government reports, and industry publications.</p><ul><li>[List specific data sources here, e.g., EPA reports, company websites]</li><li>[Mention data update frequency or limitations if applicable]</li></ul>`,
     teamSectionHTML: `<h2>Development Team</h2><p>This project was developed by:</p><ul><li>[Team Member 1 Name/Role]</li><li>[Team Member 2 Name/Role]</li><li>[Add more team members as needed]</li></ul><p>[Optionally add links to profiles or contact info]</p>`
@@ -24,12 +32,10 @@ function AboutPage() {
       const docRef = doc(db, 'content', 'about');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        // Ensure fetched data updates the editor content correctly
-        const fetchedData = docSnap.data();
+        // Type the fetched data
+        const fetchedData = docSnap.data() as PageContentState;
         setPageContent(fetchedData);
         // Update editor content after state is set
-        // Update editor content directly after fetching and setting state
-        // Use timeout to ensure state update has likely occurred before editor update
         setTimeout(() => {
             projectEditor?.commands.setContent(fetchedData.projectSectionHTML || '', false);
             dataSourcesEditor?.commands.setContent(fetchedData.dataSourcesSectionHTML || '', false);
@@ -38,7 +44,6 @@ function AboutPage() {
       } else {
         console.log("No 'about' content document found. Using default.");
         // Initialize editors with default content if doc doesn't exist
-        // Update editor content directly if doc doesn't exist
          setTimeout(() => {
             projectEditor?.commands.setContent(pageContent.projectSectionHTML, false);
             dataSourcesEditor?.commands.setContent(pageContent.dataSourcesSectionHTML, false);
@@ -50,12 +55,11 @@ function AboutPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
 
-  // Tiptap Editor Instances
+  // Tiptap Editor Instances - Type the editor in onUpdate
   const projectEditor = useEditor({
     extensions: [StarterKit],
     content: pageContent.projectSectionHTML,
-    // editable: isEditing, // Managed by useEffect now
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor }: { editor: Editor }) => {
       setPageContent(prev => ({ ...prev, projectSectionHTML: editor.getHTML() }));
     },
   });
@@ -63,8 +67,7 @@ function AboutPage() {
   const dataSourcesEditor = useEditor({
     extensions: [StarterKit],
     content: pageContent.dataSourcesSectionHTML,
-    // editable: isEditing, // Managed by useEffect now
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor }: { editor: Editor }) => {
       setPageContent(prev => ({ ...prev, dataSourcesSectionHTML: editor.getHTML() }));
     },
   });
@@ -72,8 +75,7 @@ function AboutPage() {
   const teamEditor = useEditor({
     extensions: [StarterKit],
     content: pageContent.teamSectionHTML,
-    // editable: isEditing, // Managed by useEffect now
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor }: { editor: Editor }) => {
       setPageContent(prev => ({ ...prev, teamSectionHTML: editor.getHTML() }));
     },
   });
@@ -92,10 +94,10 @@ function AboutPage() {
      const docRef = doc(db, 'content', 'about');
      const docSnap = await getDoc(docRef);
      if (docSnap.exists()) {
-       const fetchedData = docSnap.data();
+       // Type the fetched data
+       const fetchedData = docSnap.data() as PageContentState;
        setPageContent(fetchedData);
        // Update editor content directly after fetching and setting state on cancel
-       // Use timeout to ensure state update has likely occurred before editor update
        setTimeout(() => {
            projectEditor?.commands.setContent(fetchedData.projectSectionHTML || '', false);
            dataSourcesEditor?.commands.setContent(fetchedData.dataSourcesSectionHTML || '', false);
@@ -107,8 +109,8 @@ function AboutPage() {
   const handleSave = async () => {
     const docRef = doc(db, 'content', 'about');
     try {
-      // Get latest HTML from editors before saving
-      const contentToSave = {
+      // Type the content to save
+      const contentToSave: PageContentState = {
         projectSectionHTML: projectEditor?.getHTML() || '',
         dataSourcesSectionHTML: dataSourcesEditor?.getHTML() || '',
         teamSectionHTML: teamEditor?.getHTML() || '',

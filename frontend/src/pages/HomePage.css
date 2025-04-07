@@ -42,7 +42,7 @@
 }
 
 /* Legend styles */
-.legend {
+.map-container .legend { /* Increased specificity */
     position: absolute;
     bottom: 15px;
     right: 15px;
@@ -53,6 +53,7 @@
     box-shadow: var(--subtle-shadow);
     border: 1px solid var(--border-color);
     transition: background-color 0.3s ease, border-color 0.3s ease;
+    display: block; /* Ensure legend renders */
 }
 
 .legend h6 {

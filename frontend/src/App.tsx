@@ -1,18 +1,19 @@
+import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext'; // Import ThemeProvider
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import FacilitiesPage from './pages/FacilitiesPage';
-import ChartsPage from './pages/ChartsPage';
+import ChartsPage from './pages/ChartsPage'; // TS should resolve .tsx/.jsx
 import DocumentsPage from './pages/DocumentsPage';
 import FacilityDetailPage from './pages/FacilityDetailPage'; // Import the new component
 import FacilityEditPage from './pages/FacilityEditPage'; // Import the edit page component
 import FacilityCreatePage from './pages/FacilityCreatePage'; // Import the create page component
 
-import MainLayout from './layouts/MainLayout';
+import MainLayout from './layouts/MainLayout'; // TS should resolve .tsx/.jsx
 import './App.css';
 
-function App() {
+const App: React.FC = () => {
   return (
     <div className="App">
       <ThemeProvider> {/* Wrap Routes with ThemeProvider */}
@@ -32,6 +33,6 @@ function App() {
       </ThemeProvider>
     </div>
   );
-}
+};
 
 export default App;

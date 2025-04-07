@@ -1,8 +1,21 @@
-import React from 'react';
+import React, { ChangeEvent, FC } from 'react';
 
-function BasicInfoFormSection({ data, onChange, isSaving }) {
-  // Ensure data is not null or undefined
-  const formData = data || {};
+// Define the structure for the data prop, relevant fields from FacilityFormData
+interface BasicInfoData {
+  company?: string;
+  location?: string;
+  status?: 'Planning' | 'Under Construction' | 'Operational' | 'On Hold' | 'Cancelled' | 'Decommissioned' | string;
+}
+
+// Define the props for the component
+interface BasicInfoFormSectionProps {
+  data: Partial<BasicInfoData>; // Use Partial as parent state is Partial
+  onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void; // Input and Select used
+  isSaving: boolean;
+}
+
+const BasicInfoFormSection: FC<BasicInfoFormSectionProps> = ({ data, onChange, isSaving }) => {
+  // Status options remain the same
   const statusOptions = [
     'Planning',
     'Under Construction',
@@ -22,10 +35,10 @@ function BasicInfoFormSection({ data, onChange, isSaving }) {
             type="text"
             className="form-control"
             id="edit-company"
-            name="company" // Matches the key in facilityDataForForm/editFormData
-            value={formData.company || ''}
+            name="company" // Matches key in FacilityFormData
+            value={data?.company || ''} // Use optional chaining for Partial data
             onChange={onChange}
-            required
+            required // Keep required if needed, though parent form handles overall validation
           />
         </div>
         <div className="col-md-6">
@@ -34,9 +47,10 @@ function BasicInfoFormSection({ data, onChange, isSaving }) {
             type="text"
             className="form-control"
             id="edit-location"
-            name="location" // Matches the key in facilityDataForForm/editFormData
-            value={formData.location || ''}
+            name="location" // Matches key in FacilityFormData
+            value={data?.location || ''} // Use optional chaining
             onChange={onChange}
+            required // Keep required if needed
           />
         </div>
       </div>
@@ -46,8 +60,8 @@ function BasicInfoFormSection({ data, onChange, isSaving }) {
            <select
              className="form-select"
              id="edit-status"
-             name="status" // Matches the key in facilityDataForForm/editFormData
-             value={formData.status || 'Planning'}
+             name="status" // Matches key in FacilityFormData
+             value={data?.status || 'Planning'} // Use optional chaining, default if undefined
              onChange={onChange}
            >
              {statusOptions.map(option => (
@@ -55,9 +69,9 @@ function BasicInfoFormSection({ data, onChange, isSaving }) {
              ))}
            </select>
         </div>
-        {/* Add other basic info fields here if needed, e.g., Website was moved to Overview tab directly */}
+        {/* Add other basic info fields here if needed */}
       </div>
-       {/* Description and Website are handled directly in FacilityDetailPage for now */}
+       {/* Description and Website are handled elsewhere */}
     </fieldset>
   );
 }

@@ -8,7 +8,9 @@ This file tracks the project's progress using a task list format.
 ## Completed Tasks
 
 *   
+*   [2025-04-07 09:37:49] - Converted `frontend/src/components/Footer.jsx` to `Footer.tsx`, adding TypeScript types.
 
+*   [2025-04-07 09:55:00] - Converted `frontend/src/pages/ChartsPage.jsx` to `ChartsPage.tsx`, adding TypeScript types and ensuring compatibility with typed utility functions.
 ## Current Tasks
 
 *   

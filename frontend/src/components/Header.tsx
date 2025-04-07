@@ -1,20 +1,20 @@
 import React, { useState } from 'react'; // Keep useState for modal
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext'; // Import useTheme hook
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext'; // Removed .tsx extension
 import { signOut } from 'firebase/auth'; // Only need signOut now
 import { auth } from '../firebase';
-import LoginModal from './LoginModal'; // Import the modal
+import LoginModal from './LoginModal'; // Removed .tsx extension
 import './Header.css';
 
-const Header = () => {
+const Header: React.FC = () => {
   const { currentUser } = useAuth();
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // State for modal
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false); // State for modal
 
-  const openLoginModal = () => setIsLoginModalOpen(true);
-  const closeLoginModal = () => setIsLoginModalOpen(false);
+  const openLoginModal = (): void => setIsLoginModalOpen(true);
+  const closeLoginModal = (): void => setIsLoginModalOpen(false);
 
-  const handleSignOut = async () => {
+  const handleSignOut = async (): Promise<void> => {
     try {
       await signOut(auth);
     } catch (error) {
@@ -26,7 +26,7 @@ const Header = () => {
   const { isDarkMode, toggleDarkMode } = useTheme(); // Get theme state and toggle function from context
 
   // Set active class for navigation links
-  const isActive = (path) => {
+  const isActive = (path: string): string => {
     return location.pathname === path ? 'active' : '';
   };
 

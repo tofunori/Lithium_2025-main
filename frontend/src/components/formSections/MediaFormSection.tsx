@@ -1,25 +1,48 @@
-import React from 'react';
-// Import the actual ImageUploader component
-import ImageUploader from '../ImageUploader';
+import React, { FC, SyntheticEvent } from 'react';
+// Import the actual ImageUploader component - Assuming it might be JS or needs types
+// If ImageUploader is TSX and exports types, import them. Otherwise, use 'any' or define basic types.
+import ImageUploader from '../ImageUploader'; // Adjust path if needed
 
-function MediaFormSection({ facilityId, data, onFormDataChange, isSaving }) { // Added facilityId prop
+// Define the structure for the media data this section handles
+interface MediaData {
+  images?: string[];
+}
+
+// Define the props for the component
+interface MediaFormSectionProps {
+  facilityId?: string; // Facility ID needed for ImageUploader
+  data?: MediaData;
+  // Specific handler expected by this component to update parent state for images
+  onFormDataChange: (update: Partial<MediaData>) => void;
+  isSaving?: boolean;
+}
+
+const MediaFormSection: FC<MediaFormSectionProps> = ({ facilityId, data, onFormDataChange, isSaving }) => {
   const formData = data || {};
-  const images = formData.images || [];
+  const images: string[] = formData.images || [];
 
-  // Placeholder for handling image deletion within the form state
-  const handleDeleteImage = (imageUrlToDelete) => {
+  // Handles deleting an image URL from the local state and calls parent handler
+  const handleDeleteImage = (imageUrlToDelete: string) => {
     const updatedImages = images.filter(url => url !== imageUrlToDelete);
-    // Call the onUploadComplete handler to update the parent's editFormData
     // Call the parent's handler with the updated array for the 'images' field.
     onFormDataChange({ images: updatedImages });
     console.log("Deleted image (in form state):", imageUrlToDelete);
     // Note: Actual file deletion from storage needs separate handling on save/server-side.
   };
-  // Handler for when the ImageUploader provides new image URLs (data URLs in this case)
-  const handleNewImages = (newImageUrls) => {
+
+  // Handler for when the ImageUploader provides new image URLs
+  // Assuming onUploadComplete provides an array of strings (URLs)
+  const handleNewImages = (newImageUrls: string[]) => {
     const updatedImages = [...images, ...newImageUrls];
-    // Call the parent's handler to update the main editFormData state
+    // Call the parent's handler to update the main formData state
     onFormDataChange({ images: updatedImages });
+  };
+
+  // Type the event for the image error handler
+  const handleImageError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    target.src = '/placeholder-image.png'; // Provide a path to a placeholder
+    target.style.opacity = '0.5';
   };
 
   return (
@@ -38,7 +61,7 @@ function MediaFormSection({ facilityId, data, onFormDataChange, isSaving }) { //
                   alt={`Facility Image ${index + 1}`}
                   className="img-thumbnail"
                   style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'cover' }}
-                  onError={(e) => { e.target.src = '/placeholder-image.png'; e.target.style.opacity = '0.5'; }}
+                  onError={handleImageError} // Use typed error handler
                 />
                 <button
                   type="button"
@@ -61,10 +84,16 @@ function MediaFormSection({ facilityId, data, onFormDataChange, isSaving }) { //
       {/* Use the ImageUploader component */}
       <div className="mb-3">
         <label className="form-label">Upload New Images:</label>
-        <ImageUploader facilityId={facilityId} onUploadComplete={handleNewImages} disabled={isSaving} />
+        {/* Pass required props to ImageUploader. Add types if available. */}
+        <ImageUploader
+          facilityId={facilityId}
+          onUploadComplete={handleNewImages} // This matches the expected prop
+          disabled={isSaving}
+          // existingImages={images} // Pass existing images if ImageUploader supports it
+        />
       </div>
     </fieldset>
   );
-}
+};
 
 export default MediaFormSection;

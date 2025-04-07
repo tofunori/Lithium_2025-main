@@ -1,6 +1,20 @@
-import React from 'react';
+import React, { ChangeEvent, FC } from 'react';
 
-function ContactFormSection({ data, onChange, isSaving }) {
+// Define the structure for the contact data this section handles
+interface ContactData {
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+}
+
+// Define the props for the component
+interface ContactFormSectionProps {
+  data?: ContactData;
+  onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  isSaving?: boolean;
+}
+
+const ContactFormSection: FC<ContactFormSectionProps> = ({ data, onChange, isSaving }) => {
   const formData = data || {};
 
   return (
@@ -13,9 +27,10 @@ function ContactFormSection({ data, onChange, isSaving }) {
             type="text"
             className="form-control"
             id="edit-contactPerson"
-            name="contactPerson" // Matches key in editFormData
+            name="contactPerson" // Matches key in FacilityFormData (assuming it exists)
             value={formData.contactPerson || ''}
             onChange={onChange}
+            disabled={isSaving} // Add disabled attribute
           />
         </div>
       </div>
@@ -26,9 +41,10 @@ function ContactFormSection({ data, onChange, isSaving }) {
             type="email" // Use email type for validation
             className="form-control"
             id="edit-contactEmail"
-            name="contactEmail" // Matches key in editFormData
+            name="contactEmail" // Matches key in FacilityFormData (assuming it exists)
             value={formData.contactEmail || ''}
             onChange={onChange}
+            disabled={isSaving} // Add disabled attribute
           />
         </div>
         <div className="col-md-6">
@@ -37,14 +53,16 @@ function ContactFormSection({ data, onChange, isSaving }) {
             type="tel" // Use tel type
             className="form-control"
             id="edit-contactPhone"
-            name="contactPhone" // Matches key in editFormData
+            name="contactPhone" // Matches key in FacilityFormData (assuming it exists)
             value={formData.contactPhone || ''}
             onChange={onChange}
+            disabled={isSaving} // Add disabled attribute
           />
         </div>
       </div>
+      {/* Add more contact fields if needed */}
     </fieldset>
   );
-}
+};
 
 export default ContactFormSection;

@@ -1,14 +1,24 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, ChangeEvent } from 'react';
 import { uploadFacilityImage } from '../firebase'; // Import the upload function
 
-function ImageUploader({ facilityId, onUploadComplete, disabled }) { // Added facilityId prop
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+// Define the interface for the component props
+interface ImageUploaderProps {
+  facilityId: string | null | undefined; // Facility ID can be string, null, or undefined
+  onUploadComplete: (urls: string[]) => void; // Callback function accepting an array of strings
+  disabled?: boolean; // Optional disabled prop
+}
 
-  const handleFileChange = (event) => {
-    setSelectedFiles(Array.from(event.target.files));
+const ImageUploader: React.FC<ImageUploaderProps> = ({ facilityId, onUploadComplete, disabled = false }) => {
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // State for selected files, typed as File array
+  const [isProcessing, setIsProcessing] = useState<boolean>(false); // State for processing status, typed as boolean
+
+  // Type the event parameter for the file change handler
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setSelectedFiles(Array.from(event.target.files));
+    }
     // Clear the input value to allow selecting the same file again
-    event.target.value = null;
+    event.target.value = ''; // Use empty string instead of null for input value
   };
 
   const handleUpload = useCallback(async () => {
@@ -22,9 +32,9 @@ function ImageUploader({ facilityId, onUploadComplete, disabled }) { // Added fa
     }
 
     setIsProcessing(true);
-    const uploadedUrls = [];
+    const uploadedUrls: string[] = []; // Type the array for uploaded URLs
 
-    for (const file of selectedFiles) {
+    for (const file of selectedFiles) { // 'file' is implicitly of type File here
       // Basic validation (optional)
       if (!file.type.startsWith('image/')) {
         console.warn(`Skipping non-image file: ${file.name}`);
@@ -33,10 +43,12 @@ function ImageUploader({ facilityId, onUploadComplete, disabled }) { // Added fa
 
       // Upload to Firebase Storage
       try {
-        const downloadURL = await uploadFacilityImage(facilityId, file);
+        // Assuming uploadFacilityImage returns a Promise<string>
+        const downloadURL: string = await uploadFacilityImage(facilityId, file);
         uploadedUrls.push(downloadURL); // Store the actual Storage URL
       } catch (error) {
-        // Error is logged within uploadFacilityImage, alert the user
+        // Error handling remains largely the same, but consider more specific error types if available
+        console.error(`Failed to upload file: ${file.name}. Error:`, error); // Log the actual error
         alert(`Failed to upload file: ${file.name}. See console for details.`);
         // Optionally decide if you want to stop processing remaining files
         // setIsProcessing(false); // Uncomment if you want to stop on first error
@@ -50,9 +62,7 @@ function ImageUploader({ facilityId, onUploadComplete, disabled }) { // Added fa
 
     setSelectedFiles([]); // Clear selection after processing
     setIsProcessing(false);
-  }, [selectedFiles, onUploadComplete, facilityId]); // Added facilityId dependency
-
-  // Removed the readFileAsDataURL helper function as it's no longer needed
+  }, [selectedFiles, onUploadComplete, facilityId]); // Dependencies remain the same
 
   return (
     <div className="image-uploader">
@@ -88,6 +98,6 @@ function ImageUploader({ facilityId, onUploadComplete, disabled }) { // Added fa
       )}
     </div>
   );
-}
+};
 
 export default ImageUploader;

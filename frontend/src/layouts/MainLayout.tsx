@@ -4,7 +4,12 @@ import { useTheme } from '../context/ThemeContext'; // Import useTheme hook
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-const MainLayout = () => {
+// Define props interface
+interface MainLayoutProps {
+  children?: React.ReactNode; // Optional children prop
+}
+
+const MainLayout: React.FC<MainLayoutProps> = () => {
   const { isDarkMode } = useTheme(); // Get theme state from context
 
   return (
@@ -12,7 +17,7 @@ const MainLayout = () => {
     <div className={`dashboard-container ${isDarkMode ? 'dark-mode' : ''}`}>
       <Header />
       <main id="main-content">
-        <Outlet />
+        <Outlet /> {/* Renders the matched child route component */}
       </main>
       <Footer />
     </div>

@@ -1,6 +1,12 @@
 import React from 'react';
+import { Editor } from '@tiptap/react'; // Import the Editor type
 
-const TiptapMenuBar = ({ editor }) => {
+// Define the props interface
+interface TiptapMenuBarProps {
+  editor: Editor | null;
+}
+
+const TiptapMenuBar: React.FC<TiptapMenuBarProps> = ({ editor }) => {
   if (!editor) {
     return null;
   }

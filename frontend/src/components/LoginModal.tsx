@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth } from '../firebase'; // Assuming firebase.ts exists
 import './LoginModal.css'; // We'll create this for basic styling
 
-const LoginModal = ({ isOpen, onClose }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+// Define the props interface
+interface LoginModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-  const handleSignIn = async (e) => {
+const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setError('');
     try {
@@ -16,7 +22,12 @@ const LoginModal = ({ isOpen, onClose }) => {
       onClose(); // Close modal on successful login
     } catch (err) {
       console.error("Error signing in:", err);
-      setError("Failed to log in. Check email/password.");
+      // It's good practice to check the error type if possible, but for now, a generic message is okay.
+      if (err instanceof Error) {
+        setError(`Failed to log in: ${err.message}`);
+      } else {
+        setError("Failed to log in. Check email/password.");
+      }
     }
   };
 
@@ -36,7 +47,7 @@ const LoginModal = ({ isOpen, onClose }) => {
               className="form-control"
               id="loginEmail"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -47,12 +58,13 @@ const LoginModal = ({ isOpen, onClose }) => {
               className="form-control"
               id="loginPassword"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               required
             />
           </div>
           {error && <div className="alert alert-danger p-2 small">{error}</div>}
           <div className="d-flex justify-content-end">
+            {/* Ensure onClick type matches expected if necessary, but usually inferred correctly */}
             <button type="button" className="btn btn-secondary me-2" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary">Login</button>
           </div>

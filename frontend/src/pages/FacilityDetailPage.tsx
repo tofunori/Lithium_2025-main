@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom'; // Added useLocation
-import { getFacilityById, updateFacility } from '../firebase';
-// TODO: Import actual form section components when created
+import React, { useState, useEffect, ChangeEvent, SyntheticEvent } from 'react';
+import { useParams, Link, useLocation, Location } from 'react-router-dom'; // Added useLocation, Location type
+// Removed FacilityProperties import
+import { getFacilityById, updateFacility, FacilityData } from '../firebase'; // Import types
+import { User } from 'firebase/auth'; // Import User type
+import { useAuth } from '../context/AuthContext'; // Assuming AuthContext.jsx is renamed or doesn't need extension
+
+// Import form section components (assuming they are/will be .tsx)
 import BasicInfoFormSection from '../components/formSections/BasicInfoFormSection';
 import TechnicalFormSection from '../components/formSections/TechnicalFormSection';
 import MediaFormSection from '../components/formSections/MediaFormSection';
@@ -10,30 +14,75 @@ import DocumentsFormSection from '../components/formSections/DocumentsFormSectio
 import EnvironmentalFormSection from '../components/formSections/EnvironmentalFormSection';
 import InvestmentFormSection from '../components/formSections/InvestmentFormSection';
 import ContactFormSection from '../components/formSections/ContactFormSection';
-// import OverviewFormSection from '../components/formSections/OverviewFormSection';
-// import TechnicalFormSection from '../components/formSections/TechnicalFormSection';
-// ... other sections
+
 import './FacilityDetailPage.css';
-// '../components/EditFacilityForm.css' might be removable later if styles are moved
-import '../components/EditFacilityForm.css';
+import '../components/EditFacilityForm.css'; // Keep for now
 
-function FacilityDetailPage() {
-  const { id } = useParams();
-  const location = useLocation(); // Get location state
-  const [facility, setFacility] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
-  // Initialize activeTab from location state or default to 'overview'
-  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'overview');
-  const [editingTabKey, setEditingTabKey] = useState(null); // Track which tab is being edited
-  const [editFormData, setEditFormData] = useState(null); // Temporary data for the form being edited
+// --- Interfaces and Types ---
 
-  // Placeholder for authentication
-  const isAuthenticated = true;
+// Define the structure expected by the form sections (can be refined)
+// This mirrors the structure created in facilityDataForForm
+interface FacilityFormData {
+    id: string;
+    name: string; // Alias for company in form?
+    company: string;
+    location: string; // Alias for address in form?
+    address: string;
+    status: string;
+    capacity: string | number;
+    technology: string;
+    description: string;
+    technicalSpecs: string;
+    // Update timeline item structure
+    timeline: { date: string | number; event: string }[];
+    images: string[];
+    contactPerson: string;
+    contactEmail: string;
+    contactPhone: string;
+    documents: { title: string; url: string }[];
+    environmentalImpact: { details: string }; // Nested structure
+    investment: { total: string | number }; // Nested structure
+    website: string;
+    feedstock: string;
+    product: string;
+    // Add latitude/longitude if they are part of the form data being edited directly
+    latitude?: number | null;
+    longitude?: number | null;
+}
+
+// Type for location state passed via Link/navigate
+interface LocationState {
+    activeTab?: string;
+}
+
+// Type for status badge keys
+type FacilityStatusKey = 'planned' | 'underconstruction' | 'operating' | 'onhold' | 'cancelled' | 'decommissioned' | 'unknown';
+
+
+// --- Component ---
+const FacilityDetailPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>(); // Type useParams
+  const location = useLocation() as Location<LocationState | undefined>; // Type useLocation state
+  const { currentUser }: { currentUser: User | null } = useAuth(); // Type currentUser
+
+  const [facility, setFacility] = useState<FacilityData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>(location.state?.activeTab || 'overview');
+  const [editingTabKey, setEditingTabKey] = useState<string | null>(null); // Track which tab key is being edited
+  const [editFormData, setEditFormData] = useState<FacilityFormData | null>(null); // Use defined interface
+
+  // Use currentUser for authentication check
+  const isAuthenticated = !!currentUser;
 
   useEffect(() => {
     const fetchFacility = async () => {
+      if (!id) {
+          setError('No facility ID provided.');
+          setLoading(false);
+          return;
+      }
       try {
         setLoading(true);
         setError(null);
@@ -42,83 +91,136 @@ function FacilityDetailPage() {
           setFacility(facilityData);
         } else {
           setError('Facility not found.');
+          setFacility(null); // Ensure facility is null if not found
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching facility details:", err);
-        setError('Failed to load facility details.');
+        setError(`Failed to load facility details: ${err.message}`);
+        setFacility(null);
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchFacility();
-    }
+    fetchFacility();
   }, [id]);
 
-  // Update location state when tab changes (optional, but good practice if linking elsewhere)
-  // This doesn't directly solve the "remember tab after edit" because edit is a modal,
-  // but helps if navigation away and back occurs. The useState default handles the modal case.
+  // Update location state when tab changes (optional)
   useEffect(() => {
-    // Replace state in history to remember the tab without adding new history entries
-    // Only update history if not currently editing to avoid potential issues
     if (!editingTabKey) {
-      window.history.replaceState({ ...window.history.state, activeTab }, '');
+      // Use location.pathname + location.search for the URL part
+      window.history.replaceState({ ...window.history.state, activeTab }, '', `${location.pathname}${location.search}`);
     }
-  }, [activeTab, editingTabKey]);
+  }, [activeTab, editingTabKey, location.pathname, location.search]);
 
 
-  const renderStatusBadge = (status) => {
+  const renderStatusBadge = (status: string | undefined | null): JSX.Element => {
     const statusKey = status?.replace(/\s+/g, '')?.toLowerCase() || 'unknown';
-    const statusClasses = {
-      planned: 'status-badge status-planned', // Corrected key
-      underconstruction: 'status-badge status-construction', // Corrected key to match generated key
-      operating: 'status-badge status-operating', // Corrected key
+    const statusClasses: Record<FacilityStatusKey, string> = {
+      planned: 'status-badge status-planned',
+      underconstruction: 'status-badge status-construction',
+      operating: 'status-badge status-operating',
       onhold: 'status-badge status-onhold',
       cancelled: 'status-badge status-cancelled',
       decommissioned: 'status-badge status-decommissioned',
       unknown: 'status-badge status-unknown',
     };
     const label = status || 'Unknown';
-    const className = statusClasses[statusKey] || statusClasses.unknown;
-    // Add console log for debugging
-    console.log(`Status: "${status}", Key: "${statusKey}", Class: "${className}"`);
+    // Ensure statusKey is a valid key before accessing statusClasses
+    const validKey = statusKey in statusClasses ? statusKey as FacilityStatusKey : 'unknown';
+    const className = statusClasses[validKey];
+    // console.log(`Status: "${status}", Key: "${validKey}", Class: "${className}"`); // Keep for debugging if needed
     return <span className={className}>{label}</span>;
   };
 
-  // Renamed from handleEditClick
+  // Prepare data in the structure expected by the forms when editing starts
+  const prepareFormData = (facilityData: FacilityData): FacilityFormData => {
+      const props = facilityData.properties || {};
+      return {
+          id: facilityData.id, // Include id if needed by forms/update logic
+          name: props.company || '', // Assuming 'name' is used in BasicInfoFormSection
+          company: props.company || '',
+          location: props.address || '', // Assuming 'location' is used in BasicInfoFormSection
+          address: props.address || '',
+          status: props.status || 'Planning', // Default if undefined
+          capacity: props.capacity || '',
+          technology: props.technology || '',
+          description: props.description || '',
+          technicalSpecs: props.technicalSpecs || '',
+          // Update timeline mapping to use 'date'
+          timeline: props.timeline?.map(item => ({ date: item.date || '', event: item.event || '' })) || [{ date: '', event: '' }],
+          images: props.images || [''], // Ensure array exists
+          contactPerson: props.contactPerson || '',
+          contactEmail: props.contactEmail || '',
+          contactPhone: props.contactPhone || '',
+          documents: props.documents || [{ title: '', url: '' }], // Ensure array exists
+          // Handle potentially nested structures safely
+          environmentalImpact: { details: props.environmentalImpact?.details || '' },
+          // Use optional chaining for potentially missing properties
+          investment: { total: props.investment?.total || '' },
+          website: props.website || '',
+          feedstock: props.feedstock || '',
+          product: props.product || '',
+          latitude: props.latitude ?? null, // Use nullish coalescing for null/undefined
+          longitude: props.longitude ?? null,
+      };
+  };
+
+
   const handleEdit = () => {
     if (isAuthenticated && facility) {
-      // Deep copy relevant data to avoid mutating original state
-      // Using facilityDataForForm structure as a base
-      const initialFormData = JSON.parse(JSON.stringify(facilityDataForForm));
+      const initialFormData = prepareFormData(facility);
       setEditFormData(initialFormData);
-      setEditingTabKey(activeTab); // Set the current tab as the one being edited
+      setEditingTabKey(activeTab);
     } else if (!isAuthenticated) {
       alert('You must be logged in to edit facilities.');
+      // Optionally redirect to login: navigate('/login');
     }
   };
 
-  // Renamed from handleCancelEdit
   const handleCancel = () => {
-    setEditingTabKey(null); // Exit edit mode
-    setEditFormData(null); // Clear temporary form data
-    setError(null); // Clear any edit-specific errors
+    setEditingTabKey(null);
+    setEditFormData(null);
+    setError(null);
   };
 
-  // Renamed from handleSaveSuccess
+  // Type the data structure expected by updateFacility
   const handleSave = async () => {
-    if (!editFormData) return; // Should not happen if button is enabled correctly
+    if (!editFormData || !id) return;
 
     setIsSaving(true);
     setError(null);
     try {
-      // Prepare data for update (map from editFormData back to Firestore structure if needed)
-      // For now, assuming editFormData structure matches what updateFacility expects
-      // TODO: Add validation logic here before saving
-      // Get the original image list before editing started
-      const originalImages = facility?.properties?.images || [];
-      await updateFacility(id, editFormData, originalImages); // Pass original images for deletion comparison
+        // Map editFormData back to the structure expected by updateFacility (FacilityData properties)
+        const propertiesToUpdate: Partial<FacilityProperties> = {
+            company: editFormData.company,
+            address: editFormData.address,
+            status: editFormData.status,
+            capacity: editFormData.capacity,
+            technology: editFormData.technology,
+            description: editFormData.description,
+            technicalSpecs: editFormData.technicalSpecs,
+            timeline: editFormData.timeline.filter(item => item.year || item.event), // Clean empty items
+            images: editFormData.images.filter(url => url && url.trim() !== ''), // Clean empty items
+            contactPerson: editFormData.contactPerson,
+            contactEmail: editFormData.contactEmail,
+            contactPhone: editFormData.contactPhone,
+            documents: editFormData.documents.filter(doc => (doc.title && doc.title.trim() !== '') || (doc.url && doc.url.trim() !== '')), // Clean empty items
+            environmentalImpact: editFormData.environmentalImpact, // Assuming structure matches
+            investment: editFormData.investment, // Assuming structure matches
+            website: editFormData.website,
+            feedstock: editFormData.feedstock,
+            product: editFormData.product,
+            latitude: editFormData.latitude,
+            longitude: editFormData.longitude,
+            // Ensure all relevant fields from FacilityProperties are included
+        };
+
+        // Get the original image list before editing started for comparison in updateFacility
+        const originalImages = facility?.properties?.images || [];
+
+        // Pass only the properties object to updateFacility
+        await updateFacility(id, propertiesToUpdate, originalImages);
 
       // Re-fetch data to show the latest version
       const refreshedFacility = await getFacilityById(id);
@@ -126,37 +228,47 @@ function FacilityDetailPage() {
         setFacility(refreshedFacility);
       }
 
-      setEditingTabKey(null); // Exit edit mode
-      setEditFormData(null); // Clear temporary form data
+      setEditingTabKey(null);
+      setEditFormData(null);
       alert('Facility updated successfully!');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving facility:", err);
-      setError(`Failed to save changes: ${err.message}`);
-      // Keep edit mode active so user can retry or cancel
-      alert(`Error saving: ${err.message}`);
+      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(`Failed to save changes: ${message}`);
+      alert(`Error saving: ${message}`);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Handles changes in form section components
-  const handleFormChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  // Handles changes in form section components - Type event and enhance logic
+  const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked; // For checkboxes
 
-    // Basic handler for simple fields
-    // Needs enhancement for nested objects (like environmentalImpact, investment) and arrays
     setEditFormData(prevData => {
-      // Handle nested properties if name contains a dot (e.g., "environmentalImpact.details")
+      if (!prevData) return null; // Should not happen if called correctly
+
+      // Handle nested properties (e.g., "environmentalImpact.details", "investment.total")
       if (name.includes('.')) {
-        const [outerKey, innerKey] = name.split('.');
-        return {
-          ...prevData,
-          [outerKey]: {
-            ...prevData[outerKey],
-            [innerKey]: type === 'checkbox' ? checked : value,
-          }
-        };
+        const [outerKey, innerKey] = name.split('.') as [keyof FacilityFormData, string];
+        // Ensure the outer key exists and is an object
+        if (prevData[outerKey] && typeof prevData[outerKey] === 'object') {
+            // Create a new nested object with the updated value
+            const updatedNestedObject = {
+                ...(prevData[outerKey] as object), // Cast to object
+                [innerKey]: type === 'checkbox' ? checked : value,
+            };
+            return {
+                ...prevData,
+                [outerKey]: updatedNestedObject,
+            };
+        } else {
+             console.warn(`Cannot update nested property for non-object key: ${outerKey}`);
+             return prevData; // Return previous state if structure is unexpected
+        }
       }
+
       // Handle top-level properties
       return {
         ...prevData,
@@ -165,58 +277,96 @@ function FacilityDetailPage() {
     });
   };
 
-  // Handles updates specifically from the MediaFormSection (images array)
-  const handleMediaFormChange = (update) => {
-    // update should be an object like { images: [...] }
-    setEditFormData(prevData => ({
-      ...prevData,
-      ...update, // Merge the changes (e.g., the updated images array)
-    }));
+  // Handles updates specifically from the MediaFormSection (images array) - Type update
+  const handleMediaFormChange = (update: Partial<Pick<FacilityFormData, 'images'>>): void => {
+    setEditFormData(prevData => {
+        if (!prevData) return null;
+        // Ensure update contains the 'images' key if that's expected
+        if ('images' in update) {
+            return {
+                ...prevData,
+                images: update.images || [], // Update images, default to empty array if undefined
+            };
+        }
+        return prevData; // Return previous state if update structure is unexpected
+    });
   };
 
-  // TODO: Implement handlers for array changes (add/remove/update items)
-  // const handleTimelineChange = (index, field, value) => { ... };
-  // const addTimelineItem = () => { ... };
-  // const removeTimelineItem = (index) => { ... };
-  // Similar handlers for documents, etc.
+   // Handlers for Timeline array changes
+   const handleTimelineChange = (index: number, field: keyof FacilityFormData['timeline'][0], value: string | number): void => {
+       setEditFormData(prevData => {
+           if (!prevData) return null;
+           const updatedTimeline = [...prevData.timeline];
+           // Ensure field is 'date' or 'event' before updating
+           const updatedItem = { ...updatedTimeline[index], [field as 'date' | 'event']: value };
+           updatedTimeline[index] = updatedItem;
+           return { ...prevData, timeline: updatedTimeline };
+       });
+   };
+
+   const addTimelineItem = (): void => {
+       setEditFormData(prevData => {
+           if (!prevData) return null;
+           // Add item with 'date' field
+           return { ...prevData, timeline: [...prevData.timeline, { date: '', event: '' }] };
+       });
+   };
+
+   const removeTimelineItem = (index: number): void => {
+       setEditFormData(prevData => {
+           if (!prevData) return null;
+           const updatedTimeline = prevData.timeline.filter((_, i) => i !== index);
+           // Ensure at least one item remains, using 'date' field
+           return { ...prevData, timeline: updatedTimeline.length > 0 ? updatedTimeline : [{ date: '', event: '' }] };
+       });
+   };
+   // Similar handlers for Documents...
+    const handleDocumentChange = (index: number, field: keyof FacilityFormData['documents'][0], value: string): void => {
+       setEditFormData(prevData => {
+           if (!prevData) return null;
+           const updatedDocuments = [...prevData.documents];
+           const updatedItem = { ...updatedDocuments[index], [field]: value };
+           updatedDocuments[index] = updatedItem;
+           return { ...prevData, documents: updatedDocuments };
+       });
+   };
+
+   const addDocumentItem = (): void => {
+       setEditFormData(prevData => {
+           if (!prevData) return null;
+           return { ...prevData, documents: [...prevData.documents, { title: '', url: '' }] };
+       });
+   };
+
+    const removeDocumentItem = (index: number): void => {
+       setEditFormData(prevData => {
+           if (!prevData) return null;
+           const updatedDocuments = prevData.documents.filter((_, i) => i !== index);
+           return { ...prevData, documents: updatedDocuments.length > 0 ? updatedDocuments : [{ title: '', url: '' }] };
+       });
+   };
+
 
   if (loading) {
-    return <div className="container mt-4"><p>Loading facility details...</p></div>;
+    return <div className="container mt-4 text-center"><p><i className="fas fa-spinner fa-spin me-2"></i>Loading facility details...</p></div>;
   }
 
-  if (error && !facility) { // Only show full page error if facility couldn't load at all
-    return <div className="container mt-4"><p className="text-danger">{error}</p></div>;
+  if (error && !facility) {
+    return <div className="container mt-4 alert alert-danger">{error}</div>;
   }
 
   if (!facility) {
+    // This case should ideally be covered by the error state, but added for robustness
     return <div className="container mt-4"><p>Facility data not available.</p></div>;
   }
 
-  const properties = facility.properties || {};
-  const facilityDataForForm = {
-      id: id,
-      name: properties.company || '',
-      company: properties.company || '',
-      location: properties.address || '',
-      status: properties.status || 'Planning',
-      capacity: properties.capacity || '',
-      technology: properties.technology || '',
-      description: properties.description || '',
-      technicalSpecs: properties.technicalSpecs || '',
-      timeline: properties.timeline || [],
-      images: properties.images || [],
-      contactPerson: properties.contactPerson || '',
-      contactEmail: properties.contactEmail || '',
-      contactPhone: properties.contactPhone || '',
-      documents: properties.documents || [],
-      environmentalImpact: { details: properties.environmentalImpact || '' },
-      investment: { total: properties.fundingDetails || '' },
-      website: properties.website || '',
-      feedstock: properties.feedstock || '',
-      product: properties.product || '',
-  };
+  // Use the prepared form data structure for consistency, only when editing
+  // Otherwise, use the direct facility.properties for display
+  const displayProperties = facility.properties || {};
+  const currentFormData = editFormData || prepareFormData(facility); // Data for forms or initial display prep
 
-  const tabs = [
+  // Type the tabs array
+  const tabs: { key: string; label: string }[] = [
     { key: 'overview', label: 'Overview' },
     { key: 'technical', label: 'Technical Details' },
     { key: 'media', label: 'Media' },
@@ -227,35 +377,238 @@ function FacilityDetailPage() {
     { key: 'contact', label: 'Contact Information' },
   ];
 
+  // Helper to render form sections or view content
+  const renderTabContent = () => {
+      const isEditingCurrentTab = editingTabKey === activeTab;
+      const dataForView = displayProperties; // Use direct properties for viewing
+      const dataForEdit = editFormData; // Use edit state for editing
+
+      // Define props for form sections generically (can be refined if Form Section props are known)
+      const commonEditProps = {
+          data: dataForEdit,
+          onChange: handleFormChange, // General handler
+          isSaving: isSaving,
+      };
+
+      const renderViewOrEdit = (ViewComponent: React.ReactNode, EditComponent: React.ComponentType<any> | null) => {
+          // Ensure dataForEdit is not null when rendering the edit component
+          return isEditingCurrentTab && EditComponent && dataForEdit ? <EditComponent {...commonEditProps} data={dataForEdit} /> : ViewComponent;
+      };
+
+      const renderArrayEdit = (
+          ViewComponent: React.ReactNode,
+          EditComponent: React.ComponentType<any> | null,
+          listName: keyof FacilityFormData, // Use keyof for type safety
+          itemHandlers: {
+              onChange: (index: number, field: any, value: any) => void;
+              onAddItem: () => void;
+              onRemoveItem: (index: number) => void;
+          }
+      ) => {
+           // Ensure dataForEdit is not null when rendering the edit component
+           if (isEditingCurrentTab && EditComponent && dataForEdit) {
+               const editProps = {
+                   ...commonEditProps, // Includes data, isSaving
+                   data: dataForEdit, // Pass the non-null edit data
+                   // Pass specific item handlers
+                   onItemChange: itemHandlers.onChange,
+                   onAddItem: itemHandlers.onAddItem,
+                   onRemoveItem: itemHandlers.onRemoveItem,
+               };
+               return <EditComponent {...editProps} />;
+           }
+           return ViewComponent;
+      };
+
+
+      switch (activeTab) {
+          case 'overview':
+              return renderViewOrEdit(
+                  // View Mode Content
+                  <>
+                      <div className="row mb-3">
+                          <div className="col-md-6"><strong>Location:</strong><p>{dataForView.address || 'N/A'}</p></div>
+                          <div className="col-md-6"><strong>Status:</strong><p>{renderStatusBadge(dataForView.status)}</p></div>
+                      </div>
+                      <div className="row mb-3">
+                          <div className="col-md-6"><strong>Website:</strong><p>{dataForView.website ? <a href={dataForView.website} target="_blank" rel="noopener noreferrer">{dataForView.website}</a> : 'N/A'}</p></div>
+                           {/* Display coordinates if available - Use optional chaining */}
+                           {dataForView.latitude && dataForView.longitude && (
+                               <div className="col-md-6"><strong>Coordinates:</strong><p>{dataForView.latitude?.toFixed(5)}, {dataForView.longitude?.toFixed(5)}</p></div>
+                           )}
+                      </div>
+                      <div className="row mb-4">
+                          <div className="col-12"><h3 className="sub-section-heading">Description</h3><p>{dataForView.description || 'Detailed description not available.'}</p></div>
+                      </div>
+                  </>,
+                  // Edit Mode Component (Combine sections or use a dedicated OverviewEditSection)
+                  // Using BasicInfoFormSection + manual fields for description/website
+                   (props: any) => ( // Use any for props type temporarily
+                       <>
+                           <BasicInfoFormSection {...props} />
+                           <div className="mb-3">
+                               <label htmlFor="edit-description" className="form-label">Description:</label>
+                               <textarea className="form-control" id="edit-description" name="description" value={props.data?.description || ''} onChange={props.onChange} rows={4} disabled={props.isSaving}></textarea>
+                           </div>
+                           <div className="mb-3">
+                               <label htmlFor="edit-website" className="form-label">Website:</label>
+                               <input type="url" className="form-control" id="edit-website" name="website" value={props.data?.website || ''} onChange={props.onChange} disabled={props.isSaving} />
+                           </div>
+                           {/* Add fields for Lat/Lng if they should be editable here */}
+                       </>
+                   )
+              );
+
+          case 'technical':
+              return renderViewOrEdit(
+                  // View Mode Content
+                  <>
+                      <div className="row mb-3">
+                          <div className="col-md-6"><strong>Volume (tons/year):</strong><p>{dataForView.capacity || 'N/A'}</p></div>
+                          <div className="col-md-6"><strong>Method/Technology:</strong><p>{dataForView.technology || 'N/A'}</p></div>
+                      </div>
+                      <div className="row mb-3">
+                          <div className="col-md-6"><strong>Feedstock:</strong><p>{dataForView.feedstock || 'N/A'}</p></div>
+                          <div className="col-md-6"><strong>Product:</strong><p>{dataForView.product || 'N/A'}</p></div>
+                      </div>
+                      <div className="row mb-4">
+                          <div className="col-12"><h3 className="sub-section-heading">Technical Specifications</h3><pre>{dataForView.technicalSpecs || 'Technical specifications not available.'}</pre></div>
+                      </div>
+                  </>,
+                  // Edit Mode Component
+                  TechnicalFormSection
+              );
+
+          case 'media':
+               return renderViewOrEdit(
+                   // View Mode Content
+                   <div className="image-gallery-placeholder">
+                       {Array.isArray(dataForView.images) && dataForView.images.length > 0 && dataForView.images[0] !== '' ? (
+                           <div className="image-gallery-container d-flex flex-wrap">
+                               {dataForView.images.map((imageUrl, index) => (
+                                   imageUrl && <img key={index} src={imageUrl} alt={`Facility ${index + 1}`} className="img-thumbnail me-2 mb-2 facility-gallery-image" style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'cover', cursor: 'pointer' }} onError={(e: SyntheticEvent<HTMLImageElement, Event>) => { e.currentTarget.style.display = 'none'; }} onClick={() => window.open(imageUrl, '_blank')} />
+                               ))}
+                           </div>
+                       ) : (<p>No images available.</p>)}
+                   </div>,
+                   // Edit Mode Component - Pass specific handler for media updates
+                   (props: any) => <MediaFormSection {...props} facilityId={id!} onFormDataChange={handleMediaFormChange} /> // Use non-null assertion for id
+               );
+
+           case 'timeline':
+                return renderArrayEdit(
+                    // View Mode Content
+                    <ul className="list-group list-group-flush">
+                        {/* Update check and rendering to use 'date' */}
+                        {Array.isArray(dataForView.timeline) && dataForView.timeline.length > 0 && (dataForView.timeline[0].date || dataForView.timeline[0].event) ? (
+                            dataForView.timeline.map((item, index) => (
+                                <li key={index} className="list-group-item">{item.date}: {item.event}</li>
+                            ))
+                        ) : (<li className="list-group-item">No timeline information available.</li>)}
+                    </ul>,
+                    // Edit Mode Component
+                    TimelineFormSection,
+                    'timeline',
+                    { onChange: handleTimelineChange, onAddItem: addTimelineItem, onRemoveItem: removeTimelineItem }
+                );
+
+            case 'documents':
+                 return renderArrayEdit(
+                     // View Mode Content
+                     <ul className="list-group list-group-flush">
+                         {Array.isArray(dataForView.documents) && dataForView.documents.length > 0 && (dataForView.documents[0].title || dataForView.documents[0].url) ? (
+                             dataForView.documents.map((doc, index) => (
+                                 <li key={index} className="list-group-item">
+                                     {doc.url ? <a href={doc.url} target="_blank" rel="noopener noreferrer">{doc.title || 'Link'}</a> : doc.title || 'N/A'}
+                                 </li>
+                             ))
+                         ) : (<li className="list-group-item">No documents available.</li>)}
+                     </ul>,
+                     // Edit Mode Component
+                     DocumentsFormSection,
+                     'documents',
+                     { onChange: handleDocumentChange, onAddItem: addDocumentItem, onRemoveItem: removeDocumentItem }
+                 );
+
+          case 'environmental':
+              return renderViewOrEdit(
+                  // View Mode Content
+                  <div><h3 className="sub-section-heading">Details</h3><p>{dataForView.environmentalImpact?.details || 'N/A'}</p></div>,
+                  // Edit Mode Component
+                  EnvironmentalFormSection
+              );
+
+          case 'investment':
+              return renderViewOrEdit(
+                  // View Mode Content - Use optional chaining
+                  <div><h3 className="sub-section-heading">Total Investment / Funding Details</h3><p>{dataForView.investment?.total || 'N/A'}</p></div>,
+                  // Edit Mode Component
+                  InvestmentFormSection
+              );
+
+          case 'contact':
+              return renderViewOrEdit(
+                  // View Mode Content
+                  <>
+                      <div className="row">
+                          <div className="col-md-6"><strong>Contact Person:</strong><p>{dataForView.contactPerson || 'N/A'}</p></div>
+                          <div className="col-md-6"><strong>Contact Email:</strong><p>{dataForView.contactEmail || 'N/A'}</p></div>
+                      </div>
+                      <div className="row">
+                          <div className="col-md-6"><strong>Contact Phone:</strong><p>{dataForView.contactPhone || 'N/A'}</p></div>
+                      </div>
+                  </>,
+                  // Edit Mode Component
+                  ContactFormSection
+              );
+
+          default:
+              return <p>Select a tab to view details.</p>;
+      }
+  };
+
+
   return (
     <div className="container mt-4 facility-detail-page">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h1>{properties.company || 'Facility Details'}</h1>
+      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <h1 className="h3 mb-2 mb-md-0">{displayProperties.company || 'Facility Details'}</h1>
         <div>
-          {/* Edit Button - Now triggers edit mode for the *active* tab */}
-          {isAuthenticated && (
+          {isAuthenticated && !editingTabKey && ( // Show Edit only when not already editing
             <button
-              className="btn btn-primary me-2" // Add margin
-              onClick={handleEdit} // Use the correct handler for initiating edit mode
-              disabled={isSaving || editingTabKey} // Disable if saving or already editing *any* tab
+              className="btn btn-primary me-2"
+              onClick={handleEdit}
+              disabled={isSaving}
             >
-              <i className="fas fa-edit me-2"></i>Edit {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+              <i className="fas fa-edit me-1"></i>Edit {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </button>
           )}
+           {isAuthenticated && editingTabKey && ( // Show Save/Cancel only when editing
+             <>
+                <button className="btn btn-success me-2" onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? <><i className="fas fa-spinner fa-spin me-1"></i> Saving...</> : <><i className="fas fa-save me-1"></i> Save Changes</>}
+                </button>
+                <button className="btn btn-secondary me-2" onClick={handleCancel} disabled={isSaving}>
+                    Cancel
+                </button>
+             </>
+           )}
           <Link to="/facilities" className="btn btn-outline-secondary">
-            <i className="fas fa-arrow-left me-2"></i>Back to Facilities
+            <i className="fas fa-arrow-left me-1"></i>Back to List
           </Link>
         </div>
       </div>
 
-      {/* Tab Navigation */}
+      {/* Display general errors during save */}
+       {error && editingTabKey && <div className="alert alert-danger">{error}</div>}
+
+
       <ul className="nav nav-tabs mb-3">
         {tabs.map(tab => (
           <li className="nav-item" key={tab.key}>
             <button
               className={`nav-link ${activeTab === tab.key ? 'active' : ''}`}
               onClick={() => setActiveTab(tab.key)}
-              disabled={editingTabKey && editingTabKey !== tab.key} // Disable other tabs when editing
+              disabled={!!editingTabKey && editingTabKey !== tab.key} // Disable other tabs when editing ANY tab
             >
               {tab.label}
             </button>
@@ -263,441 +616,13 @@ function FacilityDetailPage() {
         ))}
       </ul>
 
-      {/* Tab Content */}
       <div className="card">
         <div className="card-body">
-          {/* Conditionally render content based on activeTab */}
-
-          {activeTab === 'overview' && (
-            <div>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                 <h2 className="section-heading mb-0">Overview</h2>
-                 {/* Removed individual edit button - use main Edit button */}
-              </div>
-
-              {editingTabKey === 'overview' ? (
-                <>
-                  {/* Render the actual BasicInfoFormSection */}
-                  <BasicInfoFormSection
-                    data={editFormData}
-                    onChange={handleFormChange}
-                    isSaving={isSaving}
-                  />
-                  {/* Add other overview-specific form sections here if needed */}
-                  {/* e.g., Description textarea */}
-                   <div className="mb-3">
-                     <label htmlFor="edit-description" className="form-label">Description:</label>
-                     <textarea
-                       className="form-control"
-                       id="edit-description"
-                       name="description"
-                       value={editFormData?.description || ''}
-                       onChange={handleFormChange}
-                       rows="4"
-                       disabled={isSaving}
-                     ></textarea>
-                   </div>
-                   <div className="mb-3">
-                     <label htmlFor="edit-website" className="form-label">Website:</label>
-                     <input
-                       type="url"
-                       className="form-control"
-                       id="edit-website"
-                       name="website"
-                       value={editFormData?.website || ''}
-                       onChange={handleFormChange}
-                       disabled={isSaving}
-                     />
-                   </div>
-
-
-                  {error && <p className="text-danger mt-2">{error}</p>}
-                  <div className="mt-3">
-                    <button className="btn btn-success me-2" onClick={handleSave} disabled={isSaving}>
-                      {isSaving ? 'Saving...' : <><i className="fas fa-save me-1"></i> Save Changes</>}
-                    </button>
-                    <button className="btn btn-secondary" onClick={handleCancel} disabled={isSaving}>
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Original View Content */}
-                  <div className="row mb-3">
-                    <div className="col-md-6">
-                      <strong>Location:</strong>
-                      <p>{properties.address || 'N/A'}</p>
-                    </div>
-                    <div className="col-md-6">
-                      <strong>Status:</strong>
-                      <p>{renderStatusBadge(properties.status)}</p>
-                    </div>
-                  </div>
-                  <div className="row mb-3">
-                     <div className="col-md-6">
-                       <strong>Volume (tons/year):</strong>
-                       <p>{properties.capacity || 'N/A'}</p> {/* Note: Capacity might belong in Technical */}
-                     </div>
-                     <div className="col-md-6">
-                       <strong>Website:</strong>
-                       <p>{properties.website ? <a href={properties.website} target="_blank" rel="noopener noreferrer">{properties.website}</a> : 'N/A'}</p>
-                     </div>
-                  </div>
-                   <div className="row mb-4">
-                     <div className="col-12">
-                       <h3 className="sub-section-heading">Description</h3>
-                       <p>{properties.description || 'Detailed description not available.'}</p>
-                     </div>
-                   </div>
-                 </>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'technical' && (
-             <div>
-               <div className="d-flex justify-content-between align-items-center mb-3">
-                 <h2 className="section-heading mb-0">Technical Details</h2>
-                 {/* Removed individual edit button */}
-               </div>
-
-               {editingTabKey === 'technical' ? (
-                 <>
-                   {/* Render the actual TechnicalFormSection */}
-                   <TechnicalFormSection
-                     data={editFormData}
-                     onChange={handleFormChange}
-                     isSaving={isSaving}
-                   />
-                   {/* Add other technical form sections if needed */}
-
-                   {error && <p className="text-danger mt-2">{error}</p>}
-                   <div className="mt-3">
-                     <button className="btn btn-success me-2" onClick={handleSave} disabled={isSaving}>
-                       {isSaving ? 'Saving...' : <><i className="fas fa-save me-1"></i> Save Changes</>}
-                     </button>
-                     <button className="btn btn-secondary" onClick={handleCancel} disabled={isSaving}>
-                       Cancel
-                     </button>
-                   </div>
-                 </>
-               ) : (
-                 <>
-                   {/* Original View Content */}
-                   {/* Note: Moved Capacity from Overview to here */}
-                   <div className="row mb-3">
-                     <div className="col-md-6">
-                       <strong>Volume (tons/year):</strong>
-                       <p>{properties.capacity || 'N/A'}</p>
-                     </div>
-                     <div className="col-md-6">
-                       <strong>Method/Technology:</strong>
-                       <p>{properties.technology || 'N/A'}</p>
-                     </div>
-                   </div>
-                   <div className="row mb-3">
-                      <div className="col-md-6">
-                        <strong>Feedstock:</strong>
-                        <p>{properties.feedstock || 'N/A'}</p>
-                      </div>
-                      <div className="col-md-6">
-                        <strong>Product:</strong>
-                        <p>{properties.product || 'N/A'}</p>
-                      </div>
-                   </div>
-                   <div className="row mb-4">
-                     <div className="col-12">
-                       <h3 className="sub-section-heading">Technical Specifications</h3>
-                       <pre>{properties.technicalSpecs || 'Technical specifications not available.'}</pre>
-                     </div>
-                   </div>
-                 </>
-               )}
-             </div>
-           )}
-
-          {activeTab === 'media' && (
-             <div>
-               <div className="d-flex justify-content-between align-items-center mb-3">
-                 <h2 className="section-heading mb-0">Media</h2>
-                 {/* Removed individual edit button */}
-               </div>
-
-               {editingTabKey === 'media' ? (
-                 <>
-                   {/* Render the actual MediaFormSection */}
-                   <MediaFormSection
-                     facilityId={id} // Pass the facility ID
-                     data={editFormData}
-                     onFormDataChange={handleMediaFormChange} // Pass the specific handler
-                     isSaving={isSaving}
-                   />
-                   {/* Add other media form sections if needed */}
-
-                   {error && <p className="text-danger mt-2">{error}</p>}
-                   <div className="mt-3">
-                     <button className="btn btn-success me-2" onClick={handleSave} disabled={isSaving}>
-                       {isSaving ? 'Saving...' : <><i className="fas fa-save me-1"></i> Save Changes</>}
-                     </button>
-                     <button className="btn btn-secondary" onClick={handleCancel} disabled={isSaving}>
-                       Cancel
-                     </button>
-                   </div>
-                 </>
-               ) : (
-                 <>
-                   {/* Original View Content */}
-                   <div className="image-gallery-placeholder">
-                     {Array.isArray(properties.images) && properties.images.length > 0 ? (
-                       <div className="image-gallery-container">
-                         {properties.images.map((imageUrl, index) => (
-                           <img
-                             key={index}
-                             src={imageUrl}
-                             alt={`Facility Image ${index + 1}`}
-                             className="img-thumbnail me-2 mb-2 facility-gallery-image"
-                             style={{maxWidth: '150px', maxHeight: '150px', objectFit: 'cover', cursor: 'pointer'}}
-                             onError={(e) => { e.target.src = '/placeholder-image.png'; e.target.style.display = 'none'; }}
-                             onClick={() => window.open(imageUrl, '_blank')}
-                           />
-                         ))}
-                       </div>
-                     ) : (
-                       <p>No images available.</p>
-                     )}
-                   </div>
-                 </>
-               )}
-             </div>
-           )}
-
-          {activeTab === 'timeline' && (
-             <div>
-               <div className="d-flex justify-content-between align-items-center mb-3">
-                 <h2 className="section-heading mb-0">Project Timeline & Milestones</h2>
-                 {/* Removed individual edit button */}
-               </div>
-
-               {editingTabKey === 'timeline' ? (
-                 <>
-                   {/* Render the actual TimelineFormSection */}
-                   <TimelineFormSection
-                     data={editFormData}
-                     onChange={handleFormChange} // Basic handler, needs enhancement for array items
-                     // onAddItem={handleAddTimelineItem} // TODO: Implement handler
-                     // onRemoveItem={handleRemoveTimelineItem} // TODO: Implement handler
-                     isSaving={isSaving}
-                   />
-                   {/* Add other timeline form sections if needed */}
-
-                   {error && <p className="text-danger mt-2">{error}</p>}
-                   <div className="mt-3">
-                     <button className="btn btn-success me-2" onClick={handleSave} disabled={isSaving}>
-                       {isSaving ? 'Saving...' : <><i className="fas fa-save me-1"></i> Save Changes</>}
-                     </button>
-                     <button className="btn btn-secondary" onClick={handleCancel} disabled={isSaving}>
-                       Cancel
-                     </button>
-                   </div>
-                 </>
-               ) : (
-                 <>
-                   {/* Original View Content */}
-                   {Array.isArray(properties.timeline) && properties.timeline.length > 0 ? (
-                     <ul className="list-group">
-                       {properties.timeline.map((item, index) => (
-                         <li key={index} className="list-group-item">
-                           <strong>{item.date || 'Date TBD'}:</strong> {item.event || 'Milestone details missing.'}
-                         </li>
-                       ))}
-                     </ul>
-                   ) : (
-                     <p>No timeline information available.</p>
-                   )}
-                 </>
-               )}
-             </div>
-           )}
-
-          {activeTab === 'documents' && (
-             <div>
-               <div className="d-flex justify-content-between align-items-center mb-3">
-                 <h2 className="section-heading mb-0">Documents & Permits</h2>
-                 {/* Removed individual edit button */}
-               </div>
-
-               {editingTabKey === 'documents' ? (
-                 <>
-                   {/* Render the actual DocumentsFormSection */}
-                   <DocumentsFormSection
-                     data={editFormData}
-                     onChange={handleFormChange} // Basic handler, needs enhancement
-                     // onAddDocument={...} // TODO
-                     // onRemoveDocument={...} // TODO
-                     isSaving={isSaving}
-                   />
-                   {/* Add other document form sections if needed */}
-
-                   {error && <p className="text-danger mt-2">{error}</p>}
-                   <div className="mt-3">
-                     <button className="btn btn-success me-2" onClick={handleSave} disabled={isSaving}>
-                       {isSaving ? 'Saving...' : <><i className="fas fa-save me-1"></i> Save Changes</>}
-                     </button>
-                     <button className="btn btn-secondary" onClick={handleCancel} disabled={isSaving}>
-                       Cancel
-                     </button>
-                   </div>
-                 </>
-               ) : (
-                 <>
-                   {/* Original View Content */}
-                   {Array.isArray(properties.documents) && properties.documents.length > 0 ? (
-                     <ul className="list-group">
-                       {properties.documents.map((doc, index) => (
-                         <li key={index} className="list-group-item">
-                           <a href={doc.url || '#'} target="_blank" rel="noopener noreferrer">
-                             {doc.name || 'Unnamed Document'}
-                           </a>
-                           {doc.type && <span className="badge bg-secondary ms-2">{doc.type}</span>}
-                         </li>
-                       ))}
-                     </ul>
-                   ) : (
-                     <p>No documents available.</p>
-                   )}
-                 </>
-               )}
-             </div>
-           )}
-
-          {activeTab === 'environmental' && (
-             <div>
-               <div className="d-flex justify-content-between align-items-center mb-3">
-                 <h2 className="section-heading mb-0">Environmental Impact</h2>
-                 {/* Removed individual edit button */}
-               </div>
-
-               {editingTabKey === 'environmental' ? (
-                 <>
-                   {/* Render the actual EnvironmentalFormSection */}
-                   <EnvironmentalFormSection
-                     data={editFormData}
-                     onChange={handleFormChange}
-                     isSaving={isSaving}
-                   />
-                   {/* Add other environmental form sections if needed */}
-
-                   {error && <p className="text-danger mt-2">{error}</p>}
-                   <div className="mt-3">
-                     <button className="btn btn-success me-2" onClick={handleSave} disabled={isSaving}>
-                       {isSaving ? 'Saving...' : <><i className="fas fa-save me-1"></i> Save Changes</>}
-                     </button>
-                     <button className="btn btn-secondary" onClick={handleCancel} disabled={isSaving}>
-                       Cancel
-                     </button>
-                   </div>
-                 </>
-               ) : (
-                 <>
-                   {/* Original View Content */}
-                   <p>{properties.environmentalImpact?.details || 'Environmental impact details not available.'}</p>
-                 </>
-               )}
-             </div>
-           )}
-
-          {activeTab === 'investment' && (
-             <div>
-               <div className="d-flex justify-content-between align-items-center mb-3">
-                 <h2 className="section-heading mb-0">Investment & Funding</h2>
-                 {/* Removed individual edit button */}
-               </div>
-
-               {editingTabKey === 'investment' ? (
-                 <>
-                   {/* Render the actual InvestmentFormSection */}
-                   <InvestmentFormSection
-                     data={editFormData}
-                     onChange={handleFormChange}
-                     isSaving={isSaving}
-                   />
-                   {/* Add other investment form sections if needed */}
-
-                   {error && <p className="text-danger mt-2">{error}</p>}
-                   <div className="mt-3">
-                     <button className="btn btn-success me-2" onClick={handleSave} disabled={isSaving}>
-                       {isSaving ? 'Saving...' : <><i className="fas fa-save me-1"></i> Save Changes</>}
-                     </button>
-                     <button className="btn btn-secondary" onClick={handleCancel} disabled={isSaving}>
-                       Cancel
-                     </button>
-                   </div>
-                 </>
-               ) : (
-                 <>
-                   {/* Original View Content */}
-                   <p>{properties.fundingDetails || 'Funding details not available.'}</p>
-                   {/* Consider adding more fields like investors, funding rounds etc. */}
-                 </>
-               )}
-             </div>
-           )}
-
-          {activeTab === 'contact' && (
-             <div>
-               <div className="d-flex justify-content-between align-items-center mb-3">
-                 <h2 className="section-heading mb-0">Contact Information</h2>
-                 {/* Removed individual edit button */}
-               </div>
-
-               {editingTabKey === 'contact' ? (
-                 <>
-                   {/* Render the actual ContactFormSection */}
-                   <ContactFormSection
-                     data={editFormData}
-                     onChange={handleFormChange}
-                     isSaving={isSaving}
-                   />
-                   {/* Add other contact form sections if needed */}
-
-                   {error && <p className="text-danger mt-2">{error}</p>}
-                   <div className="mt-3">
-                     <button className="btn btn-success me-2" onClick={handleSave} disabled={isSaving}>
-                       {isSaving ? 'Saving...' : <><i className="fas fa-save me-1"></i> Save Changes</>}
-                     </button>
-                     <button className="btn btn-secondary" onClick={handleCancel} disabled={isSaving}>
-                       Cancel
-                     </button>
-                   </div>
-                 </>
-               ) : (
-                 <>
-                   {/* Original View Content */}
-                   <div className="row">
-                     <div className="col-md-4">
-                       <strong>Contact Person:</strong>
-                       <p>{properties.contactPerson || 'N/A'}</p>
-                     </div>
-                     <div className="col-md-4">
-                       <strong>Email:</strong>
-                       <p>{properties.contactEmail ? <a href={`mailto:${properties.contactEmail}`}>{properties.contactEmail}</a> : 'N/A'}</p>
-                     </div>
-                     <div className="col-md-4">
-                       <strong>Phone:</strong>
-                       <p>{properties.contactPhone || 'N/A'}</p>
-                     </div>
-                   </div>
-                 </>
-               )}
-             </div>
-           )}
-
-        </div> {/* End card-body */}
-      </div> {/* End card */}
-
-    </div> // End container
+          {renderTabContent()}
+        </div>
+      </div>
+    </div>
   );
-}
+};
 
 export default FacilityDetailPage;

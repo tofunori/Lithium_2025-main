@@ -1,12 +1,32 @@
 // Mock data for facilities based on the project's sample data
-export const mockFacilityStats = {
+
+// Interface for the facility statistics
+interface MockFacilityStats {
+  totalFacilities: number;
+  operatingFacilities: number;
+  constructionFacilities: number;
+  plannedFacilities: number;
+}
+
+// Interface for individual facility data
+interface MockFacility {
+  id: string;
+  name: string;
+  company: string;
+  status: 'operating' | 'construction' | 'planned'; // Use a union type for status
+  volume: number;
+  method: string;
+  region: string;
+}
+
+export const mockFacilityStats: MockFacilityStats = {
   totalFacilities: 9,
   operatingFacilities: 5,
   constructionFacilities: 2,
   plannedFacilities: 2
 };
 
-export const mockFacilities = [
+export const mockFacilities: MockFacility[] = [
   {
     id: "licycle-arizona",
     name: "Li-Cycle Arizona Spoke",

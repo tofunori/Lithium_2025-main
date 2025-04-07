@@ -1,35 +1,67 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 
-// Create the context
-const ThemeContext = createContext();
+// Define the context type
+interface ThemeContextType {
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+}
 
-// Create a custom hook for using the theme context
-export const useTheme = () => useContext(ThemeContext);
+// Define Provider props type
+interface ThemeProviderProps {
+  children: ReactNode;
+}
 
-// Create the provider component
-export const ThemeProvider = ({ children }) => {
-  // Initialize state, trying to read from localStorage first
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const storedPreference = localStorage.getItem('darkMode');
-    // Check if preference exists, otherwise default based on system preference (optional)
-    // For simplicity, we'll default to false (light mode) if nothing is stored.
-    return storedPreference ? JSON.parse(storedPreference) : false; 
+// Create the context with type and default value (null)
+const ThemeContext = createContext<ThemeContextType | null>(null);
+
+// Create a custom hook for using the theme context with null check
+export const useTheme = (): ThemeContextType => {
+  const context = useContext(ThemeContext);
+  if (context === null) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
+
+// Create the provider component, typed with React.FC
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  // Initialize state with type, reading from localStorage
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      const storedPreference = localStorage.getItem('darkMode');
+      // Parse stored preference if it exists, otherwise default to false (light mode)
+      return storedPreference ? JSON.parse(storedPreference) : false;
+    } catch (error) {
+      console.error("Error reading darkMode from localStorage", error);
+      return false; // Default to false in case of error (e.g., invalid JSON)
+    }
   });
 
   // Function to toggle dark mode
   const toggleDarkMode = () => {
-    setIsDarkMode(prevMode => !prevMode);
+    // Type the prevMode parameter in the state setter callback
+    setIsDarkMode((prevMode: boolean) => !prevMode);
   };
 
   // Effect to update localStorage when the theme changes
   useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
-    // Optional: You could also add/remove a class from the body here, 
-    // but we plan to do it in MainLayout for better component encapsulation.
+    try {
+      localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+      // Apply class to body for global styling
+      if (isDarkMode) {
+        document.body.classList.add('dark-mode');
+        document.body.classList.remove('light-mode');
+      } else {
+        document.body.classList.add('light-mode');
+        document.body.classList.remove('dark-mode');
+      }
+    } catch (error) {
+      console.error("Error writing darkMode to localStorage", error);
+    }
   }, [isDarkMode]);
 
-  // Provide the state and toggle function to children
-  const value = {
+  // Provide the state and toggle function to children, conforming to ThemeContextType
+  const value: ThemeContextType = {
     isDarkMode,
     toggleDarkMode,
   };
@@ -41,4 +73,5 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
-export default ThemeContext; // Exporting context itself might be useful in some cases
+// Exporting context itself might be useful in some cases, but useTheme hook is preferred
+export default ThemeContext;
