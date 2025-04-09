@@ -6,7 +6,7 @@ export type CanonicalStatus = 'operating' | 'construction' | 'planned' | 'unknow
 // Define the display labels corresponding to the canonical keys
 export const STATUS_LABELS: { [key in CanonicalStatus]: string } = {
   operating: 'Operating',
-  construction: 'Under construction', // Use the required display label
+  construction: 'Construction', // Standardized label
   planned: 'Planned',
   unknown: 'Unknown',
 };
@@ -30,21 +30,17 @@ export const getCanonicalStatus = (statusName: string | undefined | null): Canon
   const lowerCaseStatus = statusName?.trim().toLowerCase();
 
   switch (lowerCaseStatus) {
-    case 'operational': // Match 'Operational' from CSV/DB
+    case 'operating': // Match 'Operating' from DB
       return 'operating';
-    case 'under construction': // Match 'Under Construction' from CSV/DB
+    case 'construction': // Match 'Construction' from DB
       return 'construction';
-    case 'planned': // Match 'Planned' from CSV/DB
-    // Add other potential mappings if needed (e.g., 'pilot' -> 'planned')
-    // case 'planning':
-    // case 'pilot':
+     case 'under construction': // Also map old value if needed during transition
+       return 'construction';
+    case 'planned': // Match 'Planned' from DB
       return 'planned';
-    // Add cases for 'On Hold', 'Cancelled', 'Decommissioned' if they map to specific canonical keys
-    // case 'on hold': return 'unknown'; // Or a specific key if defined
-    // case 'cancelled': return 'unknown';
-    // case 'decommissioned': return 'unknown';
     default:
-      return 'unknown'; // Default for null, undefined, empty, or others
+      // Any other value, including null/undefined/empty or specific ones like 'On Hold', maps to 'unknown'
+      return 'unknown';
   }
 };
 
@@ -88,26 +84,20 @@ export const getCanonicalKeyFromLabel = (label: string | undefined | null): Cano
     }
   }
 
-  // Handle form-specific variations if necessary (add more cases as needed)
-  // This provides flexibility if form values differ slightly from STATUS_LABELS
-  switch (lowerCaseLabel) {
-    case 'operational': // Map form value 'Operational'
-      return 'operating';
-    case 'under construction': // Map form value 'Under Construction'
-      return 'construction';
-    case 'planning': // Map form value 'Planning'
-      return 'planned';
-    // Add mappings for 'On Hold', 'Cancelled', 'Decommissioned' if they need canonical keys
-    // case 'on hold': return 'onHold'; // Example if 'onHold' was a CanonicalStatus
-    // case 'cancelled': return 'cancelled';
-    // case 'decommissioned': return 'decommissioned';
-  }
+   // Handle potential variations if needed (e.g., if form uses different text)
+   switch (lowerCaseLabel) {
+     case 'operational': return 'operating';
+     case 'under construction': return 'construction'; // Handle old label if necessary
+     // Add other mappings if form values might differ
+   }
+
 
   return 'unknown'; // Default if no match found
 };
 
-// Array of canonical statuses for iteration (e.g., filters), excluding 'unknown' if needed
-export const VALID_CANONICAL_STATUSES: CanonicalStatus[] = ['operating', 'construction', 'planned'];
+// Array of canonical statuses for iteration (e.g., filters), including 'unknown'
+// This list should now match the simplified categories in the database.
+export const VALID_CANONICAL_STATUSES: CanonicalStatus[] = ['operating', 'construction', 'planned', 'unknown'];
 
-// Array including 'unknown' if needed elsewhere
+// Array including 'unknown' if needed elsewhere (now same as VALID_CANONICAL_STATUSES)
 export const ALL_CANONICAL_STATUSES: CanonicalStatus[] = ['operating', 'construction', 'planned', 'unknown'];

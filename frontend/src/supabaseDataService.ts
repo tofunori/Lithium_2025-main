@@ -13,10 +13,12 @@ export interface Facility {
   Location: string | null;
   "Operational Status": string | null;
   "Primary Recycling Technology": string | null;
+  technology_category: string | null; // Added standardized technology category
   "Annual Processing Capacity (tonnes/year)": number | null; // Expect number after parsing
   Latitude: number | null; // Expect number after parsing
   Longitude: number | null; // Expect number after parsing
   "Key Sources/Notes": string | null;
+  capacity_tonnes_per_year: number | null; // Added new numeric column
   created_at?: string;
   // Add other potential columns if they exist in your DB and are needed
   website?: string | null;
@@ -58,6 +60,7 @@ export interface FacilityFormData {
   address?: string | null; // Corresponds to DB 'Location'
   status_name?: string | null; // Corresponds to DB 'Operational Status'
   technology_name?: string | null; // Corresponds to DB 'Primary Recycling Technology'
+  technology_category?: string | null; // Corresponds to DB 'technology_category'
   processing_capacity_mt_year?: number | string | null; // Corresponds to DB 'Annual Processing Capacity (tonnes/year)'
   latitude?: number | string | null; // Corresponds to DB 'Latitude'
   longitude?: number | string | null; // Corresponds to DB 'Longitude'
@@ -301,9 +304,15 @@ export const addFacility = async (facilityInput: FacilityFormData): Promise<{ id
       Location: facilityInput.address ?? null,
       "Operational Status": facilityInput.status_name ?? null,
       "Primary Recycling Technology": facilityInput.technology_name ?? null,
+      technology_category: facilityInput.technology_category ?? null, // Add the technology category field
+      // Store capacity/coords as text if DB column is text, otherwise convert to number if DB is numeric
       // Store capacity/coords as text if DB column is text, otherwise convert to number if DB is numeric
       "Annual Processing Capacity (tonnes/year)": facilityInput.processing_capacity_mt_year !== null && facilityInput.processing_capacity_mt_year !== undefined
-          ? String(facilityInput.processing_capacity_mt_year) // Assuming DB column is text
+          ? String(facilityInput.processing_capacity_mt_year) // Keep updating the original text column for now
+          : null,
+      // Also populate the new numeric column
+      capacity_tonnes_per_year: facilityInput.processing_capacity_mt_year !== null && facilityInput.processing_capacity_mt_year !== undefined && !isNaN(Number(facilityInput.processing_capacity_mt_year))
+          ? Number(facilityInput.processing_capacity_mt_year)
           : null,
       Latitude: facilityInput.latitude !== null && facilityInput.latitude !== undefined
           ? String(facilityInput.latitude) // Assuming DB column is text
@@ -369,11 +378,18 @@ export const updateFacility = async (facilityId: string, updatedData: FacilityFo
   if (updatedData.facility_name_site !== undefined) dataToUpdate['Facility Name/Site'] = updatedData.facility_name_site ?? null;
   if (updatedData.address !== undefined) dataToUpdate['Location'] = updatedData.address ?? null;
   if (updatedData.status_name !== undefined) dataToUpdate['Operational Status'] = updatedData.status_name ?? null;
-  if (updatedData.processing_capacity_mt_year !== undefined) dataToUpdate['Annual Processing Capacity (tonnes/year)'] = updatedData.processing_capacity_mt_year ? String(updatedData.processing_capacity_mt_year) : null; // Store as string if DB is text
+  // Update both capacity columns if the form data is provided
+  if (updatedData.processing_capacity_mt_year !== undefined) {
+      dataToUpdate['Annual Processing Capacity (tonnes/year)'] = updatedData.processing_capacity_mt_year ? String(updatedData.processing_capacity_mt_year) : null; // Keep updating text version
+      dataToUpdate['capacity_tonnes_per_year'] = updatedData.processing_capacity_mt_year !== null && !isNaN(Number(updatedData.processing_capacity_mt_year))
+          ? Number(updatedData.processing_capacity_mt_year)
+          : null; // Update numeric version
+  }
   if (updatedData.latitude !== undefined) dataToUpdate['Latitude'] = updatedData.latitude ? String(updatedData.latitude) : null; // Store as string if DB is text
   if (updatedData.longitude !== undefined) dataToUpdate['Longitude'] = updatedData.longitude ? String(updatedData.longitude) : null; // Store as string if DB is text
   if (updatedData.notes !== undefined) dataToUpdate['Key Sources/Notes'] = updatedData.notes ?? null;
   if (updatedData.technology_name !== undefined) dataToUpdate['Primary Recycling Technology'] = updatedData.technology_name ?? null;
+  if (updatedData.technology_category !== undefined) dataToUpdate['technology_category'] = updatedData.technology_category ?? null; // Handle technology_category updates
 
   // Add other mappings as needed
   if (updatedData.website !== undefined) dataToUpdate['website'] = updatedData.website ?? null; // Assuming 'website' column exists
@@ -473,6 +489,41 @@ export const getFacilityStats = async (): Promise<FacilityStats> => {
     console.error("Caught error in getFacilityStats:", error instanceof Error ? error.message : error);
     return { totalFacilities: 0, operatingFacilities: 0, constructionFacilities: 0, plannedFacilities: 0 };
   }
+ };
+
+
+// --- NEW Function to get distinct operational statuses ---
+export const getDistinctOperationalStatuses = async (): Promise<string[]> => {
+    console.log("Attempting to fetch distinct operational statuses from Supabase...");
+    try {
+        // Use a PostgREST function or view if available for better performance,
+        // otherwise, fetch all and process client-side (less efficient for large tables).
+        // For simplicity, fetching all relevant data first:
+        const { data, error } = await supabase
+            .from('facilities')
+            .select('"Operational Status"'); // Select only the status column
+
+        handleSupabaseError(error, 'getDistinctOperationalStatuses');
+
+        if (!data) {
+            console.warn("Supabase returned null data for getDistinctOperationalStatuses query.");
+            return [];
+        }
+
+        // Extract unique, non-null statuses
+        const distinctStatuses = Array.from(
+            new Set(data.map(item => item['Operational Status']).filter(status => status != null))
+        ) as string[]; // Filter out nulls/undefined and assert as string[]
+
+        console.log("Distinct operational statuses found:", distinctStatuses);
+        // Optionally sort the statuses
+        distinctStatuses.sort();
+        return distinctStatuses;
+
+    } catch (error: unknown) {
+        console.error("Caught error in getDistinctOperationalStatuses:", error instanceof Error ? error.message : error);
+        throw error; // Re-throw the error
+    }
 };
 
 

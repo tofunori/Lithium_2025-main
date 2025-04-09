@@ -6,6 +6,7 @@ import {
   getCanonicalStatus,
   getStatusLabel
 } from './statusUtils';
+import { getTechnologyCategory, getTechnologyCategoryColor } from './technologyUtils';
 
 /**
  * Utility functions for chart data processing and initialization
@@ -120,11 +121,15 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
        // console.log(`Facility ${facility.ID} has status '${facility["Operational Status"]}', mapped to 'unknown'. Skipping capacity aggregation.`);
     }
 
-    // Process technology distribution
+    // Process technology distribution using standardized categories instead of raw names
     // Use correct DB column name "Primary Recycling Technology"
     const technologyName = facility["Primary Recycling Technology"] || 'Unknown Technology';
-    technologies[technologyName] = (technologies[technologyName] || 0) + 1;
-
+    
+    // Use the technology_category field if available, otherwise determine it from the technology name
+    const technologyCategory = facility.technology_category || getTechnologyCategory(technologyName);
+    
+    // Count by category rather than individual technology names
+    technologies[technologyCategory] = (technologies[technologyCategory] || 0) + 1;
 
     // Process geographic distribution
     // Use correct DB column name "Location"
@@ -144,7 +149,6 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
         }
     }
     regions[regionName] = (regions[regionName] || 0) + 1;
-
   });
 
   const result: ProcessedChartData = {
@@ -336,9 +340,8 @@ export const createCapacityChartConfig = (capacityByStatus: CapacityByStatus): C
  * @returns {ChartJsConfig} Chart configuration
  */
 export const createTechnologiesChartConfig = (technologies: StringCountMap): ChartJsConfig => {
-  const colors: ChartColors = getChartColors();
   const labels: string[] = Object.keys(technologies);
-
+  
   console.log('Creating technologies chart config with data:', technologies);
   console.log('Technology labels:', labels);
 
@@ -376,6 +379,15 @@ export const createTechnologiesChartConfig = (technologies: StringCountMap): Cha
   }
 
   const dataValues: number[] = Object.values(technologies); // Explicitly type dataValues
+  
+  // Generate background colors based on technology category
+  const backgroundColors = labels.map(category => {
+    const color = getTechnologyCategoryColor(category);
+    return color.replace('rgb', 'rgba').replace(')', ', 0.7)');
+  });
+  
+  // Generate border colors (solid version of background colors)
+  const borderColors = labels.map(category => getTechnologyCategoryColor(category));
 
   return {
     type: 'pie', // Type remains 'pie'
@@ -383,8 +395,8 @@ export const createTechnologiesChartConfig = (technologies: StringCountMap): Cha
       labels: labels,
       datasets: [{
         data: dataValues,
-        backgroundColor: colors.backgroundColor.slice(0, labels.length),
-        borderColor: colors.borderColor.slice(0, labels.length),
+        backgroundColor: backgroundColors,
+        borderColor: borderColors,
         borderWidth: 1
       }]
     },
