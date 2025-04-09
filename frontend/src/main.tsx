@@ -1,7 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext.tsx'; // Import AuthProvider (updated extension)
+import { DndProvider } from 'react-dnd'; // Import DndProvider
+import { HTML5Backend } from 'react-dnd-html5-backend'; // Import the backend
+import { AuthProvider } from './context/AuthContext'; // Import AuthProvider (remove .tsx)
 
 // Import Bootstrap CSS
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -22,10 +24,12 @@ const root = createRoot(container); // Create root using the container
 
 root.render(
   <StrictMode>
-    <BrowserRouter> {/* Add BrowserRouter wrapper */}
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </BrowserRouter>
+    <DndProvider backend={HTML5Backend}> {/* Wrap with DndProvider */}
+      <BrowserRouter>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </BrowserRouter>
+    </DndProvider>
   </StrictMode>,
 );

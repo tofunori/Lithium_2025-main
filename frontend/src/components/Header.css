@@ -41,7 +41,7 @@
 .navbar .container-fluid {
   display: flex; /* Ensure flex behavior */
   align-items: center; /* Vertically align items */
-  gap: 1.5rem; /* Space between nav links block, theme switch, auth status */
+  gap: 2.5rem; /* Increased space between nav links block, theme switch, auth status */
 }
 
 .navbar .nav-link {
@@ -73,30 +73,50 @@
 }
 
 /* Theme Toggle Styles */
+/* Adjust the container for better alignment */
+.form-switch {
+  display: inline-flex; /* Use flex to align input and label */
+  align-items: center; /* Vertically center items */
+  padding-left: 0; /* Override default padding */
+}
+
 .form-switch .form-check-input {
-  background-color: var(--form-switch-bg, #eee);
-  border-color: var(--border-color); /* Use variable */
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
+  cursor: pointer;
+  width: 2.8em; /* Smaller width */
+  height: 1.4em; /* Smaller height */
+  background-color: var(--form-switch-bg, #ccc); /* Lighter grey for off state */
+  border-color: var(--border-color);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(255,255,255,0.8)'/%3e%3c/svg%3e"); /* White handle */
+  background-position: left center;
+  transition: background-position 0.15s ease-in-out, background-color 0.3s ease, border-color 0.3s ease;
+  margin-right: 0.6em; /* Add space between switch and icon */
+  flex-shrink: 0; /* Prevent switch from shrinking */
 }
 
 .form-switch .form-check-input:focus {
   border-color: var(--border-color); /* Use variable */
   box-shadow: 0 0 0 0.25rem var(--form-switch-focus-shadow-color); /* Use variable */
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(255,255,255,0.8)'/%3e%3c/svg%3e"); /* White handle */
 }
 
 .form-switch .form-check-input:checked {
-  background-color: var(--primary-color, #0d6efd);
+  background-color: var(--primary-color, #0d6efd); /* Use primary color for on state */
   border-color: var(--primary-color, #0d6efd);
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e"); /* White handle */
+  background-position: right center;
 }
 
+/* Style the icon within the label */
 .form-switch .form-check-label {
   color: var(--text-color, #212529);
+  margin-bottom: 0; /* Remove default bottom margin if any */
+  /* The parent .form-switch handles alignment */
 }
 
 .form-switch .form-check-label i {
   transition: color 0.3s ease;
+  font-size: 1em; /* Smaller icon to match switch */
+  vertical-align: middle; /* Helps align icon if needed */
 }
 
 /* Responsive Design */

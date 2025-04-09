@@ -1,74 +1,61 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Import Link and useNavigate
-import { useAuth } from '../context/AuthContext'; // Assuming AuthContext.jsx is renamed or doesn't need extension
-import { getFacilities, getFacilitiesByStatus, deleteFacility, FacilityData } from '../firebase'; // Import FacilityData type
-import { User } from 'firebase/auth'; // Import User type
+// frontend/src/pages/FacilitiesPage.tsx
+import React, { useState, useEffect, ChangeEvent, useCallback } from 'react'; // Added useCallback
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+// UPDATED: Import Facility from supabaseDataService
+import { getFacilities, getFacilitiesByStatus, deleteFacility, Facility } from '../supabaseDataService'; // Changed FacilityData to Facility
+// REMOVED: import { User } from 'firebase/auth';
+import {
+  CanonicalStatus,
+  getCanonicalStatus,
+  getStatusLabel,
+  getStatusClass,
+  VALID_CANONICAL_STATUSES
+} from '../utils/statusUtils'; // Import status utilities
 import './FacilitiesPage.css';
 
-// Define possible status values explicitly
-type FacilityStatus = 'all' | 'operating' | 'construction' | 'planned' | 'pilot' | 'unknown';
+// Removed local FacilityStatus type
 
 const FacilitiesPage: React.FC = () => {
-  // Type the user from context
-  const { currentUser }: { currentUser: User | null } = useAuth(); // Renamed user to currentUser to match context provider
-  const [activeFilter, setActiveFilter] = useState<FacilityStatus>('all');
+  // UPDATED: Removed explicit User type annotation
+  const { currentUser } = useAuth();
+  const [activeFilter, setActiveFilter] = useState<CanonicalStatus | 'all'>('all'); // Use CanonicalStatus
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [facilities, setFacilities] = useState<FacilityData[]>([]);
+  const [facilities, setFacilities] = useState<Facility[]>([]); // UPDATED: Use Facility[] type
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null); // Add error state
 
-  useEffect(() => {
-    const fetchFacilities = async (): Promise<void> => {
-      try {
-        setLoading(true);
-        let facilitiesData: FacilityData[];
-
-        if (activeFilter === 'all') {
-          facilitiesData = await getFacilities();
-        } else {
-          // Ensure activeFilter is not 'all' before passing to getFacilitiesByStatus
-          const statusFilter = activeFilter as Exclude<FacilityStatus, 'all'>;
-          facilitiesData = await getFacilitiesByStatus(statusFilter);
-        }
-
-        setFacilities(facilitiesData);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching facilities:", error);
-        setLoading(false);
-      }
-    };
-
-    fetchFacilities();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Fetch only on mount initially
-
-  const handleFilterClick = (filter: FacilityStatus): void => {
-    setActiveFilter(filter);
+  // Centralized fetch function
+  const fetchFacilitiesData = useCallback(async (filter: CanonicalStatus | 'all') => {
     setLoading(true);
-
-    // Re-fetch facilities based on the new filter
-    const fetchFilteredFacilities = async (): Promise<void> => {
-      try {
-        let facilitiesData: FacilityData[];
-
-        if (filter === 'all') {
-          facilitiesData = await getFacilities();
-        } else {
-           // Ensure filter is not 'all' before passing
-           const statusFilter = filter as Exclude<FacilityStatus, 'all'>;
-           facilitiesData = await getFacilitiesByStatus(statusFilter);
-        }
-
-        setFacilities(facilitiesData); // Update state with newly fetched data
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching filtered facilities:", error);
-        setLoading(false);
+    setError(null); // Clear previous errors
+    try {
+      let facilitiesData: Facility[]; // UPDATED: Use Facility[] type
+      if (filter === 'all') {
+        facilitiesData = await getFacilities();
+      } else {
+        // getFacilitiesByStatus now filters on status_name and returns Facility[]
+        facilitiesData = await getFacilitiesByStatus(filter); // Pass canonical status key directly
       }
-    };
+      setFacilities(facilitiesData);
+    } catch (err: any) {
+      console.error("Error fetching facilities:", err);
+      setError(`Failed to load facilities: ${err.message}`); // Set error message
+      setFacilities([]); // Clear facilities on error
+    } finally {
+      setLoading(false);
+    }
+  }, []); // No dependencies, fetch logic is self-contained
 
-    fetchFilteredFacilities();
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchFacilitiesData('all');
+  }, [fetchFacilitiesData]);
+
+  const handleFilterClick = (filter: CanonicalStatus | 'all'): void => { // Use CanonicalStatus
+    setActiveFilter(filter);
+    fetchFacilitiesData(filter); // Fetch data based on the new filter
   };
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -76,63 +63,56 @@ const FacilitiesPage: React.FC = () => {
     // Filtering is now done directly on the `facilities` state in the return statement
   };
 
-  // Filter facilities based on both activeFilter and searchTerm before rendering
+  // Filter facilities based on searchTerm (status filtering is handled by fetch)
   const filteredFacilities = facilities.filter(facility => {
-    // Filter by status (already handled by fetching logic, but good for client-side consistency if needed)
-    // if (activeFilter !== 'all' && facility.status !== activeFilter) {
-    //   return false;
-    // }
-
-    // Filter by search term
     const term = searchTerm.toLowerCase();
-    if (term &&
-        !(facility.properties?.company?.toLowerCase() || '').includes(term) &&
-        !(facility.properties?.address?.toLowerCase() || '').includes(term) && // Assuming location is address
-        !(facility.properties?.technology?.toLowerCase() || '').includes(term) // Search method too
-       ) {
-      return false;
-    }
+    if (!term) return true; // No search term, show all (fetched) facilities
 
-    return true;
+    // Use correct DB column names for searching
+    const company = facility.Company?.toLowerCase() || '';
+    const location = facility.Location?.toLowerCase() || ''; // Use DB Location column
+    // const city = facility.city?.toLowerCase() || ''; // city is not a direct DB column based on logs
+    // const region = facility.region_name?.toLowerCase() || ''; // region_name is not a direct DB column
+    // const country = facility.country_name?.toLowerCase() || ''; // country_name is not a direct DB column
+    const technology = facility["Primary Recycling Technology"]?.toLowerCase() || ''; // Use DB column name
+
+    // Adjust search logic based on available columns
+    return company.includes(term) || location.includes(term) || technology.includes(term);
   });
 
-  // Function to render the status badge
-  const renderStatusBadge = (status: FacilityStatus | undefined | null): JSX.Element => {
-    const validStatus = status || 'unknown'; // Default to 'unknown' if status is null/undefined
+  // Function to render the status badge using statusUtils
+  // Use correct DB column name "Operational Status"
+  const renderStatusBadge = (statusName: string | undefined | null): React.ReactNode => {
+    const canonicalStatus = getCanonicalStatus(statusName); // Pass the status name from the DB column
+    const className = `status-badge ${getStatusClass(canonicalStatus)}`; // Combine base class with specific class
+    const label = getStatusLabel(canonicalStatus);
 
-    const statusClasses: { [key in FacilityStatus]: string } = {
-      operating: 'status-badge status-operating',
-      construction: 'status-badge status-construction',
-      planned: 'status-badge status-planned',
-      pilot: 'status-badge status-pilot',
-      unknown: 'status-badge status-unknown', // Add style for unknown
-      all: '' // 'all' shouldn't be rendered as a badge
-    };
-
-    const statusLabels: { [key in FacilityStatus]: string } = {
-      operating: 'Operating',
-      construction: 'Construction',
-      planned: 'Planned',
-      pilot: 'Pilot',
-      unknown: 'Unknown',
-      all: 'All'
-    };
-
-    return <span className={statusClasses[validStatus]}>{statusLabels[validStatus]}</span>;
+    // Return null or an empty fragment if the status is 'unknown' and shouldn't be displayed,
+    // or handle 'unknown' display specifically if needed. Here, we display it.
+    return <span className={className}>{label}</span>;
   };
 
 
   const handleDelete = async (facilityId: string): Promise<void> => {
-    if (window.confirm('Are you sure you want to delete this facility?')) {
+    if (!facilityId) {
+        console.error("Delete error: facilityId is missing.");
+        alert('Cannot delete facility: ID is missing.');
+        return;
+    }
+    if (window.confirm('Are you sure you want to delete this facility? This action cannot be undone.')) {
       try {
+        // Call Supabase version (no change needed here)
         await deleteFacility(facilityId);
-        // Update the state to remove the deleted facility
-        setFacilities(prevFacilities => prevFacilities.filter(f => f.id !== facilityId));
+        // Update the state to remove the deleted facility immediately
+        // Use uppercase ID for filtering
+        setFacilities(prevFacilities => prevFacilities.filter(f => f.ID !== facilityId));
         console.log(`Facility ${facilityId} deleted successfully.`);
-      } catch (error) {
+        // Optionally show a success message
+        // alert('Facility deleted successfully.');
+      } catch (error: any) {
         console.error(`Error deleting facility ${facilityId}:`, error);
         // Optionally, show an error message to the user
-        alert('Failed to delete facility. Please try again.');
+        alert(`Failed to delete facility: ${error.message || 'Unknown error'}. Please try again.`);
       }
     }
   };
@@ -143,13 +123,22 @@ const FacilitiesPage: React.FC = () => {
         <div className="facilities-list">
           {/* Tabs Container */}
           <div className="tabs-container d-flex flex-wrap justify-content-center mb-3">
-            {(['all', 'operating', 'construction', 'planned', 'pilot'] as FacilityStatus[]).map(filter => (
+            {/* Add 'all' button separately */}
+            <button
+              key="all"
+              className={`tab-button ${activeFilter === 'all' ? 'active' : ''}`}
+              onClick={() => handleFilterClick('all')}
+            >
+              All
+            </button>
+            {/* Map through valid canonical statuses */}
+            {VALID_CANONICAL_STATUSES.map(filterKey => (
                  <button
-                    key={filter}
-                    className={`tab-button ${activeFilter === filter ? 'active' : ''}`}
-                    onClick={() => handleFilterClick(filter)}
+                    key={filterKey}
+                    className={`tab-button ${activeFilter === filterKey ? 'active' : ''}`}
+                    onClick={() => handleFilterClick(filterKey)}
                  >
-                    {filter.charAt(0).toUpperCase() + filter.slice(1)} {/* Capitalize */}
+                    {getStatusLabel(filterKey)} {/* Use utility function for label */}
                  </button>
             ))}
           </div>
@@ -173,6 +162,8 @@ const FacilitiesPage: React.FC = () => {
              )}
           </div>
 
+          {/* Display error message if fetching failed */}
+          {error && <div className="alert alert-danger">{error}</div>}
 
           {/* Column Headers */}
           <div className="facility-list-header d-none d-md-flex mb-2">
@@ -188,34 +179,34 @@ const FacilitiesPage: React.FC = () => {
           <div id="facilitiesList">
             {loading ? (
               <div className="text-center p-5"><i className="fas fa-spinner fa-spin fa-2x"></i></div>
-            ) : filteredFacilities.length === 0 ? (
+            ) : !error && filteredFacilities.length === 0 ? ( // Check for error before showing "No facilities"
               <p className="text-center text-muted mt-4">No facilities found matching your criteria.</p>
             ) : (
               filteredFacilities.map(facility => (
-                <div key={facility.id} className="facility-item card mb-2 shadow-sm"> {/* Use card for better structure */}
-                  <div className="facility-item-content card-body d-md-flex align-items-center"> {/* Flex for alignment */}
+                // Use uppercase ID for key and links
+                <div key={facility.ID} className="facility-item card mb-2 shadow-sm">
+                  <div className="facility-item-content card-body d-md-flex align-items-center">
                     <span className="col-company mb-1 mb-md-0">
-                      <Link to={`/facilities/${facility.id}`} className="fw-bold">{facility.properties?.company || 'N/A'}</Link>
+                      <Link to={`/facilities/${facility.ID}`} className="fw-bold">{facility.Company || 'N/A'}</Link> {/* Use Company */}
                     </span>
-                    <span className="col-location mb-1 mb-md-0 text-muted">{facility.properties?.address || 'N/A'}</span>
-                    <span className="col-volume mb-1 mb-md-0">{facility.properties?.capacity || 'N/A'}</span>
-                    <span className="col-method method-column mb-1 mb-md-0">{facility.properties?.technology || 'N/A'}</span>
+                    <span className="col-location mb-1 mb-md-0 text-muted">{facility.Location || 'N/A'}</span> {/* Use Location */}
+                    <span className="col-volume mb-1 mb-md-0">{facility["Annual Processing Capacity (tonnes/year)"] ?? 'N/A'}</span> {/* Use DB name */}
+                    <span className="col-method method-column mb-1 mb-md-0">{facility["Primary Recycling Technology"] || 'N/A'}</span> {/* Use DB name */}
                     <span className="col-status mb-1 mb-md-0">
-                      {/* Access status via properties */}
-                      {renderStatusBadge(facility.properties?.status as FacilityStatus)}
+                      {renderStatusBadge(facility["Operational Status"])} {/* Use DB name */}
                     </span>
                     {currentUser && (
                         <span className="col-actions actions-column text-end">
                             <button
                                 className="btn btn-sm btn-outline-danger delete-button"
-                                onClick={() => handleDelete(facility.id)}
+                                onClick={() => handleDelete(facility.ID)} // Pass uppercase ID
                                 title="Delete Facility"
                             >
                                 <i className="fas fa-trash-alt"></i>
                             </button>
-                            {/* Add Edit button */}
                              <Link
-                                to={`/facilities/edit/${facility.id}`}
+                                to={`/facilities/${facility.ID}`} // Use uppercase ID
+                                state={{ activeTab: 'overview' }}
                                 className="btn btn-sm btn-outline-primary ms-1"
                                 title="Edit Facility"
                             >

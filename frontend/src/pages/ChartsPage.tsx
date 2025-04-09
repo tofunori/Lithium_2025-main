@@ -1,7 +1,8 @@
+// frontend/src/pages/ChartsPage.tsx
 import React, { useState, useEffect, useRef, FC } from 'react';
 import { Chart, registerables, ChartConfiguration, TooltipItem } from 'chart.js';
-import { getFacilityStats, getFacilities, FacilityStats, FacilityData } from '../firebase'; // Import types
-import { initializeFacilityData } from '../utils/initializeFirebaseData'; // Assuming this is still JS or handles TS implicitly
+// UPDATED: Import Facility from supabaseDataService
+import { getFacilityStats, getFacilities, FacilityStats, Facility } from '../supabaseDataService'; // Changed FacilityData to Facility
 import { mockFacilityStats, mockFacilities } from '../mockData/facilityData'; // Assuming mock data matches types or needs adjustment
 import {
   processFacilityData,
@@ -9,7 +10,7 @@ import {
   createTechnologiesChartConfig,
   createRegionsChartConfig,
   ProcessedChartData, // Import type
-  Facility as ChartUtilsFacility // Import and alias Facility type from chartUtils
+  parseVolume // Import parseVolume
 } from '../utils/chartUtils';
 import './ChartsPage.css';
 
@@ -52,47 +53,27 @@ const ChartsPage: FC = () => {
     setLoading(true);
     setError(null);
 
-    // Initialize facility data if needed
-    try {
-      // Assuming initializeFacilityData is compatible or doesn't need explicit typing here
-      await initializeFacilityData();
-    } catch (initError: unknown) { // Type error as unknown
-      console.warn('Failed to initialize facility data:', initError);
-      // Continue with fetching - we'll fall back to mock data if needed
-    }
-
     try {
       if (useFallback) {
         throw new Error('Using fallback data intentionally');
       }
 
-      // Fetch facility statistics from Firebase
+      // Fetch facility statistics from Supabase (already uses flat structure)
       const statsData: FacilityStats = await getFacilityStats();
       setStats(statsData);
 
-      // Fetch all facilities for chart data
-      const facilitiesData: FacilityData[] = await getFacilities();
+      // Fetch all facilities for chart data from Supabase (now returns Facility[])
+      const facilitiesData: Facility[] = await getFacilities(); // Returns Facility[] from supabaseDataService
 
-      // Map FacilityData[] to ChartUtilsFacility[] before processing
-      const facilitiesForChartUtils: ChartUtilsFacility[] = facilitiesData.map(f => ({
-          // Map fields from FacilityData.properties to ChartUtilsFacility
-          name: f.properties.company || f.id, // Use company or ID as name
-          status: f.properties.status,
-          volume: f.properties.capacity, // Map capacity to volume
-          method: f.properties.technology, // Map technology to method
-          region: f.properties.address, // Map address to region (adjust if a dedicated region field exists)
-          // Add other relevant mappings if needed by processFacilityData
-      }));
-
-
-      // Process data for charts using the mapped data
-      const processedData: ProcessedChartData = processFacilityData(facilitiesForChartUtils);
+      // Pass the correct Facility[] data directly to processFacilityData
+      // The mapping is no longer needed here as chartUtils now expects the correct Facility type
+      const processedData: ProcessedChartData = processFacilityData(facilitiesData);
       console.log('Processed data for charts:', processedData);
       setChartData(processedData);
       setUsingMockData(false);
 
       // Log success for debugging
-      console.log('Successfully loaded data from Firebase');
+      console.log('Successfully loaded data from Supabase');
 
     } catch (fetchError: unknown) { // Type error as unknown
       console.error("Error fetching data:", fetchError);
@@ -103,15 +84,23 @@ const ChartsPage: FC = () => {
         // Assuming mockFacilityStats matches FacilityStats type
         setStats(mockFacilityStats);
 
-        // Map mockFacilities (assuming they match FacilityData structure) to ChartUtilsFacility[]
-         const mockFacilitiesForChartUtils: ChartUtilsFacility[] = mockFacilities.map((f: any) => ({ // Use 'any' for mock data flexibility or define a mock type
-            name: f.company || f.name || f.id || 'Unknown Mock Facility', // Access directly
-            status: f.status, // Access directly
-            volume: f.volume, // Access directly and use correct property name 'volume'
-            method: f.method, // Access directly and use correct property name 'method'
-            region: f.region, // Access directly and use correct property name 'region'
-         }));
-        const processedData = processFacilityData(mockFacilitiesForChartUtils);
+        // Process mock data directly (assuming mockFacilities matches Facility structure or needs adjustment)
+        // If mockFacilities still uses the OLD structure, it needs mapping here.
+        // Assuming mockFacilities needs mapping for demonstration:
+        const mappedMockData = mockFacilities.map((f: any) => ({
+            ID: f.id || 'mock-id',
+            Company: f.properties?.company || 'Mock Company',
+            "Facility Name/Site": 'Mock Site', // Add mock data or map if available
+            Location: f.properties?.address || 'Mock Location',
+            "Operational Status": f.properties?.status || 'Unknown',
+            "Primary Recycling Technology": f.properties?.technology || 'Unknown',
+            "Annual Processing Capacity (tonnes/year)": parseVolume(f.properties?.capacity), // Use parseVolume if mock capacity is string/mixed
+            Latitude: f.properties?.latitude ?? null, // Assuming mock data has these
+            Longitude: f.properties?.longitude ?? null,
+            "Key Sources/Notes": f.properties?.description || 'Mock notes',
+            // Add other necessary fields expected by Facility interface
+        }));
+        const processedData = processFacilityData(mappedMockData as Facility[]); // Process mapped mock data
         setChartData(processedData);
         setUsingMockData(true);
 
@@ -159,7 +148,6 @@ const ChartsPage: FC = () => {
             // Ensure dimensions are numbers
             canvas.width = container.clientWidth || 300; // Provide fallback
             canvas.height = container.clientHeight || 150; // Provide fallback
-            console.log(`Resized canvas to ${canvas.width}x${canvas.height}`);
           }
         }
       });
@@ -189,6 +177,7 @@ const ChartsPage: FC = () => {
 
       return () => clearTimeout(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartData, loading]); // Dependencies: chartData and loading
 
   // Function to destroy all charts (for cleanup)
@@ -220,7 +209,6 @@ const ChartsPage: FC = () => {
          console.warn('Cannot initialize charts: chartData is missing required properties');
          return;
     }
-    console.log('Chart data breakdown:', { capacityByStatus, technologies, regions });
 
     // Initialize capacity chart
     if (capacityCanvasRef.current) {
@@ -229,8 +217,6 @@ const ChartsPage: FC = () => {
         console.error('Failed to get 2D context for capacity chart canvas');
         return;
       }
-      console.log('Capacity canvas element:', capacityCanvasRef.current);
-      console.log('Capacity canvas context:', capacityCtx);
 
       // Destroy existing chart if it exists
       if (capacityChartRef.current) {
@@ -238,11 +224,10 @@ const ChartsPage: FC = () => {
       }
 
       const capacityConfig: ChartConfiguration = createCapacityChartConfig(capacityByStatus);
-      console.log('Capacity chart config:', capacityConfig);
 
       try {
         capacityChartRef.current = new Chart(capacityCtx, capacityConfig);
-        console.log('Capacity chart created successfully:', capacityChartRef.current);
+        console.log('Capacity chart created successfully.'); // Simplified log
       } catch (chartError: unknown) { // Type error as unknown
         console.error('Error creating capacity chart:', chartError);
       }
@@ -257,7 +242,6 @@ const ChartsPage: FC = () => {
         console.error('Failed to get 2D context for technologies chart canvas');
         return;
       }
-      console.log('Technologies canvas element:', technologiesCanvasRef.current);
 
       // Destroy existing chart if it exists
       if (technologiesChartRef.current) {
@@ -265,11 +249,10 @@ const ChartsPage: FC = () => {
       }
 
       const technologiesConfig: ChartConfiguration = createTechnologiesChartConfig(technologies);
-      console.log('Technologies chart config:', technologiesConfig);
 
       try {
         technologiesChartRef.current = new Chart(technologiesCtx, technologiesConfig);
-        console.log('Technologies chart created successfully:', technologiesChartRef.current);
+        console.log('Technologies chart created successfully.'); // Simplified log
       } catch (chartError: unknown) {
         console.error('Error creating technologies chart:', chartError);
       }
@@ -284,7 +267,6 @@ const ChartsPage: FC = () => {
         console.error('Failed to get 2D context for regions chart canvas');
         return;
       }
-      console.log('Regions canvas element:', regionsCanvasRef.current);
 
       // Destroy existing chart if it exists
       if (regionsChartRef.current) {
@@ -292,11 +274,10 @@ const ChartsPage: FC = () => {
       }
 
       const regionsConfig: ChartConfiguration = createRegionsChartConfig(regions);
-      console.log('Regions chart config:', regionsConfig);
 
       try {
         regionsChartRef.current = new Chart(regionsCtx, regionsConfig);
-        console.log('Regions chart created successfully:', regionsChartRef.current);
+        console.log('Regions chart created successfully.'); // Simplified log
       } catch (chartError: unknown) {
         console.error('Error creating regions chart:', chartError);
       }
