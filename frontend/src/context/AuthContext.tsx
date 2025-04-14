@@ -1,12 +1,25 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { User, onAuthStateChanged, getRedirectResult } from 'firebase/auth'; // Import User type
-import { auth } from '../firebase'; // Corrected path to firebase config
+import { Session, User } from '@supabase/supabase-js'; // Import Supabase types
+import { supabase } from '../supabaseClient'; // Import Supabase client
 
-// Define the context type
+// Define the context type using Supabase User
 interface AuthContextType {
   currentUser: User | null;
+  session: Session | null; // Expose session as well, might be useful
   loading: boolean;
-  // Add signIn/signOut methods here if needed in the future
+  signUp: (email: string, password: string) => Promise<{
+    error: Error | null;
+    data: any | null;
+  }>;
+  signIn: (email: string, password: string) => Promise<{
+    error: Error | null;
+    data: any | null;
+  }>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{
+    error: Error | null;
+    data: any | null;
+  }>;
 }
 
 // Define Provider props type
@@ -28,49 +41,101 @@ export function useAuth() {
 
 // Type AuthProvider component
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  // Type useState hooks
+  // Type useState hooks using Supabase types
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Type useEffect for auth state changes
+  // Use Supabase's onAuthStateChange
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => { // Type user parameter
-      setCurrentUser(user);
-      setLoading(false);
+    // Immediately try to get the current session to set the initial state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setCurrentUser(session?.user ?? null);
+      setLoading(false); // Initial load finished
+    });
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setCurrentUser(session?.user ?? null);
+      // Set loading to false if it wasn't already, e.g., after login/logout
+      if (loading) setLoading(false);
     });
 
     // Cleanup subscription on unmount
-    return unsubscribe;
-  }, []); // Dependency array is empty as 'auth' instance is stable
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [loading]); // Rerun effect if loading state changes (though primarily runs once)
 
-  // Handle redirect result (kept from original code)
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) { // Optional chaining for safety
-          // User signed in via redirect
-          console.log("Redirect login successful", result.user);
-          // Note: currentUser state is already managed by onAuthStateChanged listener
-        }
-      })
-      .catch((error) => {
-        console.error("Error handling redirect result:", error);
+  // Sign up function
+  const signUp = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
       });
-  }, []); // Empty dependency array, runs once on mount
+      return { data, error };
+    } catch (error) {
+      console.error('Error signing up:', error);
+      return { data: null, error: error as Error };
+    }
+  };
+
+  // Sign in function
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('Error signing in:', error);
+      return { data: null, error: error as Error };
+    }
+  };
+
+  // Sign out function
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  // Reset password function
+  const resetPassword = async (email: string) => {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      return { data: null, error: error as Error };
+    }
+  };
 
   // Context value conforming to AuthContextType
   const value: AuthContextType = {
     currentUser,
+    session, // Provide session
     loading,
+    signUp,
+    signIn,
+    signOut,
+    resetPassword,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {/* Render children only when not loading */}
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
 
-// Keeping original default export style if needed, though named exports are common.
+// Keeping original default export style if needed
 export default AuthContext;

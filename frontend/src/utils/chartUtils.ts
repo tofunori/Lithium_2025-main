@@ -1,19 +1,18 @@
+// frontend/src/utils/chartUtils.ts
 import { ChartConfiguration, ChartData, ChartOptions, TooltipItem } from 'chart.js';
+import { Facility } from '../supabaseDataService'; // Import the correct Facility interface
+import {
+  CanonicalStatus,
+  getCanonicalStatus,
+  getStatusLabel
+} from './statusUtils';
+import { getTechnologyCategory, getTechnologyCategoryColor } from './technologyUtils';
 
 /**
  * Utility functions for chart data processing and initialization
  */
 
-// Define interfaces for data structures
-export interface Facility {
-  name: string;
-  status?: string; // Make status optional as the code checks for its existence
-  volume?: string | number; // Allow string or number, as it's converted later
-  method?: string;
-  region?: string;
-  // Add other potential properties if known, otherwise keep it flexible
-  [key: string]: any; // Allow other properties
-}
+// REMOVED internal Facility interface definition
 
 interface CapacityByStatus {
   operating: number;
@@ -39,12 +38,13 @@ interface ChartColors {
 
 // Type the function parameters and return values
 /**
- * Parses a volume string (e.g., "20,000 tonnes per year", "Unknown", "40,000+") into a number.
+ * Parses a volume string or number (e.g., "20,000 tonnes per year", 18000, "Unknown", "40,000+") into a number.
  * Returns 0 for non-numeric or unparseable values.
- * @param volumeInput - The volume value (string or number)
+ * @param volumeInput - The volume value (string or number or undefined/null)
  * @returns The parsed volume as a number, or 0 if invalid.
  */
-const parseVolume = (volumeInput: string | number | undefined | null): number => {
+// Export the function
+export const parseVolume = (volumeInput: string | number | undefined | null): number => {
   if (typeof volumeInput === 'number') {
     return isNaN(volumeInput) ? 0 : volumeInput;
   }
@@ -74,7 +74,7 @@ const parseVolume = (volumeInput: string | number | undefined | null): number =>
 
 /**
  * Process facility data for charts
- * @param {Facility[]} facilitiesData - Array of facility objects
+ * @param {Facility[]} facilitiesData - Array of facility objects matching the ChartUtilsFacility interface
  * @returns {ProcessedChartData} Processed data for charts
  */
 export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartData => {
@@ -87,7 +87,7 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
     };
   }
 
-  console.log('Processing facility data:', facilitiesData);
+  console.log('Processing facility data for charts:', facilitiesData);
 
   // Initialize with types
   const capacityByStatus: CapacityByStatus = {
@@ -99,56 +99,57 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
   const technologies: StringCountMap = {};
   const regions: StringCountMap = {};
 
+  // Use the imported Facility interface
   facilitiesData.forEach((facility: Facility) => {
-    // Process capacity by status
-    if (facility.status) {
-      const status: string = facility.status.toLowerCase();
-      console.log(`Processing facility ${facility.name} with status: ${status}, volume: ${facility.volume}`);
+    // Use correct DB column name "Operational Status"
+    const canonicalStatus = getCanonicalStatus(facility["Operational Status"]);
+    // console.log(`Processing facility ${facility.ID} with raw status: ${facility["Operational Status"]}, canonical: ${canonicalStatus}, volume: ${facility["Annual Processing Capacity (tonnes/year)"]}`);
 
-      const volume: number = parseVolume(facility.volume); // Use helper to parse volume
-      if (!isNaN(volume)) {
-        // Map status to one of our three categories if it doesn't match exactly
-        let statusKey: string = status;
-        if (status.includes('operat')) {
-          statusKey = 'operating';
-        } else if (status.includes('construct')) {
-          statusKey = 'construction';
-        } else if (status.includes('plan')) {
-          statusKey = 'planned';
-        }
-
-        // Initialize the category if it doesn't exist (though already initialized above)
-        if (capacityByStatus[statusKey] === undefined) {
-           capacityByStatus[statusKey] = 0;
-        }
-
-        capacityByStatus[statusKey] += volume;
-        console.log(`Added ${volume} to ${statusKey}, new total: ${capacityByStatus[statusKey]}`);
+    // Only aggregate capacity for known, non-'unknown' statuses
+    if (canonicalStatus !== 'unknown') {
+      // Use correct DB column name "Annual Processing Capacity (tonnes/year)"
+      // Note: getFacilities already parses this to number | null
+      const volume: number = facility["Annual Processing Capacity (tonnes/year)"] ?? 0;
+      if (volume > 0) {
+         capacityByStatus[canonicalStatus] += volume;
+         // Add detailed log for aggregation step
+         console.log(`[chartUtils] Aggregating: Status=${canonicalStatus}, Volume=${volume}. Current totals: operating=${capacityByStatus.operating}, construction=${capacityByStatus.construction}, planned=${capacityByStatus.planned}`);
       } else {
-        console.warn(`Invalid volume for facility ${facility.name}: ${facility.volume}`);
+         // console.log(`Facility ${facility.ID} has zero or invalid volume: ${facility["Annual Processing Capacity (tonnes/year)"]}`);
       }
     } else {
-      console.warn(`Facility missing status: ${facility.name}`);
+       // console.log(`Facility ${facility.ID} has status '${facility["Operational Status"]}', mapped to 'unknown'. Skipping capacity aggregation.`);
     }
 
-    // Process technology distribution
-    if (facility.method) {
-      technologies[facility.method] = (technologies[facility.method] || 0) + 1;
-    }
+    // Process technology distribution using standardized categories instead of raw names
+    // Use correct DB column name "Primary Recycling Technology"
+    const technologyName = facility["Primary Recycling Technology"] || 'Unknown Technology';
+    
+    // Use the technology_category field if available, otherwise determine it from the technology name
+    const technologyCategory = facility.technology_category || getTechnologyCategory(technologyName);
+    
+    // Count by category rather than individual technology names
+    technologies[technologyCategory] = (technologies[technologyCategory] || 0) + 1;
 
     // Process geographic distribution
-    if (facility.region) {
-      regions[facility.region] = (regions[facility.region] || 0) + 1;
+    // Use correct DB column name "Location"
+    // Basic region extraction (e.g., taking state/province if available) - adjust as needed
+    let regionName = 'Unknown Region';
+    if (facility.Location) {
+        const parts = facility.Location.split(',').map(p => p.trim());
+        // Attempt to get state/province (often the second to last part) or country (last part)
+        if (parts.length >= 2) {
+            regionName = parts[parts.length - 2]; // Assuming State/Province is second to last
+            // Basic check if it looks like a country instead (e.g., USA, Canada)
+            if (regionName.length <= 3 && regionName === regionName.toUpperCase()) {
+                 regionName = parts[parts.length - 1]; // Fallback to country if state looks like country code
+            }
+        } else if (parts.length === 1) {
+            regionName = parts[0]; // Use the whole location if only one part
+        }
     }
+    regions[regionName] = (regions[regionName] || 0) + 1;
   });
-
-  // Ensure all required status categories exist (already done by initialization type)
-  // const requiredStatuses: string[] = ['operating', 'construction', 'planned'];
-  // requiredStatuses.forEach(status => {
-  //   if (capacityByStatus[status] === undefined) {
-  //     capacityByStatus[status] = 0;
-  //   }
-  // });
 
   const result: ProcessedChartData = {
     capacityByStatus,
@@ -207,15 +208,45 @@ export const createCapacityChartConfig = (capacityByStatus: CapacityByStatus): C
 
   console.log('Capacity values:', { operatingValue, constructionValue, plannedValue });
 
+  // Define standard colors matching HomePage
+  const standardColors = {
+    operating: 'rgba(76, 175, 80, 0.7)', // Green
+    construction: 'rgba(255, 193, 7, 0.7)', // Amber
+    planned: 'rgba(33, 150, 243, 0.7)', // Blue
+    unknown: 'rgba(108, 117, 125, 0.7)' // Grey - not used in this chart currently
+  };
+  const standardBorderColors = {
+    operating: 'rgb(76, 175, 80)',
+    construction: 'rgb(255, 193, 7)',
+    planned: 'rgb(33, 150, 243)',
+    unknown: 'rgb(108, 117, 125)'
+  };
+
+  // Get labels using utility function for consistency
+  const chartLabels = [
+      getStatusLabel('operating'),
+      getStatusLabel('construction'), // Will be "Under construction"
+      getStatusLabel('planned')
+  ];
+
   return {
-    type: 'bar', // Type remains 'bar'
+    type: 'bar',
     data: {
-      labels: ['Operating', 'Under Construction', 'Planned'],
+      labels: chartLabels, // Use standardized labels
       datasets: [{
         label: 'Processing Capacity (tonnes/year)',
         data: [operatingValue, constructionValue, plannedValue],
-        backgroundColor: colors.backgroundColor.slice(0, 3),
-        borderColor: colors.borderColor.slice(0, 3),
+        // Use standard colors in the correct order
+        backgroundColor: [
+          standardColors.operating,
+          standardColors.construction,
+          standardColors.planned
+        ],
+        borderColor: [
+          standardBorderColors.operating,
+          standardBorderColors.construction,
+          standardBorderColors.planned
+        ],
         borderWidth: 1
       }]
     },
@@ -239,6 +270,56 @@ export const createCapacityChartConfig = (capacityByStatus: CapacityByStatus): C
       },
       scales: {
         y: {
+          beginAtZero: true, // Restore linear scale starting at zero
+          // type: 'logarithmic', // Revert from logarithmic
+          title: {
+            display: true,
+            text: 'Tonnes per Year'
+          }
+        }
+      }
+    }
+  };
+
+  // Define the config object
+  const config: ChartJsConfig = {
+    type: 'bar' as const, // Use 'as const' to assert the literal type 'bar'
+    data: {
+      labels: chartLabels,
+      datasets: [{
+        label: 'Processing Capacity (tonnes/year)',
+        data: [operatingValue, constructionValue, plannedValue],
+        backgroundColor: [
+          standardColors.operating,
+          standardColors.construction,
+          standardColors.planned
+        ],
+        borderColor: [
+          standardBorderColors.operating,
+          standardBorderColors.construction,
+          standardBorderColors.planned
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context: TooltipItem<'bar'>): string {
+              const value = typeof context.raw === 'number' ? context.raw : 0;
+              return `${context.dataset.label}: ${value.toLocaleString()} tonnes`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
           beginAtZero: true,
           title: {
             display: true,
@@ -248,6 +329,9 @@ export const createCapacityChartConfig = (capacityByStatus: CapacityByStatus): C
       }
     }
   };
+  // REMOVED final console.log
+
+  return config;
 };
 
 /**
@@ -256,9 +340,8 @@ export const createCapacityChartConfig = (capacityByStatus: CapacityByStatus): C
  * @returns {ChartJsConfig} Chart configuration
  */
 export const createTechnologiesChartConfig = (technologies: StringCountMap): ChartJsConfig => {
-  const colors: ChartColors = getChartColors();
   const labels: string[] = Object.keys(technologies);
-
+  
   console.log('Creating technologies chart config with data:', technologies);
   console.log('Technology labels:', labels);
 
@@ -296,6 +379,15 @@ export const createTechnologiesChartConfig = (technologies: StringCountMap): Cha
   }
 
   const dataValues: number[] = Object.values(technologies); // Explicitly type dataValues
+  
+  // Generate background colors based on technology category
+  const backgroundColors = labels.map(category => {
+    const color = getTechnologyCategoryColor(category);
+    return color.replace('rgb', 'rgba').replace(')', ', 0.7)');
+  });
+  
+  // Generate border colors (solid version of background colors)
+  const borderColors = labels.map(category => getTechnologyCategoryColor(category));
 
   return {
     type: 'pie', // Type remains 'pie'
@@ -303,8 +395,8 @@ export const createTechnologiesChartConfig = (technologies: StringCountMap): Cha
       labels: labels,
       datasets: [{
         data: dataValues,
-        backgroundColor: colors.backgroundColor.slice(0, labels.length),
-        borderColor: colors.borderColor.slice(0, labels.length),
+        backgroundColor: backgroundColors,
+        borderColor: borderColors,
         borderWidth: 1
       }]
     },

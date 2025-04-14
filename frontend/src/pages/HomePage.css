@@ -9,55 +9,93 @@
     --subtle-shadow: 0 2px 4px rgba(0, 0, 0, 0.075);
     --card-border-radius: 8px;
     --legend-bg: rgba(255, 255, 255, 0.95);
-    --map-bg: #ffffff; /* Explicit map background */
-    --primary-color: #0d6efd; /* Added for switch */
-    --form-switch-bg: #eee; /* Default switch background */
-    --light-bg: #f8f9fa; /* Standard light background */
+    --map-bg: #ffffff;
+    --primary-color: #0d6efd;
+    --form-switch-bg: #eee;
+    --light-bg: #f8f9fa;
+    --sidebar-bg: #f8f9fa; /* Background for the new sidebar */
+    --sidebar-width: 240px; /* Reduced width of the sidebar */
 }
 
-/* Dashboard container */
-.dashboard-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 25px;
-    width: 100%;
+/* New Layout Styles */
+.home-page-container {
+    display: flex;
+    height: 80vh; /* Adjust overall height as needed, maybe calc(100vh - header_height) */
+    gap: 15px; /* Space between map and sidebar */
+    padding: 15px; /* Padding around the whole container */
+    box-sizing: border-box;
 }
 
-/* Map Styles */
-.map-container {
-    height: 70vh; /* Adjusted height */
+.map-area {
+    flex: 1; /* Map takes remaining space */
+    height: 100%;
     border-radius: var(--card-border-radius);
     overflow: hidden;
     box-shadow: var(--subtle-shadow);
-    position: relative; /* Needed for legend positioning */
     border: 1px solid var(--border-color);
-    background-color: var(--map-bg); 
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    background-color: var(--map-bg);
+    /* Removed transition from map area */
+    /* transition: background-color 0.3s ease, border-color 0.3s ease; */
+}
+
+.map-sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0; /* Prevent sidebar from shrinking */
+    height: 100%;
+    overflow-y: auto; /* Allow scrolling if content exceeds height */
+    /* Ensure sidebar container itself has no visual styling */
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0; /* No padding on the container */
+    box-sizing: border-box;
+    transition: none !important;
 }
 
 #map {
     height: 100%;
-    width: 100%; /* Ensure map takes full width of container */
-    line-height: normal; /* Prevent body line-height from affecting map tiles */
+    width: 100%;
+    line-height: normal;
 }
 
-/* Legend styles */
-.map-container .legend { /* Increased specificity */
-    position: absolute;
-    bottom: 15px;
-    right: 15px;
-    z-index: 1000; /* Ensure legend is above map tiles */
+/* Updated Legend styles (now inside sidebar) */
+.map-sidebar .legend {
+    /* Remove absolute positioning */
+    /* position: absolute; */
+    /* bottom: 30px; */
+    /* right: 15px; */
+    /* z-index: 1000; */ /* No longer needed */
+
+    /* Apply the frame styling directly to the legend */
     background-color: var(--legend-bg);
-    padding: 12px 15px;
-    border-radius: var(--card-border-radius);
-    box-shadow: var(--subtle-shadow);
-    border: 1px solid var(--border-color);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-    display: block; /* Ensure legend renders */
+    padding: 15px; /* Use the padding originally intended for the sidebar */
+    border-radius: var(--card-border-radius); /* Use the sidebar's intended radius */
+    box-shadow: var(--subtle-shadow); /* Use the sidebar's intended shadow */
+    border: 1px solid var(--border-color); /* Use the sidebar's intended border */
+    width: 100%; /* Fill the sidebar container */
+    box-sizing: border-box;
 }
 
+/* Removed hover rule */
+
+/* Force disable transitions/transforms and apply frame styles */
+.map-sidebar .legend {
+    background-color: var(--legend-bg);
+    padding: 15px; /* Use sidebar padding */
+    border-radius: var(--card-border-radius); /* Use sidebar radius */
+    box-shadow: var(--subtle-shadow); /* Use sidebar shadow */
+    border: 1px solid var(--border-color); /* Use sidebar border */
+    width: 100%;
+    box-sizing: border-box;
+    transition: none !important;
+    transform: none !important;
+    margin: 0;
+}
+
+
+/* Styles for elements within the legend remain largely the same */
 .legend h6 {
-    margin-bottom: 8px;
+    margin-bottom: 10px; /* Slightly more space */
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-color); 
@@ -111,7 +149,8 @@
 .legend hr {
     margin: 10px 0; /* Keep original margin */
     border-top: 1px solid var(--border-color);
-    transition: border-color 0.3s ease;
+    /* Removed transition from hr */
+    /* transition: border-color 0.3s ease; */
 }
 
 /* Ensure Bootstrap grid classes work if Bootstrap CSS isn't loaded globally */
@@ -199,3 +238,6 @@
   text-decoration: none;
   color: #0a58ca; /* Darker blue on hover */
 }
+
+/* Removed custom CSS for technology filter container/select,
+   relying on react-bootstrap Form.Select component now */

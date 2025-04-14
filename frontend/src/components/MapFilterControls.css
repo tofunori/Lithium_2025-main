@@ -1,0 +1,96 @@
+.map-filter-controls {
+  background-color: var(--card-bg);
+  padding: 0.75rem 1rem; /* Adjust padding */
+  border-radius: var(--card-border-radius);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.map-filter-controls .card-body {
+  padding: 0.5rem; /* Reduce padding inside card body */
+}
+
+.map-filter-controls .form-label {
+  font-size: 0.8rem; /* Smaller labels */
+  font-weight: 500;
+  color: var(--text-muted-color);
+  margin-bottom: 0.25rem;
+}
+
+/* Styling for react-select component */
+.map-filter-controls .react-select__control {
+  min-height: 31px; /* Match input-group-sm height */
+  height: 31px;
+  font-size: 0.875rem; /* Match input-group-sm font size */
+  border-color: var(--border-color);
+  background-color: var(--input-bg);
+  box-shadow: none; /* Remove default focus shadow if desired */
+  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+.map-filter-controls .react-select__control--is-focused {
+  border-color: #86b7fe; /* Bootstrap focus color */
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); /* Bootstrap focus shadow */
+}
+
+.map-filter-controls .react-select__value-container {
+  padding: 0 8px;
+}
+
+.map-filter-controls .react-select__placeholder {
+  color: var(--text-muted-color);
+}
+
+.map-filter-controls .react-select__indicator-separator {
+  background-color: var(--border-color);
+}
+
+.map-filter-controls .react-select__indicator svg {
+  fill: var(--text-muted-color);
+}
+
+.map-filter-controls .react-select__multi-value {
+  background-color: var(--primary-light); /* Lighter primary color for tags */
+  color: var(--primary-dark); /* Darker text for contrast */
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.map-filter-controls .react-select__multi-value__label {
+  padding: 2px 6px;
+}
+
+.map-filter-controls .react-select__multi-value__remove {
+  color: var(--primary-dark);
+  border-radius: 0 4px 4px 0;
+}
+.map-filter-controls .react-select__multi-value__remove:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.map-filter-controls .react-select__menu {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color-light);
+  box-shadow: var(--subtle-shadow);
+  font-size: 0.875rem;
+  z-index: 1050; /* Ensure dropdown is above map controls */
+}
+
+.map-filter-controls .react-select__option {
+  color: var(--text-color);
+}
+
+.map-filter-controls .react-select__option--is-focused {
+  background-color: var(--primary-light);
+}
+
+.map-filter-controls .react-select__option--is-selected {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* Adjust input group for capacity */
+.map-filter-controls .input-group-sm .form-control {
+  font-size: 0.875rem; /* Ensure consistent size */
+}

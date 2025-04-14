@@ -1,5 +1,7 @@
+// frontend/src/components/ImageUploader.tsx
 import React, { useState, useCallback, ChangeEvent } from 'react';
-import { uploadFacilityImage } from '../firebase'; // Import the upload function
+// UPDATED: Import from supabaseDataService
+import { uploadFacilityImage } from '../supabaseDataService';
 
 // Define the interface for the component props
 interface ImageUploaderProps {
@@ -41,13 +43,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ facilityId, onUploadCompl
         continue;
       }
 
-      // Upload to Firebase Storage
+      // Upload using the imported Supabase version of uploadFacilityImage
       try {
-        // Assuming uploadFacilityImage returns a Promise<string>
+        // Assuming uploadFacilityImage returns a Promise<string> (the public URL)
         const downloadURL: string = await uploadFacilityImage(facilityId, file);
         uploadedUrls.push(downloadURL); // Store the actual Storage URL
       } catch (error) {
-        // Error handling remains largely the same, but consider more specific error types if available
+        // Error handling remains largely the same
         console.error(`Failed to upload file: ${file.name}. Error:`, error); // Log the actual error
         alert(`Failed to upload file: ${file.name}. See console for details.`);
         // Optionally decide if you want to stop processing remaining files

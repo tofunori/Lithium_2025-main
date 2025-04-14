@@ -1,36 +1,32 @@
-import React, { useState } from 'react'; // Keep useState for modal
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext'; // Import useTheme hook
-import { useAuth } from '../context/AuthContext'; // Removed .tsx extension
-import { signOut } from 'firebase/auth'; // Only need signOut now
-import { auth } from '../firebase';
-import LoginModal from './LoginModal'; // Removed .tsx extension
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import LoginModal from './LoginModal';
 import './Header.css';
 
 const Header: React.FC = () => {
-  const { currentUser } = useAuth();
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false); // State for modal
+  const { currentUser, signOut } = useAuth(); // Updated to use signOut from context
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
 
   const openLoginModal = (): void => setIsLoginModalOpen(true);
   const closeLoginModal = (): void => setIsLoginModalOpen(false);
 
   const handleSignOut = async (): Promise<void> => {
     try {
-      await signOut(auth);
+      await signOut();
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("Unexpected error during sign out:", error);
     }
   };
 
   const location = useLocation();
-  const { isDarkMode, toggleDarkMode } = useTheme(); // Get theme state and toggle function from context
+  const { isDarkMode, toggleDarkMode } = useTheme();
 
-  // Set active class for navigation links
   const isActive = (path: string): string => {
     return location.pathname === path ? 'active' : '';
   };
 
-  // Return the Header JSX wrapped in a Fragment, and include the LoginModal
   return (
     <>
       <div className="dashboard-header">
@@ -59,29 +55,25 @@ const Header: React.FC = () => {
                     <Link className={`nav-link ${isActive('/about')}`} to="/about">About</Link>
                   </li>
                 </ul>
-                {/* Theme Toggle Switch */}
                 <div className="form-check form-switch me-3">
                   <input
                     className="form-check-input"
                     type="checkbox"
                     role="switch"
                     id="themeSwitch"
-                    checked={isDarkMode}  // Use context state
-                    onChange={toggleDarkMode} // Use context toggle function
+                    checked={isDarkMode}
+                    onChange={toggleDarkMode}
                   />
                   <label className="form-check-label" htmlFor="themeSwitch">
-                    <i className="fas fa-moon"></i>
+                    <i className={`fas ${isDarkMode ? 'fa-moon' : 'fa-sun'}`}></i>
                   </label>
                 </div>
-                {/* Auth Status */}
                 <div id="authStatus" className="d-flex align-items-center">
                   {currentUser ? (
                     <>
-                      {/* <span className="me-2">{currentUser.email}</span> */} {/* Removed email display */}
                       <button className="btn btn-outline-secondary btn-sm" onClick={handleSignOut}>Logout</button>
                     </>
                   ) : (
-                    // Button to open the modal
                     <button className="btn btn-outline-primary btn-sm" onClick={openLoginModal}>Login</button>
                   )}
                 </div>
@@ -90,7 +82,6 @@ const Header: React.FC = () => {
           </div>
         </div>
       </div>
-      {/* Render the modal */}
       <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
     </>
   );
