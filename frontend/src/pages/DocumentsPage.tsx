@@ -1,5 +1,5 @@
 // frontend/src/pages/DocumentsPage.tsx
-import React, { useState, useEffect, ChangeEvent, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, ChangeEvent, useCallback, useMemo, useRef, JSX } from 'react'; // Explicitly import JSX
 import { Modal, Button } from 'react-bootstrap';
 import { useDrag, useDrop, DropTargetMonitor } from 'react-dnd'; // Import useDrag
 import { ItemTypes } from '../dndItemTypes'; // Import item types
@@ -256,9 +256,17 @@ const DocumentsPage: React.FC = () => {
   };
 
   // Filter items for the *current view* based on search term (client-side)
-  const filteredCurrentItems = useMemo(() => currentItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ), [currentItems, searchTerm]);
+  const filteredCurrentItems = useMemo(() => {
+      const filtered = currentItems.filter(item =>
+          item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      // Debug: Log the full path of each item shown in the current folder
+      console.log("[DocumentsPage][DEBUG] Current folder:", currentPath);
+      filtered.forEach(item => {
+          console.log("[DocumentsPage][DEBUG] Item in current folder:", { name: item.name, path: item.path, type: item.type });
+      });
+      return filtered;
+  }, [currentItems, searchTerm, currentPath]);
 
   // Handle navigation (clicking breadcrumbs or folders)
   const handleNavigate = (newPath: string): void => {
@@ -280,46 +288,53 @@ const DocumentsPage: React.FC = () => {
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
+    // Prevent uploads to the root (no folder selected)
+    if (!currentPath || currentPath.trim() === '') {
+      setError("Please select or create a folder before uploading files. Uploads to the root are not allowed.");
+      e.target.value = '';
+      return;
+    }
+
     const file = e.target.files[0];
     setUploadProgress(0); // Start progress
     setError(null);
 
     try {
-      setLoadingItems(true); // Use setLoadingItems
-      // Create a path within the current folder
-      const timestamp = new Date().getTime();
-      // Prepend currentPath (which should end in '/') if not in root
-      const path = `${currentPath}${timestamp}_${file.name}`;
-      console.log(`Uploading to path: ${path}`);
+        setLoadingItems(true); // Use setLoadingItems
+        // Create a path within the current folder
+        const timestamp = new Date().getTime();
+        // Prepend currentPath (which should end in '/') if not in root
+        const path = `${currentPath}${timestamp}_${file.name}`;
+        console.log(`Uploading to path: ${path}`);
 
-      // Upload the file to Supabase Storage
-      const result = await uploadFile(documentsBucket, path, file);
-      console.log(`File uploaded successfully to path: ${result.path}`);
+        // Upload the file to Supabase Storage
+        const result = await uploadFile(documentsBucket, path, file);
+        console.log(`File uploaded successfully to path: ${result.path}`);
 
-      setUploadProgress(100); // Complete progress
+        setUploadProgress(100); // Complete progress
 
-      // Refetch items for the current path after successful upload
-      await fetchCurrentItems(currentPath);
-      // OPTIONAL: Consider refetching the tree if uploads might create new implicit folders
-      // await fetchFolderTree(); // Uncomment if needed, but might be slow
+        // Refetch items for the current path after successful upload
+        await fetchCurrentItems(currentPath);
+        // OPTIONAL: Consider refetching the tree if uploads might create new implicit folders
+        // await fetchFolderTree(); // Uncomment if needed, but might be slow
 
-      // Show success message using state
-      const successMsg = `File "${file.name}" uploaded successfully to ${currentPath || 'root'}.`;
-      setActionSuccessMessage(successMsg); // Use renamed state setter
-      // Clear the message after 5 seconds
-      setTimeout(() => setActionSuccessMessage(null), 5000); // Use renamed state setter
+        // Show success message using state
+        const successMsg = `File "${file.name}" uploaded successfully to ${currentPath || 'root'}.`;
+        setActionSuccessMessage(successMsg); // Use renamed state setter
+        // Clear the message after 5 seconds
+        setTimeout(() => setActionSuccessMessage(null), 5000); // Use renamed state setter
 
     } catch (uploadError) {
-      console.error("Error uploading file:", uploadError);
-      setError(`Failed to upload ${file.name}: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
-      setUploadProgress(null);
+        console.error("Error uploading file:", uploadError);
+        setError(`Failed to upload ${file.name}: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+        setUploadProgress(null);
     } finally {
-      setLoadingItems(false); // Use setLoadingItems
-      e.target.value = ''; // Clear input
-      // Reset progress after a short delay to show completion
-      setTimeout(() => setUploadProgress(null), 1500);
-      }
-  };
+        setLoadingItems(false); // Use setLoadingItems
+        e.target.value = ''; // Clear input
+        // Reset progress after a short delay to show completion
+        setTimeout(() => setUploadProgress(null), 1500);
+        }
+    };
 
   // --- File Delete Confirmation Logic ---
   const openDeleteConfirm = (item: StorageItem) => {

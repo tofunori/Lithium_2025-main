@@ -1095,6 +1095,7 @@ export const renameFolder = async (bucket: string, oldPathPrefix: string, newPat
 
         // 2. Filter items that are within the old folder path
         const itemsToProcess = allItems.filter(item => item.path.startsWith(oldPrefix));
+        console.log(`[Rename][DEBUG] After filtering, itemsToProcess for oldPrefix '${oldPrefix}':`, itemsToProcess);
 
         if (itemsToProcess.length === 0) {
             // Special case: only .keep file exists (empty folder)
@@ -1125,6 +1126,8 @@ export const renameFolder = async (bucket: string, oldPathPrefix: string, newPat
         }
 
         console.log(`[Rename] Found ${itemsToProcess.length} items/sub-folders under '${oldPrefix}' to process.`);
+        console.log(`[Rename][DEBUG] itemsToProcess:`, itemsToProcess);
+        console.log(`[Rename][DEBUG] sourcePathsToDelete (before filter):`, sourcePathsToDelete);
 
         // 3. Copy each FILE item to the new location
         for (const item of itemsToProcess) {
@@ -1194,20 +1197,35 @@ export const renameFolder = async (bucket: string, oldPathPrefix: string, newPat
         // 4. Bulk delete all original source items (files and folders/placeholders)
         // Filter out any empty strings or root path just in case
         const validSourcePathsToDelete = sourcePathsToDelete.filter(p => p && p !== '/');
+        console.log(`[Rename][DEBUG] validSourcePathsToDelete (after filter):`, validSourcePathsToDelete);
 
         if (validSourcePathsToDelete.length > 0) {
             console.log(`[Rename] Attempting to bulk delete ${validSourcePathsToDelete.length} source items...`);
             console.log("[Rename] Source paths to delete:", validSourcePathsToDelete);
-            const { data: deleteData, error: deleteError } = await supabase.storage
-                .from(bucket)
-                .remove(validSourcePathsToDelete);
+            try {
+                console.log(`[Rename][DEBUG] About to delete the following source paths:`, validSourcePathsToDelete);
+                const { data: deleteData, error: deleteError } = await supabase.storage
+                    .from(bucket)
+                    .remove(validSourcePathsToDelete);
 
-            if (deleteError) {
-                console.error(`[Rename] Error during bulk delete of source items from ${oldPrefix}:`, deleteError);
-                // Throw error, as rename is incomplete if source isn't removed
-                throw new Error(`Failed to delete original folder contents: ${deleteError.message}`);
+                console.log(`[Rename][DEBUG] Supabase delete response:`, { data: deleteData, error: deleteError });
+
+                if (deleteError) {
+                    // Log the specific Supabase error
+                    console.error(`[Rename] Supabase error during bulk delete of source items from ${oldPrefix}:`, deleteError);
+                    // Throw a more specific error indicating partial success (copy worked, delete failed)
+                    throw new Error(`Folder renamed, but failed to delete original folder contents: ${deleteError.message}. Please check storage manually.`);
+                }
+                if (deleteData && Array.isArray(deleteData)) {
+                    console.log(`[Rename][DEBUG] Supabase reported deleted:`, deleteData);
+                }
+                console.log(`[Rename] Bulk delete successful. Response:`, deleteData);
+            } catch (deletePhaseError: any) {
+                 // Catch errors specifically from the delete operation (including the one thrown above)
+                 console.error(`[Rename] Error occurred specifically during the delete phase for ${oldPrefix}:`, deletePhaseError.message);
+                 // Re-throw the specific error to be handled by the caller, ensuring it indicates partial failure
+                 throw new Error(`Folder rename partially failed: Could not delete original files/folder '${oldPrefix}'. Reason: ${deletePhaseError.message}`);
             }
-            console.log(`[Rename] Bulk delete successful. Response:`, deleteData);
         } else {
              console.warn("[Rename] No valid source paths collected for deletion.");
         }
@@ -1215,8 +1233,10 @@ export const renameFolder = async (bucket: string, oldPathPrefix: string, newPat
         console.log(`[Rename] Folder rename process completed successfully for ${oldPrefix} -> ${newPrefix}.`);
 
     } catch (error: unknown) {
-        console.error(`[Rename] Caught error during rename process for prefix ${oldPrefix}:`, error instanceof Error ? error.message : error);
-        throw error; // Re-throw the error to be handled by the caller
+        // This outer catch handles errors from the copy phase or other unexpected issues before deletion attempt
+        console.error(`[Rename] Caught error during rename process for prefix ${oldPrefix} (potentially before delete phase):`, error instanceof Error ? error.message : error);
+        // Re-throw the original error or a wrapped error
+        throw new Error(`Folder rename failed for '${oldPrefix}'. Reason: ${error instanceof Error ? error.message : String(error)}`);
     }
 };
 
