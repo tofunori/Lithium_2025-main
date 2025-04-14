@@ -766,7 +766,6 @@ export const listStorageItems = async (bucket: string, pathPrefix: string = ''):
                     console.error(`Failed to get public URL for file ${itemPath}:`, urlError);
                 }
             }
-
             return {
                 id: fileObject.id, // Keep the ID from Supabase
                 name: itemName,
@@ -1036,6 +1035,283 @@ export const moveFile = async (bucket: string, sourcePath: string, destinationPa
         throw error; // Re-throw the error to be handled by the caller
     }
 };
+
+
+/**
+ * Renames/Moves a folder and its contents within a Supabase Storage bucket.
+ * This involves moving all items (files/subfolders) recursively.
+ * WARNING: This can be slow and resource-intensive for large folders.
+ * @param bucket - The name of the storage bucket.
+ * @param oldPathPrefix - The current path prefix of the folder to rename (e.g., 'folder/to/rename/').
+ * @param newPathPrefix - The desired new path prefix for the folder (e.g., 'renamed/folder/').
+ */
+export const renameFolder = async (bucket: string, oldPathPrefix: string, newPathPrefix: string): Promise<void> => {
+    console.log(`Attempting to rename folder in Supabase Storage bucket '${bucket}' from '${oldPathPrefix}' to '${newPathPrefix}'...`);
+
+    // Ensure prefixes end with '/' for consistency
+    const oldPrefix = oldPathPrefix.endsWith('/') ? oldPathPrefix : `${oldPathPrefix}/`;
+    const newPrefix = newPathPrefix.endsWith('/') ? newPathPrefix : `${newPathPrefix}/`;
+
+    if (oldPrefix === newPrefix) {
+        console.warn("Old and new folder paths are the same. Skipping rename.");
+        return;
+    }
+    if (!oldPrefix || oldPrefix === '/') {
+        throw new Error("Cannot rename the root directory.");
+    }
+     if (newPrefix.startsWith(oldPrefix)) {
+         throw new Error("Cannot move a folder into itself.");
+     }
+
+    let copiedCount = 0;
+    const copyErrors: { path: string; error: string }[] = [];
+    const sourcePathsToDelete: string[] = [];
+
+    try {
+        // 1. Get all items in the bucket
+        console.log(`[Rename] Fetching all items in bucket '${bucket}' to identify items under '${oldPrefix}' and '${newPrefix}'...`);
+        const allItems = await getAllStorageItems(bucket);
+
+        // 1b. Check if destination folder exists and is NOT empty (file explorer logic)
+        const itemsAtDestination = allItems.filter(item => item.path.startsWith(newPrefix));
+        const filesAtDestination = itemsAtDestination.filter(item => item.type === 'file');
+        const nonKeepFiles = filesAtDestination.filter(item => item.name !== '.keep');
+        if (nonKeepFiles.length > 0) {
+            // Destination folder is NOT empty, abort like a file explorer
+            throw new Error(`A folder named "${newPrefix}" already exists and is not empty. Please choose a different name.`);
+        }
+        // If only a .keep file exists (empty folder), delete it so rename can proceed
+        const keepFile = filesAtDestination.find(item => item.name === '.keep');
+        if (keepFile) {
+            console.log(`[Rename] Destination folder is empty (only .keep). Deleting .keep file at ${keepFile.path}`);
+            const { error: delError } = await supabase.storage
+                .from(bucket)
+                .remove([keepFile.path]);
+            if (delError) {
+                console.error(`[Rename] Error deleting .keep file at destination:`, delError);
+                throw new Error(`Failed to clear empty destination folder before rename: ${delError.message}`);
+            }
+        }
+
+        // 2. Filter items that are within the old folder path
+        const itemsToProcess = allItems.filter(item => item.path.startsWith(oldPrefix));
+
+        if (itemsToProcess.length === 0) {
+            // Special case: only .keep file exists (empty folder)
+            const keepPath = `${oldPrefix}.keep`;
+            const { data: keepData, error: keepError } = await supabase.storage
+                .from(bucket)
+                .list(oldPrefix);
+            const hasKeep = keepData && keepData.some((file: any) => file.name === '.keep');
+            if (hasKeep) {
+                // Move the .keep file to the new folder
+                const newKeepPath = `${newPrefix}.keep`;
+                try {
+                    await supabase.storage.from(bucket).move(keepPath, newKeepPath);
+                    // Optionally delete the old .keep file if move doesn't do it
+                } catch (moveError: any) {
+                    console.error(`[Rename] Failed to move .keep file for empty folder rename: ${moveError.message}`);
+                    throw new Error(`Failed to rename empty folder: ${moveError.message}`);
+                }
+                return;
+            }
+            // If no .keep file, just create the new folder
+            try {
+                await createFolder(bucket, newPrefix); // Ensure target folder exists
+            } catch (createError) {
+                console.error(`[Rename] Failed to create target folder ${newPrefix} after finding empty source ${oldPrefix}`, createError);
+            }
+            return;
+        }
+
+        console.log(`[Rename] Found ${itemsToProcess.length} items/sub-folders under '${oldPrefix}' to process.`);
+
+        // 3. Copy each FILE item to the new location
+        for (const item of itemsToProcess) {
+            // Collect all original paths for later deletion
+            // Ensure we don't add duplicates if getAllStorageItems returns both folder and its .keep file
+             if (!sourcePathsToDelete.includes(item.path)) {
+                 sourcePathsToDelete.push(item.path);
+             }
+             // Also explicitly add the .keep file path for folders if it wasn't listed directly
+             if (item.type === 'folder' && item.path.endsWith('/')) {
+                 const keepPath = `${item.path}.keep`;
+                 if (!sourcePathsToDelete.includes(keepPath)) {
+                    // Check if this .keep file actually exists before adding? Maybe not necessary for bulk delete.
+                    console.log(`[Rename] Adding potential placeholder ${keepPath} to delete list.`);
+                    sourcePathsToDelete.push(keepPath);
+                 }
+             }
+
+
+            if (item.type === 'file') {
+                const relativePath = item.path.substring(oldPrefix.length);
+                const destinationPath = `${newPrefix}${relativePath}`;
+                console.log(`[Rename] Copying file: ${item.path} -> ${destinationPath}`);
+                try {
+                    const { error: copyError } = await supabase.storage
+                        .from(bucket)
+                        .copy(item.path, destinationPath);
+
+                    if (copyError) {
+                        // Check for 'Duplicate' error specifically - might mean file already exists (e.g., from partial previous attempt)
+                        if (copyError.message.includes('Duplicate')) {
+                             console.warn(`[Rename] Copy failed for ${item.path} (Duplicate), assuming already copied.`);
+                             // Continue to next item, source will be deleted later
+                        } else {
+                            throw copyError; // Throw other errors to be caught below
+                        }
+                    } else {
+                         copiedCount++;
+                         console.log(`[Rename] Successfully copied ${item.path} to ${destinationPath}`);
+                    }
+                } catch (error: any) {
+                    console.error(`[Rename] Failed to copy file ${item.path} to ${destinationPath}: ${error.message}`);
+                    copyErrors.push({ path: item.path, error: error.message });
+                    // Stop on first copy error to prevent inconsistent state
+                    throw new Error(`Failed to copy ${item.path}: ${error.message}`);
+                }
+            } else if (item.type === 'folder') {
+                 // Ensure corresponding destination folder structure exists (using .keep file)
+                 const relativePath = item.path.substring(oldPrefix.length);
+                 const destinationFolderPath = `${newPrefix}${relativePath}`;
+                 console.log(`[Rename] Ensuring destination folder exists: ${destinationFolderPath}`);
+                 try {
+                     await createFolder(bucket, destinationFolderPath);
+                 } catch (createError: any) {
+                      console.warn(`[Rename] Failed to explicitly create destination folder ${destinationFolderPath} (might be ok): ${createError.message}`);
+                 }
+            }
+        }
+
+        console.log(`[Rename] Copy phase completed. Copied ${copiedCount} files.`);
+        if (copyErrors.length > 0) {
+             // This part might not be reached if we throw on first error
+            const errorSummary = copyErrors.map(e => `${e.path}: ${e.error}`).join('; ');
+            throw new Error(`Folder rename failed during copy phase. ${copyErrors.length} errors occurred: ${errorSummary}`);
+        }
+
+        // 4. Bulk delete all original source items (files and folders/placeholders)
+        // Filter out any empty strings or root path just in case
+        const validSourcePathsToDelete = sourcePathsToDelete.filter(p => p && p !== '/');
+
+        if (validSourcePathsToDelete.length > 0) {
+            console.log(`[Rename] Attempting to bulk delete ${validSourcePathsToDelete.length} source items...`);
+            console.log("[Rename] Source paths to delete:", validSourcePathsToDelete);
+            const { data: deleteData, error: deleteError } = await supabase.storage
+                .from(bucket)
+                .remove(validSourcePathsToDelete);
+
+            if (deleteError) {
+                console.error(`[Rename] Error during bulk delete of source items from ${oldPrefix}:`, deleteError);
+                // Throw error, as rename is incomplete if source isn't removed
+                throw new Error(`Failed to delete original folder contents: ${deleteError.message}`);
+            }
+            console.log(`[Rename] Bulk delete successful. Response:`, deleteData);
+        } else {
+             console.warn("[Rename] No valid source paths collected for deletion.");
+        }
+
+        console.log(`[Rename] Folder rename process completed successfully for ${oldPrefix} -> ${newPrefix}.`);
+
+    } catch (error: unknown) {
+        console.error(`[Rename] Caught error during rename process for prefix ${oldPrefix}:`, error instanceof Error ? error.message : error);
+        throw error; // Re-throw the error to be handled by the caller
+    }
+};
+
+
+
+/**
+ * Deletes a folder and all its contents from a Supabase Storage bucket.
+ * WARNING: This is a destructive operation and cannot be undone.
+ * @param bucket - The name of the storage bucket.
+ * @param folderPathPrefix - The path prefix of the folder to delete (e.g., 'folder/to/delete/').
+ */
+export const deleteFolder = async (bucket: string, folderPathPrefix: string): Promise<void> => {
+    console.log(`[Delete Folder] Attempting to delete folder and contents for prefix: ${folderPathPrefix}`);
+
+    // Ensure prefix ends with '/' for safety and consistency
+    const prefix = folderPathPrefix.endsWith('/') ? folderPathPrefix : `${folderPathPrefix}/`;
+
+    if (!prefix || prefix === '/') {
+        throw new Error("Cannot delete the root directory.");
+    }
+
+    let deletedFilesCount = 0;
+    const errors: { path: string; error: string }[] = [];
+
+    try {
+        // 1. List all items under the prefix
+        // Use getAllStorageItems and filter, or implement a more direct recursive list if possible
+        const allItems = await getAllStorageItems(bucket);
+        const itemsToDelete = allItems.filter(item => item.path.startsWith(prefix));
+
+        if (itemsToDelete.length === 0) {
+            console.warn(`[Delete Folder] No items found under path '${prefix}'. Folder might be empty or already deleted.`);
+            // Attempt to delete the placeholder file just in case it exists
+             const placeholderPath = `${prefix}.keep`;
+             try {
+                 await deleteFile(bucket, placeholderPath);
+                 console.log(`[Delete Folder] Deleted placeholder file for potentially empty folder: ${placeholderPath}`);
+             } catch (e) {
+                 // Ignore error if placeholder doesn't exist
+             }
+            return;
+        }
+
+        console.log(`[Delete Folder] Found ${itemsToDelete.length} items/sub-folders under '${prefix}' to delete.`);
+
+        // 2. Create a list of file paths to delete
+        const filePathsToDelete = itemsToDelete
+            .filter(item => item.type === 'file') // Only explicitly delete files
+            .map(item => item.path);
+
+        // Include the placeholder file if it exists in the list
+        const placeholderPath = `${prefix}.keep`;
+        if (itemsToDelete.some(item => item.path === placeholderPath)) {
+             if (!filePathsToDelete.includes(placeholderPath)) {
+                 filePathsToDelete.push(placeholderPath);
+             }
+        }
+
+        console.log(`[Delete Folder] File paths to delete:`, filePathsToDelete);
+
+        if (filePathsToDelete.length > 0) {
+            // 3. Use Supabase's bulk remove feature
+            const { data: deleteData, error: deleteError } = await supabase.storage
+                .from(bucket)
+                .remove(filePathsToDelete);
+
+            if (deleteError) {
+                 console.error(`[Delete Folder] Error during bulk remove for prefix ${prefix}:`, deleteError);
+                 // We might still throw an error here, or log it and continue
+                 throw deleteError; // Throw the error to indicate failure
+            }
+
+            // Log success/partial success based on response
+            if (deleteData) {
+                deletedFilesCount = deleteData.length;
+                console.log(`[Delete Folder] Successfully deleted ${deletedFilesCount} files under prefix ${prefix}. Response:`, deleteData);
+                // Check if any files listed in deleteData have errors? (API might provide this)
+            } else {
+                 console.warn(`[Delete Folder] Bulk remove call for prefix ${prefix} completed, but Supabase returned no data.`);
+            }
+        } else {
+             console.log(`[Delete Folder] No files found to delete under prefix ${prefix}. Only folder structure might have existed.`);
+        }
+
+        // Folders are implicitly deleted when all their contents (including placeholders) are gone.
+
+        console.log(`[Delete Folder] Folder deletion process completed for prefix: ${prefix}.`);
+
+    } catch (error: unknown) {
+        console.error(`[Delete Folder] Caught error during deletion for prefix ${prefix}:`, error instanceof Error ? error.message : error);
+        // Construct a meaningful error message?
+        throw new Error(`Failed to completely delete folder ${prefix}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+};
+
 
 
  // --- REMOVED getFacilitiesWithJoins ---

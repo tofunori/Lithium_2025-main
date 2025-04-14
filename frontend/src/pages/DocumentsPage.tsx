@@ -12,7 +12,9 @@ import {
     getAllStorageItems,
     buildFolderTree,
     StorageItem,
-    TreeNode
+    TreeNode,
+    renameFolder, // Import renameFolder
+    deleteFolder, // Import deleteFolder
 } from '../supabaseDataService';
 import FolderTreeView from '../components/FolderTreeView';
 import './DocumentsPage.css';
@@ -115,8 +117,21 @@ const DocumentsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null); // Renamed state for generic success messages
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false); // State for delete confirmation modal
+
+  // State for File Delete Modal
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
   const [itemToDelete, setItemToDelete] = useState<StorageItem | null>(null);
+
+  // State for Folder Rename Modal
+  const [showRenameModal, setShowRenameModal] = useState<boolean>(false);
+  const [folderToRename, setFolderToRename] = useState<StorageItem | null>(null);
+  const [newFolderName, setNewFolderName] = useState<string>('');
+  const [isRenaming, setIsRenaming] = useState<boolean>(false); // Loading state for rename/delete folder operation
+
+  // State for Folder Delete Modal
+  const [showDeleteFolderConfirm, setShowDeleteFolderConfirm] = useState<boolean>(false);
+  const [folderToDelete, setFolderToDelete] = useState<StorageItem | null>(null);
+
 
   const documentsBucket = 'documents'; // Define the bucket
 
@@ -306,27 +321,24 @@ const DocumentsPage: React.FC = () => {
       }
   };
 
-  // --- Delete Confirmation Logic ---
-
-  // Opens the delete confirmation modal
+  // --- File Delete Confirmation Logic ---
   const openDeleteConfirm = (item: StorageItem) => {
       if (item.type === 'folder') {
-          alert("Folder deletion is not implemented yet."); // Keep placeholder for folders
+          // This should ideally not be called for folders now
+          console.warn("Attempted to open file delete confirm for a folder.");
           return;
       }
       setItemToDelete(item);
       setShowDeleteConfirm(true);
   };
 
-  // Closes the delete confirmation modal
   const closeDeleteConfirm = () => {
       setItemToDelete(null);
       setShowDeleteConfirm(false);
   };
 
-  // Executes the actual deletion after confirmation
   const executeDelete = async () => {
-      if (!itemToDelete) return;
+      if (!itemToDelete || itemToDelete.type === 'folder') return;
 
       setError(null);
       setActionSuccessMessage(null);
@@ -359,9 +371,9 @@ const DocumentsPage: React.FC = () => {
           closeDeleteConfirm(); // Close the modal regardless of success/failure
       }
   };
-  // --- End Delete Confirmation Logic ---
+  // --- End File Delete Confirmation Logic ---
 
-  // Implement Create Folder functionality
+  // --- Create Folder functionality ---
   const handleCreateFolder = async () => {
       const folderName = prompt("Enter new folder name:");
       if (!folderName || folderName.trim() === '') {
@@ -393,8 +405,6 @@ const DocumentsPage: React.FC = () => {
           // Refetch the tree to include the new folder
           await fetchFolderTree();
 
-          // Don't use alert here, use the success message state
-          // alert(`Folder "${folderName}" created successfully.`);
           setActionSuccessMessage(`Folder "${folderName}" created successfully.`);
           setTimeout(() => setActionSuccessMessage(null), 5000);
 
@@ -407,10 +417,133 @@ const DocumentsPage: React.FC = () => {
           setLoadingTree(false);
       }
   };
+  // --- End Create Folder functionality ---
+
+
+  // --- Rename Folder Logic ---
+  const openRenameModal = (folder: StorageItem) => {
+    if (folder.type !== 'folder') return;
+    setFolderToRename(folder);
+    setNewFolderName(folder.name); // Pre-fill with current name
+    setShowRenameModal(true);
+    setError(null); // Clear previous errors
+  };
+
+  const closeRenameModal = () => {
+    setShowRenameModal(false);
+    setFolderToRename(null);
+    setNewFolderName('');
+    setError(null);
+  };
+
+  const handleRenameSubmit = async () => {
+    if (!folderToRename || !newFolderName || newFolderName.trim() === '' || folderToRename.type !== 'folder') {
+      setError("Invalid folder or name for renaming.");
+      return;
+    }
+
+    const trimmedNewName = newFolderName.trim();
+    if (trimmedNewName.includes('/')) {
+        setError("Folder name cannot contain slashes.");
+        return;
+    }
+    if (trimmedNewName === folderToRename.name) {
+        closeRenameModal(); // Name hasn't changed
+        return;
+    }
+
+    // Construct the new path prefix
+    const pathSegments = folderToRename.path.split('/').filter(Boolean);
+    pathSegments.pop(); // Remove old name
+    const parentPath = pathSegments.length > 0 ? `${pathSegments.join('/')}/` : '';
+    const newPathPrefix = `${parentPath}${trimmedNewName}/`;
+    const oldPathPrefix = folderToRename.path; // Path already includes trailing slash for folders
+
+    setIsRenaming(true); // Use specific renaming state
+    setError(null);
+    setActionSuccessMessage(null);
+
+    try {
+      await renameFolder(documentsBucket, oldPathPrefix, newPathPrefix);
+      setActionSuccessMessage(`Folder renamed to \"${trimmedNewName}\" successfully.`);
+      closeRenameModal();
+
+      // Refresh data
+      await fetchFolderTree(); // Essential to update the tree view
+      // Also refresh current items if the renamed folder was in the current view's parent
+      // Or simply refresh current items always for simplicity, though less efficient
+      await fetchCurrentItems(currentPath);
+
+      // Clear success message after a delay
+      setTimeout(() => setActionSuccessMessage(null), 5000);
+
+    } catch (renameError: any) {
+      console.error("Error renaming folder:", renameError);
+      setError(`Failed to rename folder: ${renameError.message}`);
+      // Keep modal open on error to show the message
+    } finally {
+      setIsRenaming(false); // Clear specific renaming state
+    }
+  };
+  // --- End Rename Folder Logic ---
+
+
+  // --- Delete Folder Logic ---
+  const openDeleteFolderConfirm = (folder: StorageItem) => {
+    if (folder.type !== 'folder') return;
+    setFolderToDelete(folder);
+    setShowDeleteFolderConfirm(true);
+    setError(null);
+  };
+
+  const closeDeleteFolderConfirm = () => {
+    setShowDeleteFolderConfirm(false);
+    setFolderToDelete(null);
+    setError(null);
+  };
+
+  const executeDeleteFolder = async () => {
+    if (!folderToDelete || folderToDelete.type !== 'folder') return;
+
+    // Use a more specific loading state if needed, or reuse isRenaming/isLoading
+    setIsRenaming(true); // Reusing isRenaming for general loading state for now
+    setError(null);
+    setActionSuccessMessage(null);
+
+    try {
+      await deleteFolder(documentsBucket, folderToDelete.path);
+      setActionSuccessMessage(`Folder \"${folderToDelete.name}\" and its contents deleted successfully.`);
+      closeDeleteFolderConfirm();
+
+      // Refresh data
+      await fetchFolderTree();
+      // Navigate to parent folder if current folder was deleted
+      if (currentPath === folderToDelete.path) {
+          const pathSegments = folderToDelete.path.split('/').filter(Boolean);
+          pathSegments.pop(); // Remove deleted folder name
+          const parentPath = pathSegments.length > 0 ? `${pathSegments.join('/')}/` : '';
+          handleNavigate(parentPath); // Navigate up
+      } else {
+          await fetchCurrentItems(currentPath); // Refresh current view if not inside deleted folder
+      }
+
+
+      // Clear success message after delay
+      setTimeout(() => setActionSuccessMessage(null), 5000);
+
+    } catch (deleteFolderError: any) {
+      console.error("Error deleting folder:", deleteFolderError);
+      setError(`Failed to delete folder: ${deleteFolderError.message}`);
+      // Keep modal open on error
+    } finally {
+      setIsRenaming(false); // Clear loading state
+    }
+  };
+  // --- End Delete Folder Logic ---
 
 
   // Combine loading states
-  const isLoading = loadingItems || loadingTree;
+  const isLoading = loadingItems || loadingTree || isRenaming; // Include isRenaming in general loading
 
   return (
     <div className="container-fluid mt-4 fade-in">
@@ -486,6 +619,56 @@ const DocumentsPage: React.FC = () => {
             </div>
           )}
 
+
+      {/* Rename Folder Modal */}
+      <Modal show={showRenameModal} onHide={closeRenameModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Rename Folder</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Renaming folder: <strong>{folderToRename?.name}</strong></p>
+          <input
+            type="text"
+            className="form-control"
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            placeholder="Enter new folder name"
+            disabled={isRenaming}
+          />
+          {error && <div className="text-danger mt-2 small">{error}</div>} {/* Display error inside modal */}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={closeRenameModal} disabled={isRenaming}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleRenameSubmit} disabled={isRenaming || !newFolderName.trim() || newFolderName.trim() === folderToRename?.name}>
+            {isRenaming ? (<><i className="fas fa-spinner fa-spin me-1"></i> Renaming...</>) : 'Rename'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+      {/* Delete Folder Confirmation Modal */}
+      <Modal show={showDeleteFolderConfirm} onHide={closeDeleteFolderConfirm} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Folder Deletion</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {/* Simplified confirmation message */}
+          <p>Delete folder <strong>{folderToDelete?.name}</strong> and all its contents?</p>
+          {error && <div className="text-danger mt-2 small">{error}</div>}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={closeDeleteFolderConfirm} disabled={isRenaming}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={executeDeleteFolder} disabled={isRenaming}>
+            {isRenaming ? 'Deleting...' : 'Delete Folder & Contents'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
           {/* Action Success Alert */}
           {actionSuccessMessage && (
               <div className="alert alert-success alert-dismissible fade show" role="alert">
@@ -523,7 +706,9 @@ const DocumentsPage: React.FC = () => {
                           key={item.path}
                           item={item}
                           onFolderClick={handleFolderClick}
-                          onDeleteClick={openDeleteConfirm}
+                          onDeleteClick={openDeleteConfirm} // For files
+                          onRenameClick={openRenameModal}
+                          onDeleteFolderClick={openDeleteFolderConfirm} // Pass the folder delete handler
                           isLoading={isLoading}
                         />
                       ))}
@@ -536,7 +721,7 @@ const DocumentsPage: React.FC = () => {
         </div> {/* End Right Column */}
       </div> {/* End Row */}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal (File) */}
       <Modal show={showDeleteConfirm} onHide={closeDeleteConfirm} centered>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Deletion</Modal.Title>
@@ -562,14 +747,18 @@ const DocumentsPage: React.FC = () => {
 interface DraggableStorageItemRowProps {
     item: StorageItem;
     onFolderClick: (item: StorageItem) => void;
-    onDeleteClick: (item: StorageItem) => void;
+    onDeleteClick: (item: StorageItem) => void; // For files
+    onRenameClick: (item: StorageItem) => void;
+    onDeleteFolderClick: (item: StorageItem) => void; // Add delete handler prop for folders
     isLoading: boolean;
 }
 
 const DraggableStorageItemRow: React.FC<DraggableStorageItemRowProps> = ({
     item,
     onFolderClick,
-    onDeleteClick,
+    onDeleteClick, // For files
+    onRenameClick,
+    onDeleteFolderClick, // Destructure delete handler for folders
     isLoading
 }) => {
     const ref = useRef<HTMLTableRowElement>(null); // Ref for drag source and drop target (for potential reordering later)
@@ -649,7 +838,26 @@ const DraggableStorageItemRow: React.FC<DraggableStorageItemRowProps> = ({
                     </button>
                 )}
                 {item.type === 'folder' && (
-                    <span className="text-muted fst-italic"></span>
+                    <> {/* Use Fragment to group buttons */}
+                        {/* Rename button for folders */}
+                        <button
+                            className="btn btn-sm btn-link text-secondary p-0 me-2 action-btn"
+                            onClick={() => onRenameClick(item)}
+                            title={`Rename ${item.name}`}
+                            disabled={isLoading}
+                        >
+                            <i className="fas fa-pencil-alt fa-sm"></i>
+                        </button>
+                        {/* Delete button for folders */}
+                        <button
+                            className="btn btn-sm btn-link text-danger p-0 action-btn"
+                            onClick={() => onDeleteFolderClick(item)}
+                            title={`Delete Folder ${item.name}`}
+                            disabled={isLoading}
+                        >
+                            <i className="fas fa-trash-alt fa-sm"></i>
+                        </button>
+                    </>
                 )}
             </td>
         </tr>
