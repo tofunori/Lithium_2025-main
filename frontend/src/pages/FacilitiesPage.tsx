@@ -47,6 +47,7 @@ const FacilitiesPage: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<CanonicalStatus | 'all'>('all');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedTechnology, setSelectedTechnology] = useState<string>('all');
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +80,17 @@ const FacilitiesPage: React.FC = () => {
     // Check if the key exists in visibleColumns before accessing it
     return col.key && visibleColumns.hasOwnProperty(col.key) && visibleColumns[col.key];
   }).length;
+
+  // Compute unique technology categories for the filter dropdown
+  const uniqueTechnologies = React.useMemo(() => {
+    const techSet = new Set<string>();
+    facilities.forEach(facility => {
+      if (facility.technology_category && facility.technology_category.trim() !== '') {
+        techSet.add(facility.technology_category.trim());
+      }
+    });
+    return Array.from(techSet).sort();
+  }, [facilities]);
 
 
   // Centralized fetch function - accepts CanonicalStatus or 'all'
@@ -193,6 +205,10 @@ const FacilitiesPage: React.FC = () => {
   };
 
   const searchFilteredFacilities = facilities.filter(facility => {
+    // Filter by technology first
+    if (selectedTechnology !== 'all' && facility.technology_category !== selectedTechnology) {
+      return false;
+    }
     const term = searchTerm.toLowerCase();
     if (!term) return true;
 
@@ -264,6 +280,20 @@ const FacilitiesPage: React.FC = () => {
                      value={searchTerm}
                      onChange={handleSearchChange}
                  />
+              </div>
+              {/* Technology Filter Dropdown */}
+              <div className="input-group tech-filter-bar me-2 mb-2 mb-md-0" style={{ maxWidth: '220px' }}>
+                <span className="input-group-text"><i className="fas fa-microchip"></i></span>
+                <select
+                  className="form-select form-select-sm"
+                  value={selectedTechnology}
+                  onChange={e => setSelectedTechnology(e.target.value)}
+                >
+                  <option value="all">All Technologies</option>
+                  {uniqueTechnologies.map(tech => (
+                    <option key={tech} value={tech}>{tech}</option>
+                  ))}
+                </select>
               </div>
               <div className="d-flex align-items-center">
                 {/* Column Visibility Dropdown */}
