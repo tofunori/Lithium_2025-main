@@ -13,3 +13,31 @@
   display: flex;
   flex-direction: column;
 }
+
+
+/* Status Badge Styles */
+.status-badge {
+  padding: 0.2em 0.6em;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+  font-weight: 600;
+  display: inline-block;
+  color: #fff; /* Default white text */
+}
+
+.status-operating {
+  background-color: #4CAF50; /* Green */
+}
+
+.status-construction {
+  background-color: #FFC107; /* Amber */
+  color: #212529; /* Darker text for better contrast on yellow */
+}
+
+.status-planned {
+  background-color: #2196F3; /* Blue */
+}
+
+.status-unknown {
+  background-color: #6c757d; /* Grey */
+}

@@ -123,12 +123,15 @@ function populateFacilitiesList(facilityCollection) { // Removed isLoggedIn para
         // Extract number from capacity string (e.g., "10,000 tonnes..." -> "10,000")
         const capacityValue = props.capacity ? props.capacity.split(' ')[0] : 'N/A';
 
+        // Use the technology_category field if available, otherwise use the original technology field
+        const technologyDisplay = props.technology_category || props.technology || 'N/A';
+
         facilityItem.innerHTML = `
             <div class="facility-item-content"> <!-- Wrapper for flex layout -->
                 <span class="col-company"><a href="facilities/${props.id}.html" class="facility-link">${props.company || 'N/A'}</a></span>
                 <span class="col-location">${props.address || 'N/A'}</span>
                 <span class="col-volume">${capacityValue}</span>
-                <span class="col-method">${props.technology || 'N/A'}</span>
+                <span class="col-method">${technologyDisplay}</span>
                 <span class="col-status"><span class="status-badge ${statusClass}">${props.status || 'N/A'}</span></span>
                 <span class="col-actions">
                     ${isLoggedIn ? `<a href="edit-facility.html?id=${props.id}" class="btn btn-sm btn-outline-secondary ms-1 edit-link" title="Edit Facility"><i class="fas fa-edit"></i></a>` : ''}
@@ -234,7 +237,7 @@ function searchFacilities(query, facilityCollection) {
         if (!facility) return;
 
         const props = facility.properties;
-        const searchText = `${props.name || ''} ${props.company || ''} ${props.address || ''}`.toLowerCase();
+        const searchText = `${props.name || ''} ${props.company || ''} ${props.address || ''} ${props.technology_category || ''} ${props.technology || ''}`.toLowerCase();
         const shouldShow = searchText.includes(searchQuery);
 
         item.style.display = shouldShow ? '' : 'none';

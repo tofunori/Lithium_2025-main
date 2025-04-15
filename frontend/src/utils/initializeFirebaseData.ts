@@ -1,3 +1,4 @@
+/*
 import { db } from '../firebase'; // Assuming firebase.ts or similar exists
 import { collection, getDocs, doc, updateDoc, DocumentReference, DocumentData, CollectionReference, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
 import { mockFacilities } from '../mockData/facilityData'; // Assuming facilityData.ts or similar exists
@@ -37,7 +38,7 @@ interface UpdateResult {
 /**
  * Initializes or updates facility data in Firebase with required fields
  * This function checks if facilities are missing required fields and adds them
- */
+ * /
 export const initializeFacilityData = async (): Promise<UpdateResult> => {
   try {
     console.log('Checking and initializing facility data...');
@@ -146,3 +147,4 @@ function getRandomRegion(): string {
   ];
   return regions[Math.floor(Math.random() * regions.length)];
 }
+*/

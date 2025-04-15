@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase'; // Import Firestore instance
+// import { db } from '../firebase'; // Import Firestore instance - REMOVED
 import { useAuth } from '../context/AuthContext'; // Updated import path if necessary
 import { useEditor, EditorContent, Editor } from '@tiptap/react'; // Tiptap imports
 import StarterKit from '@tiptap/starter-kit'; // Tiptap basic extensions
 import TiptapMenuBar from '../components/TiptapMenuBar'; // Import the menu bar
-import { doc, getDoc, setDoc, DocumentData } from 'firebase/firestore';
-import { User } from 'firebase/auth'; // Import User type
+// import { doc, getDoc, setDoc, DocumentData } from 'firebase/firestore'; - REMOVED
+// import { User } from 'firebase/auth'; // Import User type - REMOVED (Assuming User type is no longer needed or comes from context)
 import './AboutPage.css';
 
 // Interface for the page content state and Firestore data
@@ -16,8 +16,8 @@ interface PageContentState {
 }
 
 const AboutPage: React.FC = () => {
-  // Type the currentUser from context
-  const { currentUser }: { currentUser: User | null } = useAuth();
+  // Type the currentUser from context - Assuming useAuth provides a non-Firebase User type now or null
+  const { currentUser }: { currentUser: any | null } = useAuth(); // Adjusted type placeholder
   const [isEditing, setIsEditing] = useState<boolean>(false);
   // Type the page content state
   const [pageContent, setPageContent] = useState<PageContentState>({
@@ -26,30 +26,30 @@ const AboutPage: React.FC = () => {
     teamSectionHTML: `<h2>Development Team</h2><p>This project was developed by:</p><ul><li>[Team Member 1 Name/Role]</li><li>[Team Member 2 Name/Role]</li><li>[Add more team members as needed]</li></ul><p>[Optionally add links to profiles or contact info]</p>`
   });
 
-  // Fetch content from Firestore
+  // Fetch content from Firestore - THIS WILL BE BROKEN
   useEffect(() => {
     const fetchContent = async () => {
-      const docRef = doc(db, 'content', 'about');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        // Type the fetched data
-        const fetchedData = docSnap.data() as PageContentState;
-        setPageContent(fetchedData);
-        // Update editor content after state is set
-        setTimeout(() => {
-            projectEditor?.commands.setContent(fetchedData.projectSectionHTML || '', false);
-            dataSourcesEditor?.commands.setContent(fetchedData.dataSourcesSectionHTML || '', false);
-            teamEditor?.commands.setContent(fetchedData.teamSectionHTML || '', false);
-        }, 0);
-      } else {
-        console.log("No 'about' content document found. Using default.");
-        // Initialize editors with default content if doc doesn't exist
+      console.log("Attempting to fetch 'about' content (Firebase logic removed)...");
+      // const docRef = doc(db, 'content', 'about'); // REMOVED
+      // const docSnap = await getDoc(docRef); // REMOVED
+      // if (docSnap.exists()) { // REMOVED
+      //   const fetchedData = docSnap.data() as PageContentState; // REMOVED
+      //   setPageContent(fetchedData); // REMOVED
+      //   // Update editor content after state is set
+      //   setTimeout(() => {
+      //       projectEditor?.commands.setContent(fetchedData.projectSectionHTML || '', false);
+      //       dataSourcesEditor?.commands.setContent(fetchedData.dataSourcesSectionHTML || '', false);
+      //       teamEditor?.commands.setContent(fetchedData.teamSectionHTML || '', false);
+      //   }, 0);
+      // } else { // REMOVED
+        console.log("No 'about' content document found or fetch logic removed. Using default.");
+        // Initialize editors with default content if doc doesn't exist or fetch failed
          setTimeout(() => {
             projectEditor?.commands.setContent(pageContent.projectSectionHTML, false);
             dataSourcesEditor?.commands.setContent(pageContent.dataSourcesSectionHTML, false);
             teamEditor?.commands.setContent(pageContent.teamSectionHTML, false);
         }, 0);
-      }
+      // } // REMOVED
     };
     fetchContent();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,24 +90,24 @@ const AboutPage: React.FC = () => {
 
   const handleEdit = () => setIsEditing(true);
   const handleCancel = async () => {
-     // Refetch content on cancel to discard changes
-     const docRef = doc(db, 'content', 'about');
-     const docSnap = await getDoc(docRef);
-     if (docSnap.exists()) {
-       // Type the fetched data
-       const fetchedData = docSnap.data() as PageContentState;
-       setPageContent(fetchedData);
-       // Update editor content directly after fetching and setting state on cancel
-       setTimeout(() => {
-           projectEditor?.commands.setContent(fetchedData.projectSectionHTML || '', false);
-           dataSourcesEditor?.commands.setContent(fetchedData.dataSourcesSectionHTML || '', false);
-           teamEditor?.commands.setContent(fetchedData.teamSectionHTML || '', false);
-        }, 0);
-     }
+     // Refetch content on cancel to discard changes - THIS WILL BE BROKEN
+     console.log("Attempting to refetch 'about' content on cancel (Firebase logic removed)...");
+     // const docRef = doc(db, 'content', 'about'); // REMOVED
+     // const docSnap = await getDoc(docRef); // REMOVED
+     // if (docSnap.exists()) { // REMOVED
+     //   const fetchedData = docSnap.data() as PageContentState; // REMOVED
+     //   setPageContent(fetchedData); // REMOVED
+     //   // Update editor content directly after fetching and setting state on cancel
+     //   setTimeout(() => {
+     //       projectEditor?.commands.setContent(fetchedData.projectSectionHTML || '', false);
+     //       dataSourcesEditor?.commands.setContent(fetchedData.dataSourcesSectionHTML || '', false);
+     //       teamEditor?.commands.setContent(fetchedData.teamSectionHTML || '', false);
+     //    }, 0);
+     // } // REMOVED
     setIsEditing(false);
   }
   const handleSave = async () => {
-    const docRef = doc(db, 'content', 'about');
+    // const docRef = doc(db, 'content', 'about'); // REMOVED
     try {
       // Type the content to save
       const contentToSave: PageContentState = {
@@ -115,13 +115,14 @@ const AboutPage: React.FC = () => {
         dataSourcesSectionHTML: dataSourcesEditor?.getHTML() || '',
         teamSectionHTML: teamEditor?.getHTML() || '',
       };
-      await setDoc(docRef, contentToSave, { merge: true });
-      setPageContent(contentToSave); // Update local state with saved content
-      console.log("About page content saved successfully!");
+      // await setDoc(docRef, contentToSave, { merge: true }); // REMOVED
+      console.log("Attempting to save 'about' content (Firebase logic removed)... Data:", contentToSave);
+      // setPageContent(contentToSave); // Update local state with saved content - Keep this? Or rely on cancel/refetch? Let's keep it for now.
+      console.log("About page content save attempted (Firebase logic removed).");
       setIsEditing(false);
     } catch (error) {
-      console.error("Error saving about page content:", error);
-      alert("Failed to save changes. Please try again.");
+      console.error("Error saving about page content (Firebase logic removed):", error);
+      alert("Failed to save changes (Firebase logic removed). Please try again.");
     }
   };
 

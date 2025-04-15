@@ -1,3 +1,4 @@
+/*
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import {
   getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, updateDoc, deleteDoc,
@@ -11,6 +12,7 @@ import {
   getStorage, ref, listAll, getDownloadURL, uploadBytes, deleteObject,
   FirebaseStorage, StorageReference, ListResult, UploadResult, StorageError
 } from 'firebase/storage'; // Added deleteObject
+import { getCanonicalStatus } from './utils/statusUtils'; // Import status utility
 
 // --- Type Definitions ---
 
@@ -170,41 +172,41 @@ export const getFacilities = async (): Promise<FacilityData[]> => {
     const facilitiesCollection: CollectionReference<DocumentData> = collection(db, 'facilities');
     const facilitiesSnapshot: QuerySnapshot<DocumentData> = await getDocs(facilitiesCollection);
 
-    const facilities: FacilityData[] = facilitiesSnapshot.docs
-      .map((docSnap: DocumentSnapshot<DocumentData>) => {
-        const data = docSnap.data();
+    const facilities: FacilityData[] = facilitiesSnapshot.docs.reduce((acc: FacilityData[], docSnap) => {
+      const data = docSnap.data();
 
-        // Basic validation: Check if data and properties exist
-        if (!data || typeof data !== 'object' || !data.properties || typeof data.properties !== 'object') {
-          console.warn(`Facility document ${docSnap.id} is missing data or properties:`, data);
-          return null;
-        }
+      // Basic validation: Check if data and properties exist
+      if (!data || typeof data !== 'object' || !data.properties || typeof data.properties !== 'object') {
+        console.warn(`Facility document ${docSnap.id} is missing data or properties:`, data);
+        return acc; // Skip this document
+      }
 
-        // --- NEW: Safely access geometry and coordinates ---
-        let geometry: Geometry | undefined = undefined;
-        if (data.geometry && typeof data.geometry === 'object' &&
-            data.geometry.type === 'Point' && // Assuming Point type
-            Array.isArray(data.geometry.coordinates) &&
-            data.geometry.coordinates.length === 2 &&
-            typeof data.geometry.coordinates[0] === 'number' &&
-            typeof data.geometry.coordinates[1] === 'number') {
-          geometry = {
-            type: data.geometry.type,
-            coordinates: [data.geometry.coordinates[0], data.geometry.coordinates[1]] // [lon, lat]
-          };
-        } else if (data.geometry) {
-            // Log if geometry exists but is invalid
-            console.warn(`Facility document ${docSnap.id} has invalid geometry structure:`, data.geometry);
-        }
-        // --- End NEW ---
+      // Construct the base facility object
+      const facility: FacilityData = {
+        id: docSnap.id,
+        properties: data.properties as FacilityProperties, // Assuming properties are valid if we pass the check above
+      };
 
-        return {
-          id: docSnap.id,
-          properties: data.properties as FacilityProperties, // Cast properties (assuming they are valid if we reach here)
-          geometry: geometry // Add the validated or undefined geometry
+      // Safely process and add geometry only if valid
+      if (data.geometry && typeof data.geometry === 'object' &&
+          data.geometry.type === 'Point' &&
+          Array.isArray(data.geometry.coordinates) &&
+          data.geometry.coordinates.length === 2 &&
+          typeof data.geometry.coordinates[0] === 'number' &&
+          typeof data.geometry.coordinates[1] === 'number') {
+        facility.geometry = { // Add geometry only if valid
+          type: data.geometry.type,
+          coordinates: [data.geometry.coordinates[0], data.geometry.coordinates[1]]
         };
-      })
-      .filter((facility): facility is FacilityData => facility !== null); // Type predicate to filter nulls
+      } else if (data.geometry) {
+        // Log if geometry exists but is invalid
+        console.warn(`Facility document ${docSnap.id} has invalid geometry structure:`, data.geometry);
+        // Do not add invalid geometry to the facility object
+      }
+
+      acc.push(facility); // Add the valid facility to the accumulator
+      return acc;
+    }, []); // Initialize accumulator as FacilityData[]
 
     console.log('Mapped facilities data from Firebase:', facilities);
 
@@ -288,39 +290,39 @@ export const getFacilitiesByStatus = async (status: string): Promise<FacilityDat
     );
     const facilitiesSnapshot: QuerySnapshot<DocumentData> = await getDocs(statusQuery);
 
-    const facilities: FacilityData[] = facilitiesSnapshot.docs
-      .map((docSnap: DocumentSnapshot<DocumentData>) => {
-        const data = docSnap.data();
+    const facilities: FacilityData[] = facilitiesSnapshot.docs.reduce((acc: FacilityData[], docSnap) => {
+      const data = docSnap.data();
 
-        // Basic validation
-        if (!data || typeof data !== 'object' || !data.properties || typeof data.properties !== 'object') {
-          console.warn(`Facility document ${docSnap.id} is missing data or properties:`, data);
-          return null;
-        }
+      // Basic validation
+      if (!data || typeof data !== 'object' || !data.properties || typeof data.properties !== 'object') {
+        console.warn(`Facility document ${docSnap.id} is missing data or properties:`, data);
+        return acc; // Skip
+      }
 
-        // Safely access geometry
-        let geometry: Geometry | undefined = undefined;
-        if (data.geometry && typeof data.geometry === 'object' &&
-            data.geometry.type === 'Point' &&
-            Array.isArray(data.geometry.coordinates) &&
-            data.geometry.coordinates.length === 2 &&
-            typeof data.geometry.coordinates[0] === 'number' &&
-            typeof data.geometry.coordinates[1] === 'number') {
-          geometry = {
-            type: data.geometry.type,
-            coordinates: [data.geometry.coordinates[0], data.geometry.coordinates[1]]
-          };
-        } else if (data.geometry) {
-          console.warn(`Facility document ${docSnap.id} has invalid geometry structure:`, data.geometry);
-        }
+      // Construct base object
+      const facility: FacilityData = {
+        id: docSnap.id,
+        properties: data.properties as FacilityProperties,
+      };
 
-        return {
-          id: docSnap.id,
-          properties: data.properties as FacilityProperties,
-          geometry: geometry
+      // Safely process and add geometry
+      if (data.geometry && typeof data.geometry === 'object' &&
+          data.geometry.type === 'Point' &&
+          Array.isArray(data.geometry.coordinates) &&
+          data.geometry.coordinates.length === 2 &&
+          typeof data.geometry.coordinates[0] === 'number' &&
+          typeof data.geometry.coordinates[1] === 'number') {
+        facility.geometry = {
+          type: data.geometry.type,
+          coordinates: [data.geometry.coordinates[0], data.geometry.coordinates[1]]
         };
-      })
-      .filter((facility): facility is FacilityData => facility !== null);
+      } else if (data.geometry) {
+        console.warn(`Facility document ${docSnap.id} has invalid geometry structure:`, data.geometry);
+      }
+
+      acc.push(facility);
+      return acc;
+    }, []);
 
     return facilities;
   } catch (error: unknown) {
@@ -329,20 +331,29 @@ export const getFacilitiesByStatus = async (status: string): Promise<FacilityDat
   }
 };
 
+
+
 export const getFacilityStats = async (): Promise<FacilityStats> => {
   try {
     const facilitiesCollection: CollectionReference<DocumentData> = collection(db, 'facilities');
     const facilitiesSnapshot: QuerySnapshot<DocumentData> = await getDocs(facilitiesCollection);
-    
+
+    // Get properties, ensuring they exist
     const facilitiesProperties: FacilityProperties[] = facilitiesSnapshot.docs
         .map(doc => doc.data()?.properties as FacilityProperties)
-        .filter((props): props is FacilityProperties => props !== undefined); // Ensure properties exist
+        .filter((props): props is FacilityProperties => props !== undefined);
 
-    // Calculate statistics based on nested status
+    // Calculate statistics using canonical statuses
     const totalFacilities = facilitiesProperties.length;
-    const operatingFacilities = facilitiesProperties.filter(p => p.status === 'operating').length;
-    const constructionFacilities = facilitiesProperties.filter(p => p.status === 'construction').length;
-    const plannedFacilities = facilitiesProperties.filter(p => p.status === 'planned' || p.status === 'Planning').length; // Include 'Planning'
+
+    // Get canonical status for each facility
+    const canonicalStatuses = facilitiesProperties.map(p => getCanonicalStatus(p.status));
+
+    // Count based on canonical keys
+    const operatingFacilities = canonicalStatuses.filter(s => s === 'operating').length;
+    const constructionFacilities = canonicalStatuses.filter(s => s === 'construction').length;
+    const plannedFacilities = canonicalStatuses.filter(s => s === 'planned').length;
+    // Note: 'unknown' statuses are implicitly ignored in these counts
 
     return {
       totalFacilities,
@@ -676,3 +687,4 @@ export const uploadFacilityImage = async (facilityId: string, file: File): Promi
     throw error; // Re-throw for the caller to handle
   }
 };
+*/

@@ -127,154 +127,111 @@ function calculateRadius(capacityNum) {
 // mapInstance and currentGeoJsonLayer moved to global scope
 
 function initializeMap(facilityCollection) {
-    console.log("Initializing map..."); // Debug log
-    const mapContainer = document.getElementById('map');
-    if (!mapContainer) {
-        console.error("Map container (#map) not found during map initialization.");
+    console.log("Initializing map with data:", facilityCollection); // Debug log
+    // Create map if it doesn't already exist
+    if (!mapInstance) {
+        // Create a Leaflet map instance in "map-container" element
+        mapInstance = L.map('map-container', {
+            minZoom: 2,
+            zoomControl: false // We'll add it in a custom position
+        });
+        // Add custom positioned zoom controls
+        L.control.zoom({
+            position: 'topright'
+        }).addTo(mapInstance);
+    }
+
+    if (currentGeoJsonLayer) {
+        mapInstance.removeLayer(currentGeoJsonLayer); // Remove old data
+    }
+
+    if (!facilityCollection || !facilityCollection.features || facilityCollection.features.length === 0) {
+        console.warn("No valid facility data to display on map.");
+        // Set a default center view if data is missing or empty
+        mapInstance.setView([39.8283, -98.5795], 4); // Center on US
+        mapInstance.setMaxBounds([[-90, -180], [90, 180]]); // World bounds
         return;
     }
 
-    // --- Check if Map Instance Exists and is Valid ---
-    let isNewInstance = false;
-    if (mapInstance && document.body.contains(mapInstance.getContainer())) {
-        console.log("Reusing existing map instance.");
-        // Clear old data layer if it exists
-        if (currentGeoJsonLayer && mapInstance.hasLayer(currentGeoJsonLayer)) {
-            mapInstance.removeLayer(currentGeoJsonLayer);
-            console.log("Removed old GeoJSON layer.");
-        }
-        currentGeoJsonLayer = null;
-    } else {
-        console.log("Creating new map instance.");
-        isNewInstance = true;
-        // If instance exists but container is detached, try removing it first
-        if (mapInstance) {
-            try { mapInstance.remove(); } catch(e) { console.warn("Error removing detached map instance:", e); }
-        }
-        mapInstance = null; // Ensure it's null before creating
-
-        // DEBUG: Log map container size before initialization
-        const mapStyle = window.getComputedStyle(mapContainer);
-        console.log(`Map container computed size before L.map: ${mapStyle.width} x ${mapStyle.height}`);
-
-        mapInstance = L.map('map').setView([39.8283, -98.5795], 4);
-
-    // Add OpenStreetMap as base layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-    }).addTo(mapInstance);
-
-    // Add alternate basemaps
-    const basemaps = {
-        "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
-        }),
-        "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-            maxZoom: 19
-        }),
-        "Terrain": L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png', {
-            attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 18
-        })
-    };
-    // Default to Satellite view
-    basemaps["Satellite"].addTo(mapInstance);
-    L.control.layers(basemaps).addTo(mapInstance);
-
-    // Setup base layers, controls, and event listeners ONLY when creating a new instance
-    if (isNewInstance) {
-        // Add OpenStreetMap as base layer
+    // Configure the tile layer (Only create once)
+    if (!mapInstance.hasLayer(L.tileLayer)) {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
+            maxZoom: 19,
         }).addTo(mapInstance);
-
-        // Add alternate basemaps
-        const basemaps = {
-            "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }),
-            "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                maxZoom: 19
-            }),
-            "Terrain": L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png', {
-                attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 18
-            })
-        };
-        // Default to Satellite view
-        basemaps["Satellite"].addTo(mapInstance);
-        L.control.layers(basemaps).addTo(mapInstance);
-
-        // Setup event listeners ONLY when the map is first created
-        setupEventListeners();
     }
-    }
-    // Function to get marker color based on status
-    function getMarkerColor(status) {
-        switch(status.toLowerCase()) {
-            case 'operating':
-                return '#4CAF50'; // Green
-            case 'under construction':
-                return '#FFC107'; // Amber
-            case 'planned':
-                return '#2196F3'; // Blue
-            case 'pilot':
-                return '#9C27B0'; // Purple
-            default:
-                return '#757575'; // Grey
+
+    // Calculate map bounds from all facility locations
+    const bounds = L.latLngBounds();
+    facilityCollection.features.forEach(feature => {
+        if (feature.geometry && feature.geometry.type === 'Point') {
+            bounds.extend([feature.geometry.coordinates[1], feature.geometry.coordinates[0]]);
         }
+    });
+
+    // Fit map to these bounds with padding
+    if (bounds.isValid()) {
+        mapInstance.fitBounds(bounds, {
+            padding: [50, 50],
+            maxZoom: 7 // Don't zoom in too much when there's just one marker
+        });
+    } else {
+        // Fallback center if no valid bounds
+        mapInstance.setView([39.8283, -98.5795], 4); // Center on US
     }
 
-    // --- Add GeoJSON Data Layer (Always happens) ---
-    // Ensure previous layer is removed if reusing instance (handled above)
-    if (currentGeoJsonLayer) {
-         console.warn("currentGeoJsonLayer was not null before creating new layer.");
-         currentGeoJsonLayer = null; // Ensure it's reset
-    }
-
-    const sizeToggle = document.getElementById('sizeByCapacityToggle');
-    const sizeByCapacity = sizeToggle ? sizeToggle.checked : false; // Check if toggle exists before accessing checked property
-
-    console.log("Adding GeoJSON layer. Size by capacity:", sizeByCapacity); // Debug log
-
+    // Add GeoJSON layer with facilities
     currentGeoJsonLayer = L.geoJSON(facilityCollection, {
         pointToLayer: function(feature, latlng) {
             const props = feature.properties;
-            const status = props.status;
-            const color = getMarkerColor(status);
-            let radius = 8; // Default fixed radius
-
-            if (sizeByCapacity) {
-                const capacityNum = parseCapacity(props.capacity);
-                radius = calculateRadius(capacityNum);
+            const statusClass = getStatusClass(props.status);
+            // Determine marker color based on status
+            let markerColor;
+            switch(statusClass) {
+                case 'status-operating':
+                    markerColor = '#4CAF50'; // Green
+                    break;
+                case 'status-construction':
+                    markerColor = '#FFC107'; // Yellow/Amber
+                    break;
+                case 'status-planned':
+                    markerColor = '#2196F3'; // Blue
+                    break;
+                case 'status-pilot':
+                    markerColor = '#9C27B0'; // Purple
+                    break;
+                default:
+                    markerColor = '#9E9E9E'; // Grey as fallback
             }
 
-            return L.circleMarker(latlng, {
-                radius: radius, // Use dynamic or fixed radius
-                fillColor: color,
-                color: '#000',
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8
+            // Create custom icon
+            const customIcon = L.divIcon({
+                className: 'custom-map-marker ' + statusClass,
+                html: `<div style="background-color: ${markerColor};"></div>`,
+                iconSize: [15, 15],
+                iconAnchor: [7, 7]
+            });
+
+            return L.marker(latlng, {
+                icon: customIcon,
+                title: props.name
             });
         },
         onEachFeature: function(feature, layer) {
-            // Create popup content
             const props = feature.properties;
+            
+            // Use the technology_category field if it exists, otherwise fall back to the original technology name
+            const technologyDisplay = props.technology_category || props.technology || 'N/A';
+            
+            // Create popup content
             const popupContent = `
-                <div class="info-box">
-                    <h3>${props.name}</h3>
-                    <p class="info-company">Company: ${props.company}</p>
+                <div class="facility-popup">
+                    <h4>${props.name || 'Unnamed Facility'}</h4>
+                    <p><strong>Company:</strong> ${props.company || 'N/A'}</p>
                     <p>Location: ${props.address}</p>
                     <p>Status: <strong>${props.status}</strong></p>
                     <p class="info-capacity">Capacity: ${props.capacity}</p>
-                    <p>Technology: ${props.technology}</p>
+                    <p>Technology: ${technologyDisplay}</p>
                     <p>${props.description}</p>
                     <a href="facilities/${props.id}.html" class="btn btn-sm btn-primary mt-2" style="color: #ffffff !important;">View Details</a>
                     <a href="${props.website}" target="_blank" class="btn btn-sm btn-outline-secondary mt-2">Visit Website</a>
@@ -289,16 +246,9 @@ function initializeMap(facilityCollection) {
     console.log("GeoJSON layer added."); // Debug log
     // Force map to re-evaluate its size after potential DOM changes, with a slight delay
     setTimeout(() => {
-        if (mapInstance) { // Check if map still exists (might have been removed by rapid navigation)
-             mapInstance.invalidateSize();
-             console.log("Map size invalidated (delayed).");
-             // Also reset the view to potentially trigger tile loading
-             mapInstance.setView(mapInstance.getCenter(), mapInstance.getZoom());
-             console.log("Map view reset (delayed).");
-        } else {
-             console.log("Map instance no longer exists, skipping delayed invalidateSize.");
-        }
-    }, 10); // Delay by 10 milliseconds
+        mapInstance.invalidateSize();
+        console.log("Map size invalidated."); // Debug log
+    }, 100);
 }
 
 

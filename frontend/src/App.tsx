@@ -9,6 +9,7 @@ import DocumentsPage from './pages/DocumentsPage';
 import FacilityDetailPage from './pages/FacilityDetailPage'; // Import the new component
 import FacilityEditPage from './pages/FacilityEditPage'; // Import the edit page component
 import FacilityCreatePage from './pages/FacilityCreatePage'; // Import the create page component
+import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
 
 import MainLayout from './layouts/MainLayout'; // TS should resolve .tsx/.jsx
 import './App.css';
@@ -19,15 +20,19 @@ const App: React.FC = () => {
       <ThemeProvider> {/* Wrap Routes with ThemeProvider */}
         <Routes>
           <Route element={<MainLayout />}>
+            {/* Public routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/facilities" element={<FacilitiesPage />} />
             <Route path="/charts" element={<ChartsPage />} />
             <Route path="/documents" element={<DocumentsPage />} />
-            <Route path="/facilities/new" element={<FacilityCreatePage />} /> {/* Add route for facility creation */}
+            <Route path="/facilities/:id" element={<FacilityDetailPage />} />
 
-            <Route path="/facilities/:id" element={<FacilityDetailPage />} /> {/* Add route for facility detail */}
-            <Route path="/facilities/edit/:facilityId" element={<FacilityEditPage />} /> {/* Add route for facility edit */}
+            {/* Protected routes - require authentication */}
+            <Route element={<ProtectedRoute redirectPath="/" />}>
+              <Route path="/facilities/new" element={<FacilityCreatePage />} />
+              <Route path="/facilities/edit/:facilityId" element={<FacilityEditPage />} />
+            </Route>
           </Route>
         </Routes>
       </ThemeProvider>
