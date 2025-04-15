@@ -52,6 +52,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 2px;
+  transition: none !important;
 }
 
 .explorer-tree-node:hover {
@@ -184,6 +185,11 @@
   color: var(--text-color);
   vertical-align: top;
   border-color: var(--border-color);
+}
+.table tr,
+.table td,
+.table-hover > tbody > tr {
+  transition: none !important;
 }
 
 .table > :not(caption) > * > * {

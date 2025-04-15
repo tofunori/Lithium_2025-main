@@ -126,37 +126,21 @@ a:hover {
 
 /* Animation */
 .fade-in {
-  animation: fadeIn 0.5s ease-in-out;
+  /* animation removed */
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* @keyframes fadeIn removed */
 
-/* Apply fade-in animation to cards */
+/* No animation on cards */
 .card {
-  animation: fadeIn 0.5s ease-in-out;
-  animation-fill-mode: both;
+  /* animation removed */
+  /* animation-fill-mode removed */
 }
 
-.row:nth-child(1) .card {
-  animation-delay: 0.1s;
-}
-
-.row:nth-child(2) .card {
-  animation-delay: 0.2s;
-}
-
-.row:nth-child(3) .card {
-  animation-delay: 0.3s;
-}
+/* animation-delay rules removed */
+.row:nth-child(1) .card {}
+.row:nth-child(2) .card {}
+.row:nth-child(3) .card {}
 
 /* Responsive styles */
 @media (min-width: 576px) {

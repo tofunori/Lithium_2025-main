@@ -169,7 +169,7 @@ const FacilitiesPage: React.FC = () => {
     });
   };
 
-  // Initial fetch and Realtime subscription setup
+  // Add error handling for Realtime subscription
   useEffect(() => {
     fetchFacilitiesData(activeFilter);
 
@@ -204,7 +204,14 @@ const FacilitiesPage: React.FC = () => {
     setSearchTerm(e.target.value);
   };
 
-  const searchFilteredFacilities = facilities.filter(facility => {
+  // Add validation to filter out facilities with invalid coordinates before processing
+  const validFacilities = facilities.filter(facility => 
+    facility.Latitude !== null && facility.Longitude !== null &&
+    typeof facility.Latitude === 'number' && typeof facility.Longitude === 'number'
+  );
+
+  // Update the searchFilteredFacilities to use validFacilities
+  const searchFilteredFacilities = validFacilities.filter(facility => {
     // Filter by technology first
     if (selectedTechnology !== 'all' && facility.technology_category !== selectedTechnology) {
       return false;

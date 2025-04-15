@@ -1,4 +1,4 @@
- // frontend/src/pages/HomePage.tsx
+// frontend/src/pages/HomePage.tsx
 import React, { useState, useEffect, useRef, useCallback, ChangeEvent, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import L, { Map, TileLayer as LeafletTileLayer, Marker, DivIcon } from 'leaflet';
@@ -124,12 +124,20 @@ const HomePage: React.FC = () => {
     operating: '#4CAF50', // Green
     construction: '#FFC107', // Amber
     planned: '#2196F3', // Blue
+    closed: '#000000', // Black for closed
     unknown: '#6c757d' // Grey for unknown
   };
-
+  
   // Function to update all marker sizes and styles
   const updateMarkerSizes = useCallback(() => {
-    facilitiesData.forEach(facility => {
+    // Add validation to filter out facilities with invalid coordinates before creating markers
+    const validFacilities = facilitiesData.filter(facility => 
+      facility.Latitude !== null && facility.Longitude !== null &&
+      typeof facility.Latitude === 'number' && typeof facility.Longitude === 'number'
+    );
+
+    // Update the loop to use validFacilities instead of facilitiesData
+    validFacilities.forEach(facility => {
       const marker = markersRef.current[facility.ID]; // Use facility.ID (uppercase)
       if (!marker) return;
 

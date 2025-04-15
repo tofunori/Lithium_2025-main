@@ -1,13 +1,14 @@
 // frontend/src/utils/statusUtils.ts
 
 // Define the canonical status keys used internally
-export type CanonicalStatus = 'operating' | 'construction' | 'planned' | 'unknown';
+export type CanonicalStatus = 'operating' | 'construction' | 'planned' | 'closed' | 'unknown'; // Added 'closed'
 
 // Define the display labels corresponding to the canonical keys
 export const STATUS_LABELS: { [key in CanonicalStatus]: string } = {
   operating: 'Operating',
   construction: 'Construction', // Standardized label
   planned: 'Planned',
+  closed: 'Closed', // Added label for closed
   unknown: 'Unknown',
 };
 
@@ -16,12 +17,13 @@ export const STATUS_CLASSES: { [key in CanonicalStatus]: string } = {
   operating: 'status-operating',
   construction: 'status-construction',
   planned: 'status-planned',
+  closed: 'status-closed', // Added class for closed
   unknown: 'status-unknown', // Add a class for unknown
 };
 
 /**
  * Converts a raw status string (from DB, e.g., status_name) into a canonical status key.
- * Handles variations like 'Operational', 'Under Construction', 'Planned'.
+ * Handles variations like 'Operational', 'Under Construction', 'Planned', 'Closed'.
  * Defaults to 'unknown' for null, undefined, empty, or unrecognized statuses.
  * @param statusName The status name string (e.g., from facility.status_name).
  * @returns The corresponding CanonicalStatus key.
@@ -38,6 +40,8 @@ export const getCanonicalStatus = (statusName: string | undefined | null): Canon
        return 'construction';
     case 'planned': // Match 'Planned' from DB
       return 'planned';
+    case 'closed': // Match 'Closed' from DB
+      return 'closed';
     default:
       // Any other value, including null/undefined/empty or specific ones like 'On Hold', maps to 'unknown'
       return 'unknown';
@@ -97,7 +101,7 @@ export const getCanonicalKeyFromLabel = (label: string | undefined | null): Cano
 
 // Array of canonical statuses for iteration (e.g., filters), including 'unknown'
 // This list should now match the simplified categories in the database.
-export const VALID_CANONICAL_STATUSES: CanonicalStatus[] = ['operating', 'construction', 'planned', 'unknown'];
+export const VALID_CANONICAL_STATUSES: CanonicalStatus[] = ['operating', 'construction', 'planned', 'closed', 'unknown']; // Added 'closed'
 
 // Array including 'unknown' if needed elsewhere (now same as VALID_CANONICAL_STATUSES)
-export const ALL_CANONICAL_STATUSES: CanonicalStatus[] = ['operating', 'construction', 'planned', 'unknown'];
+export const ALL_CANONICAL_STATUSES: CanonicalStatus[] = ['operating', 'construction', 'planned', 'closed', 'unknown']; // Added 'closed'
