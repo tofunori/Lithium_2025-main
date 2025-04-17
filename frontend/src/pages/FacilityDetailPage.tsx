@@ -109,43 +109,53 @@ const FacilityDetailPage: React.FC = () => {
   };
 
   // Prepare data in the structure expected by the forms (SupabaseFacilityFormData) when editing starts
-  // UPDATED: Map from flat Facility structure
+  // UPDATED: Map from flat Facility structure (using correct DB property names)
   const prepareFormData = (facilityData: Facility): SupabaseFacilityFormData => {
       // Map Facility (DB structure) to SupabaseFacilityFormData (Form structure)
       return {
-          id: facilityData.id, // Include id
-          // Map flat properties to form fields
-          company_name: facilityData.company_name ?? '',
-          address: facilityData.address ?? '', // Use address directly
-          city: facilityData.city ?? '', // Add city if needed in form
-          status_name: facilityData.status_name ?? 'Planned', // Default if undefined
-          status_effective_date_text: facilityData.status_effective_date_text ?? '',
-          processing_capacity_mt_year: facilityData.processing_capacity_mt_year ?? '',
-          ev_equivalent_per_year: facilityData.ev_equivalent_per_year ?? '',
-          jobs: facilityData.jobs ?? '',
-          technology_name: facilityData.technology_name ?? '', // Add if needed in form
-          technology_description: facilityData.technology_description ?? '', // Use technology_description
-          notes: facilityData.notes ?? '', // Use notes
-          latitude: facilityData.latitude ?? null,
-          longitude: facilityData.longitude ?? null,
-          website: facilityData.website ?? '', // Assuming website is a direct column now or handled in form data
-          feedstock: facilityData.feedstock ?? '', // Assuming feedstock is direct or handled
-          product: facilityData.product ?? '', // Assuming product is direct or handled
-          contactPerson: facilityData.contactPerson ?? '', // Assuming contactPerson is direct or handled
-          contactEmail: facilityData.contactEmail ?? '', // Assuming contactEmail is direct or handled
-          contactPhone: facilityData.contactPhone ?? '', // Assuming contactPhone is direct or handled
+          id: facilityData.ID, // Use DB 'ID'
+          // Map flat properties from DB to form fields
+          company_name: facilityData.Company ?? '', // Use DB 'Company'
+          address: facilityData.Location ?? '', // Use DB 'Location'
+          // city: facilityData.city ?? '', // 'city' is not directly on Facility DB model
+          status_name: facilityData["Operational Status"] ?? 'Planned', // Use DB 'Operational Status'
+          // status_effective_date_text: facilityData.status_effective_date_text ?? '', // Not directly on Facility DB model
+          processing_capacity_mt_year: facilityData["Annual Processing Capacity (tonnes/year)"] ?? '', // Use DB 'Annual Processing Capacity (tonnes/year)'
+          ev_equivalent_per_year: facilityData.ev_equivalent_per_year ?? '', // Use DB 'ev_equivalent_per_year' (if exists)
+          jobs: facilityData.jobs ?? '', // Use DB 'jobs' (if exists)
+          technology_name: facilityData["Primary Recycling Technology"] ?? '', // Use DB 'Primary Recycling Technology'
+          // technology_description: facilityData.technology_description ?? '', // Not directly on Facility DB model
+          notes: facilityData["Key Sources/Notes"] ?? '', // Use DB 'Key Sources/Notes'
+          latitude: facilityData.Latitude ?? null, // Use DB 'Latitude'
+          longitude: facilityData.Longitude ?? null, // Use DB 'Longitude'
+          website: facilityData.website ?? '', // Use DB 'website' (if exists)
+          feedstock: facilityData.feedstock ?? '', // Use DB 'feedstock' (if exists)
+          product: facilityData.product ?? '', // Use DB 'product' (if exists)
+          contactPerson: facilityData.contactPerson ?? '', // Use DB 'contactPerson' (if exists)
+          contactEmail: facilityData.contactEmail ?? '', // Use DB 'contactEmail' (if exists)
+          contactPhone: facilityData.contactPhone ?? '', // Use DB 'contactPhone' (if exists)
 
           // Map investment_usd (DB) to investment.total (Form)
-          investment: { total: facilityData.investment_usd ?? '' },
+          investment: { total: facilityData.investment_usd ?? '' }, // Use DB 'investment_usd' (if exists)
 
-          // Keep structures for fields managed within the form state (if not flattened in DB)
-          // Ensure timeline structure matches SupabaseFacilityFormData (FacilityTimelineEvent[])
-          // These might need fetching from related tables if they were normalized
-          // Assuming these fields might not be directly on the Facility object anymore
-          timeline: (facilityData as any).timeline || [{ date: '', event: '' }], // Use 'as any' or fetch separately
-          images: (facilityData as any).images || [''], // Use 'as any' or fetch separately
-          documents: (facilityData as any).documents || [{ title: '', url: '' }], // Use 'as any' or fetch separately
-          environmentalImpact: { details: (facilityData as any).environmentalImpact?.details || '' }, // Use 'as any' or fetch separately
+          // Map potentially nested or related data safely, providing defaults
+          // These might be 'any' on Facility type, handle safely
+          timeline: (facilityData.timeline && Array.isArray(facilityData.timeline))
+              ? facilityData.timeline
+              : [{ date: '', event: '', description: '' }], // Default structure matching FacilityTimelineEvent
+          images: (facilityData.images && Array.isArray(facilityData.images))
+              ? facilityData.images
+              : [''], // Default empty image
+          documents: (facilityData.documents && Array.isArray(facilityData.documents))
+              ? facilityData.documents
+              : [{ title: '', url: '' }], // Default empty document
+          environmentalImpact: {
+              details: facilityData.environmentalImpact?.details ?? '' // Use nullish coalescing
+          },
+          // Add defaults for fields present in FormData but not directly in Facility DB model
+          // city: '', // Removed: 'city' is not in FacilityFormData
+          status_effective_date_text: '', // Default status date text to empty string
+          technology_description: '', // Default tech description to empty string
       };
   };
 
@@ -171,6 +181,7 @@ const FacilityDetailPage: React.FC = () => {
   const handleSave = async () => {
     if (!editFormData || !id) return;
 
+
     setIsSaving(true);
     setError(null);
     try {
@@ -180,6 +191,7 @@ const FacilityDetailPage: React.FC = () => {
 
       // Re-fetch data to show the latest version
       const refreshedFacility = await getFacilityById(id);
+      console.log('[handleSave] Refreshed facility data:', refreshedFacility);
       if (refreshedFacility) {
         setFacility(refreshedFacility);
       }
@@ -372,7 +384,8 @@ const FacilityDetailPage: React.FC = () => {
 
       const renderViewOrEdit = (ViewComponent: React.ReactNode, EditComponent: React.ComponentType<any> | null) => {
           // Ensure dataForEdit is not null when rendering the edit component
-          return isEditingCurrentTab && EditComponent && dataForEdit ? <EditComponent {...commonEditProps} data={dataForEdit} /> : ViewComponent;
+          // REMOVED redundant data={dataForEdit} prop as it's already in commonEditProps
+          return isEditingCurrentTab && EditComponent && dataForEdit ? <EditComponent {...commonEditProps} /> : ViewComponent;
       };
 
       const renderArrayEdit = (
@@ -386,6 +399,7 @@ const FacilityDetailPage: React.FC = () => {
       ) => {
            // Ensure dataForEdit is not null when rendering the edit component
            if (isEditingCurrentTab && EditComponent && dataForEdit) {
+      console.log('[renderTabContent] Data used for display:', JSON.stringify(currentFormDataForDisplay, null, 2));
                const editProps = {
                    ...commonEditProps, // Includes data, isSaving
                    data: dataForEdit, // Pass the non-null edit data (SupabaseFacilityFormData)
@@ -512,7 +526,7 @@ const FacilityDetailPage: React.FC = () => {
                      // View Mode Content - Use dataForView
                      <ul className="list-group list-group-flush">
                          {Array.isArray(dataForView.documents) && dataForView.documents.length > 0 && (dataForView.documents[0]?.title || dataForView.documents[0]?.url) ? (
-                             dataForView.documents.map((doc: any, index: number) => ( // Added type annotation
+                             dataForView.documents.map((doc: { title?: string; url?: string }, index: number) => ( // Use specific type
                                  <li key={index} className="list-group-item">
                                      {doc.url ? <a href={doc.url} target="_blank" rel="noopener noreferrer">{doc.title || 'View Document'}</a> : (doc.title || 'N/A')}
                                  </li>
@@ -567,10 +581,10 @@ const FacilityDetailPage: React.FC = () => {
       <div className="card shadow-sm">
         <div className="card-header facility-header d-flex justify-content-between align-items-center flex-wrap">
           <div>
-            {/* UPDATED: Display company_name */}
-            <h1 className="h3 mb-0">{facility.company_name || 'Facility Details'}</h1>
-            {/* UPDATED: Display status_name */}
-            {renderStatusBadge(facility.status_name)}
+            {/* UPDATED: Display Company from Facility object */}
+            <h1 className="h3 mb-0">{facility.Company || 'Facility Details'}</h1>
+            {/* UPDATED: Display "Operational Status" from Facility object */}
+            {renderStatusBadge(facility["Operational Status"])}
           </div>
           <div>
             {isAuthenticated && !editingTabKey && (

@@ -391,16 +391,16 @@ export const updateFacility = async (facilityId: string, updatedData: FacilityFo
   if (updatedData.technology_name !== undefined) dataToUpdate['Primary Recycling Technology'] = updatedData.technology_name ?? null;
   if (updatedData.technology_category !== undefined) dataToUpdate['technology_category'] = updatedData.technology_category ?? null; // Handle technology_category updates
 
-  // Add other mappings as needed
-  if (updatedData.website !== undefined) dataToUpdate['website'] = updatedData.website ?? null; // Assuming 'website' column exists
-  if (updatedData.feedstock !== undefined) dataToUpdate['feedstock'] = updatedData.feedstock ?? null; // Assuming 'feedstock' column exists
-  if (updatedData.product !== undefined) dataToUpdate['product'] = updatedData.product ?? null; // Assuming 'product' column exists
-  if (updatedData.contactPerson !== undefined) dataToUpdate['contactPerson'] = updatedData.contactPerson ?? null; // Assuming 'contactPerson' column exists
-  if (updatedData.contactEmail !== undefined) dataToUpdate['contactEmail'] = updatedData.contactEmail ?? null; // Assuming 'contactEmail' column exists
-  if (updatedData.contactPhone !== undefined) dataToUpdate['contactPhone'] = updatedData.contactPhone ?? null; // Assuming 'contactPhone' column exists
-  // if (updatedData.investment?.total !== undefined) dataToUpdate['investment_usd'] = updatedData.investment.total ? Number(updatedData.investment.total) : null; // Assuming 'investment_usd' column exists
-  // if (updatedData.jobs !== undefined) dataToUpdate['jobs'] = updatedData.jobs ? Number(updatedData.jobs) : null; // Assuming 'jobs' column exists
-  // if (updatedData.ev_equivalent_per_year !== undefined) dataToUpdate['ev_equivalent_per_year'] = updatedData.ev_equivalent_per_year ? Number(updatedData.ev_equivalent_per_year) : null; // Assuming 'ev_equivalent_per_year' column exists
+  // Add other mappings as needed - COMMENTED OUT potentially non-existent columns based on error feedback
+  // if (updatedData.website !== undefined) dataToUpdate['website'] = updatedData.website ?? null;
+  // if (updatedData.feedstock !== undefined) dataToUpdate['feedstock'] = updatedData.feedstock ?? null;
+  // if (updatedData.product !== undefined) dataToUpdate['product'] = updatedData.product ?? null;
+  // if (updatedData.contactPerson !== undefined) dataToUpdate['contactPerson'] = updatedData.contactPerson ?? null;
+  // if (updatedData.contactEmail !== undefined) dataToUpdate['contactEmail'] = updatedData.contactEmail ?? null; // Error indicated this column doesn't exist
+  // if (updatedData.contactPhone !== undefined) dataToUpdate['contactPhone'] = updatedData.contactPhone ?? null;
+  // if (updatedData.investment?.total !== undefined) dataToUpdate['investment_usd'] = updatedData.investment.total ? Number(updatedData.investment.total) : null;
+  // if (updatedData.jobs !== undefined) dataToUpdate['jobs'] = updatedData.jobs ? Number(updatedData.jobs) : null;
+  // if (updatedData.ev_equivalent_per_year !== undefined) dataToUpdate['ev_equivalent_per_year'] = updatedData.ev_equivalent_per_year ? Number(updatedData.ev_equivalent_per_year) : null;
 
 
   // Check if there's anything to update
@@ -408,6 +408,8 @@ export const updateFacility = async (facilityId: string, updatedData: FacilityFo
       console.log(`No changes detected for facility ${facilityId}. Skipping update.`);
       return;
   }
+    // Log the full object being sent using JSON.stringify
+    console.log(`[updateFacility] Data being sent for update (ID: ${facilityId}):`, JSON.stringify(dataToUpdate, null, 2));
 
   try {
     const { error: updateError } = await supabase
