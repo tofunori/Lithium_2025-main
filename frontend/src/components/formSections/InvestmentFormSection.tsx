@@ -2,7 +2,7 @@ import React, { ChangeEvent, FC } from 'react';
 
 // Define the structure for the investment data this section handles
 interface InvestmentData {
-  total?: string | number; // Matches FacilityFormData.investment.total
+  total?: string | number | null | undefined; // UPDATED: Allow null to match SupabaseFacilityFormData
 }
 
 // Define the props for the component
@@ -28,7 +28,7 @@ const InvestmentFormSection: FC<InvestmentFormSectionProps> = ({ data, onChange,
   // If passing the generic handleChange, it might need modification to handle nested paths.
 
   return (
-    <fieldset disabled={isSaving}>
+    <fieldset disabled={isSaving}> {/* RESTORED disabled attribute */}
       <legend className="mb-3">Investment & Funding</legend>
       <div className="mb-3">
         <label htmlFor="edit-investment-total" className="form-label">Total Investment / Funding Details:</label>

@@ -31,7 +31,7 @@ import '../components/EditFacilityForm.css'; // Keep for now
 
 // Type for location state passed via Link/navigate
 interface LocationState {
-    activeTab?: string;
+    // activeTab?: string; // Removed as tabs are gone
 }
 
 // Type for status badge keys used locally for styling
@@ -48,8 +48,7 @@ const FacilityDetailPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<string>(location.state?.activeTab || 'overview');
-  const [editingTabKey, setEditingTabKey] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState<boolean>(false); // New state for in-page editing
   // Use the imported SupabaseFacilityFormData type for edit state
   const [editFormData, setEditFormData] = useState<SupabaseFacilityFormData | null>(null);
 
@@ -85,12 +84,7 @@ const FacilityDetailPage: React.FC = () => {
     fetchFacility();
   }, [id]);
 
-  // Update location state when tab changes (optional)
-  useEffect(() => {
-    if (!editingTabKey) {
-      window.history.replaceState({ ...window.history.state, activeTab }, '', `${location.pathname}${location.search}`);
-    }
-  }, [activeTab, editingTabKey, location.pathname, location.search]);
+  // Removed useEffect for activeTab history update
 
 
   // UPDATED: renderStatusBadge accepts status_name and returns React.ReactNode
@@ -164,7 +158,8 @@ const FacilityDetailPage: React.FC = () => {
     if (isAuthenticated && facility) {
       const initialFormData = prepareFormData(facility);
       setEditFormData(initialFormData);
-      setEditingTabKey(activeTab);
+      console.log('[handleEdit] Initial editFormData:', JSON.stringify(initialFormData, null, 2));
+      setIsEditing(true); // Set editing state to true
     } else if (!isAuthenticated) {
       alert('You must be logged in to edit facilities.');
       // Optionally redirect to login: navigate('/login');
@@ -172,9 +167,9 @@ const FacilityDetailPage: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setEditingTabKey(null);
-    setEditFormData(null);
-    setError(null);
+    setIsEditing(false); // Set editing state to false
+    setEditFormData(null); // Clear edit form data
+    setError(null); // Clear any previous errors
   };
 
   // handleSave uses Supabase updateFacility which now accepts FacilityFormData
@@ -196,9 +191,11 @@ const FacilityDetailPage: React.FC = () => {
         setFacility(refreshedFacility);
       }
 
-      setEditingTabKey(null);
-      setEditFormData(null);
-      alert('Facility updated successfully!');
+      // Update state to exit edit mode *before* the alert
+      setIsEditing(false); // Set editing state to false
+      setEditFormData(null); // Clear edit form data
+
+      alert('Facility updated successfully!'); // Show alert after state updates initiated
     } catch (err: any) {
       console.error("Error saving facility:", err);
       const message = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -355,284 +352,273 @@ const FacilityDetailPage: React.FC = () => {
   // Use editFormData when editing, otherwise prepare fresh data for display mapping consistency
   const currentFormDataForDisplay = editFormData || prepareFormData(facility);
 
-  // Type the tabs array
-  const tabs: { key: string; label: string }[] = [
-    { key: 'overview', label: 'Overview' },
-    { key: 'technical', label: 'Technical Details' },
-    { key: 'media', label: 'Media' },
-    { key: 'timeline', label: 'Timeline' },
-    { key: 'documents', label: 'Documents' },
-    { key: 'environmental', label: 'Environmental Impact' },
-    { key: 'investment', label: 'Investment & Funding' },
-    { key: 'contact', label: 'Contact Information' },
-  ];
-
-  // Helper to render form sections or view content
-  const renderTabContent = () => {
-      const isEditingCurrentTab = editingTabKey === activeTab;
-      // For viewing, use currentFormDataForDisplay (mapped from facility or edit state)
-      const dataForView = currentFormDataForDisplay; // Use prepared form data for view consistency
-      const dataForEdit = editFormData; // Use edit state for editing (SupabaseFacilityFormData)
-
-      // Define props for form sections generically
-      // Pass dataForEdit which is SupabaseFacilityFormData
-      const commonEditProps = {
-          data: dataForEdit,
-          onChange: handleFormChange, // General handler
-          isSaving: isSaving,
-      };
-
-      const renderViewOrEdit = (ViewComponent: React.ReactNode, EditComponent: React.ComponentType<any> | null) => {
-          // Ensure dataForEdit is not null when rendering the edit component
-          // REMOVED redundant data={dataForEdit} prop as it's already in commonEditProps
-          return isEditingCurrentTab && EditComponent && dataForEdit ? <EditComponent {...commonEditProps} /> : ViewComponent;
-      };
-
-      const renderArrayEdit = (
-          ViewComponent: React.ReactNode,
-          EditComponent: React.ComponentType<any> | null,
-          itemHandlers: {
-              onChange: (index: number, field: any, value: any) => void;
-              onAddItem: () => void;
-              onRemoveItem: (index: number) => void;
-          }
-      ) => {
-           // Ensure dataForEdit is not null when rendering the edit component
-           if (isEditingCurrentTab && EditComponent && dataForEdit) {
-      console.log('[renderTabContent] Data used for display:', JSON.stringify(currentFormDataForDisplay, null, 2));
-               const editProps = {
-                   ...commonEditProps, // Includes data, isSaving
-                   data: dataForEdit, // Pass the non-null edit data (SupabaseFacilityFormData)
-                   // Pass specific item handlers
-                   onItemChange: itemHandlers.onChange,
-                   onAddItem: itemHandlers.onAddItem,
-                   onRemoveItem: itemHandlers.onRemoveItem,
-               };
-               return <EditComponent {...editProps} />;
-           }
-           return ViewComponent;
-      };
-
-
-      switch (activeTab) {
-          case 'overview':
-              return renderViewOrEdit(
-                  // View Mode Content - Use dataForView (mapped from facility or edit state)
-                  <>
-                      <div className="row mb-3">
-                          {/* UPDATED: Use dataForView.address */}
-                          <div className="col-md-6"><strong>Location:</strong><p>{dataForView.address || 'N/A'}</p></div>
-                          {/* UPDATED: Use dataForView.status_name */}
-                          <div className="col-md-6"><strong>Status:</strong><p>{renderStatusBadge(dataForView.status_name)}</p></div>
-                      </div>
-                      <div className="row mb-3">
-                          <div className="col-md-6"><strong>Website:</strong><p>{dataForView.website ? <a href={dataForView.website} target="_blank" rel="noopener noreferrer">{dataForView.website}</a> : 'N/A'}</p></div>
-                           {/* UPDATED: Display coordinates if available, check type for toFixed */}
-                           {typeof dataForView.latitude === 'number' && typeof dataForView.longitude === 'number' && (
-                               <div className="col-md-6"><strong>Coordinates:</strong><p>{dataForView.latitude.toFixed(5)}, {dataForView.longitude.toFixed(5)}</p></div>
-                           )}
-                      </div>
-                      <div className="row mb-4">
-                          {/* UPDATED: Use dataForView.notes */}
-                          <div className="col-12"><h3 className="sub-section-heading">Notes</h3><p>{dataForView.notes || 'Notes not available.'}</p></div>
-                      </div>
-                  </>,
-                  // Edit Mode Component
-                   (props: any) => (
-                       <>
-                           {/* UPDATED: Pass correct props to BasicInfoFormSection */}
-                           <BasicInfoFormSection {...props} data={{ company: props.data?.company_name, location: props.data?.address, status: props.data?.status_name }} />
-                           {/* UPDATED: Edit notes instead of description */}
-                           <div className="mb-3">
-                               <label htmlFor="edit-notes" className="form-label">Notes:</label>
-                               <textarea className="form-control" id="edit-notes" name="notes" value={props.data?.notes || ''} onChange={props.onChange} rows={4} disabled={props.isSaving}></textarea>
-                           </div>
-                           <div className="mb-3">
-                               <label htmlFor="edit-website" className="form-label">Website:</label>
-                               <input type="url" className="form-control" id="edit-website" name="website" value={props.data?.website || ''} onChange={props.onChange} disabled={props.isSaving} />
-                           </div>
-                           {/* UPDATED: Edit latitude/longitude */}
-                            <div className="row">
-                                <div className="col-md-6 mb-3">
-                                    <label htmlFor="edit-latitude" className="form-label">Latitude:</label>
-                                    <input type="number" step="any" className="form-control" id="edit-latitude" name="latitude" value={props.data?.latitude ?? ''} onChange={props.onChange} disabled={props.isSaving} />
-                                </div>
-                                <div className="col-md-6 mb-3">
-                                    <label htmlFor="edit-longitude" className="form-label">Longitude:</label>
-                                    <input type="number" step="any" className="form-control" id="edit-longitude" name="longitude" value={props.data?.longitude ?? ''} onChange={props.onChange} disabled={props.isSaving} />
-                                </div>
-                            </div>
-                       </>
-                   )
-              );
-
-          case 'technical':
-              return renderViewOrEdit(
-                  // View Mode Content - Use dataForView
-                  <>
-                      <div className="row mb-3">
-                          {/* UPDATED: Use processing_capacity_mt_year */}
-                          <div className="col-md-6"><strong>Volume (tons/year):</strong><p>{dataForView.processing_capacity_mt_year || 'N/A'}</p></div>
-                          {/* UPDATED: Use technology_name (assuming it's in form data) */}
-                          <div className="col-md-6"><strong>Method/Technology:</strong><p>{dataForView.technology_name || 'N/A'}</p></div>
-                      </div>
-                      <div className="row mb-3">
-                          <div className="col-md-6"><strong>Feedstock:</strong><p>{dataForView.feedstock || 'N/A'}</p></div>
-                          <div className="col-md-6"><strong>Product:</strong><p>{dataForView.product || 'N/A'}</p></div>
-                      </div>
-                      <div className="row mb-4">
-                          {/* UPDATED: Use technology_description */}
-                          <div className="col-12"><h3 className="sub-section-heading">Technology Description</h3><pre>{dataForView.technology_description || 'Description not available.'}</pre></div>
-                      </div>
-                  </>,
-                  // Edit Mode Component - UPDATED: Pass correct props to TechnicalFormSection
-                  (props: any) => <TechnicalFormSection {...props} data={{ capacity: props.data?.processing_capacity_mt_year, technology: props.data?.technology_name, feedstock: props.data?.feedstock, product: props.data?.product, technicalSpecs: props.data?.technology_description }} /> // Map capacity->processing_capacity, tech->technology_name, specs->technology_description
-              );
-
-          case 'media':
-               return renderViewOrEdit(
-                   // View Mode Content - Use dataForView
-                   <div className="image-gallery-placeholder">
-                       {Array.isArray(dataForView.images) && dataForView.images.length > 0 && dataForView.images[0] !== '' ? (
-                           <div className="image-gallery-container d-flex flex-wrap">
-                               {dataForView.images.map((imageUrl, index) => (
-                                   imageUrl && <img key={index} src={imageUrl} alt={`Facility ${index + 1}`} className="img-thumbnail me-2 mb-2 facility-gallery-image" style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'cover', cursor: 'pointer' }} onError={(e: SyntheticEvent<HTMLImageElement, Event>) => { e.currentTarget.style.display = 'none'; }} onClick={() => window.open(imageUrl, '_blank')} />
-                               ))}
-                           </div>
-                       ) : (<p>No images available.</p>)}
-                   </div>,
-                   // Edit Mode Component - Pass specific handler for media updates
-                   (props: any) => <MediaFormSection {...props} facilityId={id!} data={{ images: props.data?.images }} onFormDataChange={handleMediaFormChange} /> // Use non-null assertion for id
-               );
-
-           case 'timeline':
-                return renderArrayEdit(
-                    // View Mode Content - Use dataForView
-                    <ul className="list-group list-group-flush">
-                        {Array.isArray(dataForView.timeline) && dataForView.timeline.length > 0 && dataForView.timeline[0]?.event ? (
-                            dataForView.timeline.map((item, index) => (
-                                <li key={index} className="list-group-item"><strong>{item.date}:</strong> {item.event} {item.description ? `- ${item.description}` : ''}</li>
-                            ))
-                        ) : (<li className="list-group-item">No timeline events available.</li>)}
-                    </ul>,
-                    // Edit Mode Component
-                    TimelineFormSection,
-                    // Pass timeline-specific handlers
-                    { onChange: handleTimelineChange, onAddItem: addTimelineItem, onRemoveItem: removeTimelineItem }
-                );
-
-            case 'documents':
-                 return renderArrayEdit(
-                     // View Mode Content - Use dataForView
-                     <ul className="list-group list-group-flush">
-                         {Array.isArray(dataForView.documents) && dataForView.documents.length > 0 && (dataForView.documents[0]?.title || dataForView.documents[0]?.url) ? (
-                             dataForView.documents.map((doc: { title?: string; url?: string }, index: number) => ( // Use specific type
-                                 <li key={index} className="list-group-item">
-                                     {doc.url ? <a href={doc.url} target="_blank" rel="noopener noreferrer">{doc.title || 'View Document'}</a> : (doc.title || 'N/A')}
-                                 </li>
-                             ))
-                         ) : (<li className="list-group-item">No documents available.</li>)}
-                     </ul>,
-                     // Edit Mode Component
-                     DocumentsFormSection,
-                     // Pass document-specific handlers
-                     { onChange: handleDocumentChange, onAddItem: addDocumentItem, onRemoveItem: removeDocumentItem }
-                 );
-
-          case 'environmental':
-              return renderViewOrEdit(
-                  // View Mode Content - Use dataForView
-                  <div><h3 className="sub-section-heading">Details</h3><p>{dataForView.environmentalImpact?.details || 'Details not available.'}</p></div>,
-                  // Edit Mode Component
-                  EnvironmentalFormSection // Expects data={{ environmentalImpact: { details: ... } }}
-              );
-
-          case 'investment':
-              return renderViewOrEdit(
-                  // View Mode Content - Use dataForView
-                  // UPDATED: Display investment.total (mapped from investment_usd)
-                  <div><h3 className="sub-section-heading">Total Investment</h3><p>{dataForView.investment?.total || 'Details not available.'}</p></div>,
-                  // Edit Mode Component
-                  InvestmentFormSection // Expects data={{ investment: { total: ... } }}
-              );
-
-          case 'contact':
-              return renderViewOrEdit(
-                  // View Mode Content - Use dataForView
-                  <>
-                      <div className="row mb-2">
-                          <div className="col-md-4"><strong>Contact Person:</strong><p>{dataForView.contactPerson || 'N/A'}</p></div>
-                          <div className="col-md-4"><strong>Contact Email:</strong><p>{dataForView.contactEmail || 'N/A'}</p></div>
-                          <div className="col-md-4"><strong>Contact Phone:</strong><p>{dataForView.contactPhone || 'N/A'}</p></div>
-                      </div>
-                  </>,
-                  // Edit Mode Component
-                  ContactFormSection // Expects data={{ contactPerson: ..., contactEmail: ..., contactPhone: ... }}
-              );
-
-          default:
-              return <p>This section is under construction.</p>;
-      }
+  // Define common props for form sections when editing
+  const commonEditProps = {
+      data: editFormData, // Pass the edit form data state
+      onChange: handleFormChange, // General handler for simple inputs
+      isSaving: isSaving,
   };
 
 
+  // --- Render ---
   return (
     <div className="container mt-4 facility-detail-page">
       <div className="card shadow-sm">
         <div className="card-header facility-header d-flex justify-content-between align-items-center flex-wrap">
           <div>
-            {/* UPDATED: Display Company from Facility object */}
+            {/* Display Company and Status from the fetched facility data */}
             <h1 className="h3 mb-0">{facility.Company || 'Facility Details'}</h1>
-            {/* UPDATED: Display "Operational Status" from Facility object */}
             {renderStatusBadge(facility["Operational Status"])}
           </div>
           <div>
-            {isAuthenticated && !editingTabKey && (
-              <button className="btn btn-outline-primary btn-sm me-2" onClick={handleEdit}>
-                <i className="fas fa-edit me-1"></i> Edit Section
-              </button>
-            )}
-            {editingTabKey && (
-              <>
-                <button className="btn btn-success btn-sm me-2" onClick={handleSave} disabled={isSaving}>
-                  <i className="fas fa-save me-1"></i> {isSaving ? 'Saving...' : 'Save Changes'}
+            {/* Edit/Save/Cancel Buttons - Logic based on isEditing state */}
+            {isAuthenticated && !isEditing && (
+                <button className="btn btn-outline-primary btn-sm me-2" onClick={handleEdit}>
+                    <i className="fas fa-edit me-1"></i> Edit
                 </button>
-                <button className="btn btn-secondary btn-sm" onClick={handleCancel} disabled={isSaving}>
-                  <i className="fas fa-times me-1"></i> Cancel
-                </button>
-              </>
             )}
-            <Link to="/facilities" className="btn btn-outline-secondary btn-sm">
+            {isEditing && (
+                <>
+                    <button className="btn btn-success btn-sm me-2" onClick={handleSave} disabled={isSaving}>
+                        <i className={`fas ${isSaving ? 'fa-spinner fa-spin' : 'fa-save'} me-1`}></i> {isSaving ? 'Saving...' : 'Save'}
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={handleCancel} disabled={isSaving}>
+                        <i className="fas fa-times me-1"></i> Cancel
+                    </button>
+                </>
+            )}
+            <Link to="/facilities" className="btn btn-outline-secondary btn-sm ms-2">
               <i className="fas fa-arrow-left me-1"></i> Back to List
             </Link>
           </div>
         </div>
 
-        {/* Display saving error */}
-        {error && editingTabKey && <div className="alert alert-danger m-3">{error}</div>}
+        {/* Display saving error - Only when editing */}
+        {error && isEditing && <div className="alert alert-danger m-3">{error}</div>}
 
         <div className="card-body">
-          <ul className="nav nav-tabs mb-3">
-            {tabs.map(tab => (
-              <li className="nav-item" key={tab.key}>
-                <button
-                  type="button"
-                  className={`nav-link ${activeTab === tab.key ? 'active' : ''} ${editingTabKey && editingTabKey !== tab.key ? 'disabled' : ''}`}
-                  onClick={() => !editingTabKey && setActiveTab(tab.key)} // Prevent switching tabs while editing
-                  disabled={!!(editingTabKey && editingTabKey !== tab.key)} // FIX: Coerce to boolean
-                >
-                  {tab.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+          {/* NEW: Multi-column layout structure */}
+          <div className="facility-content-grid">
+            {/* --- Column 1 --- */}
+            <div>
+              {/* Basic Info Section */}
+              <div className="facility-section">
+                <h3>Basic Information</h3>
+                {isEditing && editFormData ? (
+                  <>
+                    {/* Pass specific props needed by BasicInfoFormSection, handling potential nulls */}
+                    <BasicInfoFormSection
+                        data={{ company: editFormData.company_name ?? '', location: editFormData.address ?? '', status: editFormData.status_name ?? '' }}
+                        onChange={handleFormChange}
+                        isSaving={isSaving}
+                    />
+                     {/* Website Input */}
+                     <div className="mb-3">
+                         <label htmlFor="edit-website" className="form-label">Website:</label>
+                         <input type="url" className="form-control" id="edit-website" name="website" value={editFormData.website || ''} onChange={handleFormChange} disabled={isSaving} />
+                     </div>
+                     {/* Coordinates Input */}
+                      <div className="row">
+                          <div className="col-md-6 mb-3">
+                              <label htmlFor="edit-latitude" className="form-label">Latitude:</label>
+                              <input type="number" step="any" className="form-control" id="edit-latitude" name="latitude" value={editFormData.latitude ?? ''} onChange={handleFormChange} disabled={isSaving} />
+                          </div>
+                          <div className="col-md-6 mb-3">
+                              <label htmlFor="edit-longitude" className="form-label">Longitude:</label>
+                              <input type="number" step="any" className="form-control" id="edit-longitude" name="longitude" value={editFormData.longitude ?? ''} onChange={handleFormChange} disabled={isSaving} />
+                          </div>
+                      </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="row mb-3">
+                      <div className="col-md-6"><strong>Location:</strong><p>{currentFormDataForDisplay.address || 'N/A'}</p></div>
+                      <div className="col-md-6"><strong>Status:</strong><p>{renderStatusBadge(currentFormDataForDisplay.status_name)}</p></div>
+                    </div>
+                    <div className="row mb-3">
+                      <div className="col-md-6"><strong>Website:</strong><p>{currentFormDataForDisplay.website ? <a href={currentFormDataForDisplay.website} target="_blank" rel="noopener noreferrer">{currentFormDataForDisplay.website}</a> : 'N/A'}</p></div>
+                      {typeof currentFormDataForDisplay.latitude === 'number' && typeof currentFormDataForDisplay.longitude === 'number' && (
+                           <div className="col-md-6"><strong>Coordinates:</strong><p>{currentFormDataForDisplay.latitude.toFixed(5)}, {currentFormDataForDisplay.longitude.toFixed(5)}</p></div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
 
-          <div className="tab-content p-3 border bg-light">
-            {renderTabContent()}
-          </div>
-        </div>
-      </div>
-    </div>
+              {/* Contact Info Section */}
+              <div className="facility-section">
+                <h3>Contact Information</h3>
+                {isEditing && editFormData ? (
+                  <ContactFormSection
+                    data={{ contactPerson: editFormData.contactPerson ?? '', contactEmail: editFormData.contactEmail ?? '', contactPhone: editFormData.contactPhone ?? '' }}
+                    onChange={handleFormChange}
+                    isSaving={isSaving}
+                  />
+                ) : (
+                  <div className="row">
+                    <div className="col-md-4"><strong>Person:</strong><p>{currentFormDataForDisplay.contactPerson || 'N/A'}</p></div>
+                    <div className="col-md-4"><strong>Email:</strong><p>{currentFormDataForDisplay.contactEmail || 'N/A'}</p></div>
+                    <div className="col-md-4"><strong>Phone:</strong><p>{currentFormDataForDisplay.contactPhone || 'N/A'}</p></div>
+                  </div>
+                )}
+              </div>
+
+              {/* Investment Section */}
+               <div className="facility-section">
+                 <h3>Investment & Funding</h3>
+                 {isEditing && editFormData ? (
+                   <InvestmentFormSection
+                     data={{ investment: editFormData.investment }}
+                     onChange={handleFormChange}
+                     isSaving={isSaving}
+                   />
+                 ) : (
+                   <p>Total Investment (USD): {currentFormDataForDisplay.investment?.total || 'N/A'}</p>
+                 )}
+               </div>
+
+              {/* Notes Section */}
+              <div className="facility-section">
+                <h3>Notes</h3>
+                {isEditing && editFormData ? (
+                  <textarea
+                    className="form-control"
+                    id="edit-notes"
+                    name="notes"
+                    value={editFormData.notes || ''}
+                    onChange={handleFormChange}
+                    rows={5}
+                    disabled={isSaving}
+                  ></textarea>
+                ) : (
+                  <p>{currentFormDataForDisplay.notes || 'No notes available.'}</p>
+                )}
+              </div>
+            </div>
+
+            {/* --- Column 2 --- */}
+            <div>
+              {/* Technical Details Section */}
+              <div className="facility-section">
+                <h3>Technical Details</h3>
+                {isEditing && editFormData ? (
+                  <TechnicalFormSection
+                    data={{
+                        processing_capacity_mt_year: editFormData.processing_capacity_mt_year,
+                        technology_name: editFormData.technology_name,
+                        feedstock: editFormData.feedstock,
+                        product: editFormData.product,
+                        technology_description: editFormData.technology_description
+                    }}
+                    onChange={handleFormChange}
+                    isSaving={isSaving}
+                   />
+                ) : (
+                  <>
+                    <div className="row mb-3">
+                      <div className="col-md-6"><strong>Volume (tons/year):</strong><p>{currentFormDataForDisplay.processing_capacity_mt_year || 'N/A'}</p></div>
+                      <div className="col-md-6"><strong>Method/Technology:</strong><p>{currentFormDataForDisplay.technology_name || 'N/A'}</p></div>
+                    </div>
+                    <div className="row mb-3">
+                      <div className="col-md-6"><strong>Feedstock:</strong><p>{currentFormDataForDisplay.feedstock || 'N/A'}</p></div>
+                      <div className="col-md-6"><strong>Product:</strong><p>{currentFormDataForDisplay.product || 'N/A'}</p></div>
+                    </div>
+                    <div className="row mb-0"> {/* Removed mb-4 */}
+                      <div className="col-12"><strong>Technology Description:</strong><pre>{currentFormDataForDisplay.technology_description || 'Description not available.'}</pre></div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Timeline Section */}
+              <div className="facility-section">
+                <h3>Timeline</h3>
+                {isEditing && editFormData ? (
+                  <TimelineFormSection
+                    // Map timeline data to ensure date is a string, pass general handler
+                    data={{ timeline: editFormData.timeline?.map(item => ({ ...item, date: String(item.date) })) }}
+                    onChange={handleFormChange} // Use general handler
+                    // onAddItem and onRemoveItem likely handled internally by the component
+                    isSaving={isSaving}
+                  />
+                ) : (
+                  <ul className="list-group list-group-flush">
+                    {Array.isArray(currentFormDataForDisplay.timeline) && currentFormDataForDisplay.timeline.length > 0 && currentFormDataForDisplay.timeline[0]?.event ? (
+                        currentFormDataForDisplay.timeline.map((item, index) => (
+                            <li key={index} className="list-group-item bg-transparent px-0"><strong>{item.date}:</strong> {item.event} {item.description ? `- ${item.description}` : ''}</li>
+                        ))
+                    ) : (<li className="list-group-item bg-transparent px-0">No timeline events available.</li>)}
+                  </ul>
+                )}
+              </div>
+
+              {/* Documents Section */}
+              <div className="facility-section">
+                <h3>Documents</h3>
+                 {isEditing && editFormData ? (
+                   <DocumentsFormSection
+                     // Pass the correct subset of data and the general handler
+                     data={{ documents: editFormData.documents }}
+                     onChange={handleFormChange} // Use general handler
+                     // onAddItem and onRemoveItem likely handled internally
+                     isSaving={isSaving}
+                   />
+                 ) : (
+                   <ul className="list-group list-group-flush">
+                     {Array.isArray(currentFormDataForDisplay.documents) && currentFormDataForDisplay.documents.length > 0 && (currentFormDataForDisplay.documents[0]?.title || currentFormDataForDisplay.documents[0]?.url) ? (
+                         currentFormDataForDisplay.documents.map((doc: { title?: string; url?: string }, index: number) => (
+                             <li key={index} className="list-group-item bg-transparent px-0">
+                                 {doc.url ? <a href={doc.url} target="_blank" rel="noopener noreferrer">{doc.title || 'View Document'}</a> : (doc.title || 'N/A')}
+                             </li>
+                         ))
+                     ) : (<li className="list-group-item bg-transparent px-0">No documents available.</li>)}
+                   </ul>
+                 )}
+              </div>
+
+              {/* Media Section */}
+              <div className="facility-section">
+                <h3>Media</h3>
+                 {isEditing && editFormData ? (
+                    // Pass specific handler for media updates
+                    <MediaFormSection
+                        facilityId={id!} // Use non-null assertion if id is guaranteed
+                        data={{ images: editFormData.images }} // Pass only images array
+                        onFormDataChange={handleMediaFormChange} // Use the specific handler
+                        isSaving={isSaving}
+                    />
+                 ) : (
+                   <div className="image-gallery-placeholder">
+                     {Array.isArray(currentFormDataForDisplay.images) && currentFormDataForDisplay.images.length > 0 && currentFormDataForDisplay.images[0] !== '' ? (
+                         <div className="image-gallery-container d-flex flex-wrap">
+                             {currentFormDataForDisplay.images.map((imageUrl, index) => (
+                                 imageUrl && <img key={index} src={imageUrl} alt={`Facility ${index + 1}`} className="img-thumbnail me-2 mb-2 facility-gallery-image" style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'cover', cursor: 'pointer' }} onError={(e: SyntheticEvent<HTMLImageElement, Event>) => { e.currentTarget.style.display = 'none'; }} onClick={() => window.open(imageUrl, '_blank')} />
+                             ))}
+                         </div>
+                     ) : (<p>No images available.</p>)}
+                   </div>
+                 )}
+              </div>
+
+              {/* Environmental Impact Section */}
+              <div className="facility-section">
+                <h3>Environmental Impact</h3>
+                {isEditing && editFormData ? (
+                   <EnvironmentalFormSection
+                     data={{ environmentalImpact: editFormData.environmentalImpact }}
+                     onChange={handleFormChange}
+                     isSaving={isSaving}
+                   />
+                ) : (
+                  <p>{currentFormDataForDisplay.environmentalImpact?.details || 'Details not available.'}</p>
+                )}
+              </div>
+
+            </div>
+          </div> {/* End facility-content-grid */}
+        </div> {/* End card-body */}
+      </div> {/* End card */}
+    </div> /* End container */
   );
 };
 

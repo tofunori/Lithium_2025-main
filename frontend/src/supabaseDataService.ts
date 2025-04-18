@@ -390,6 +390,7 @@ export const updateFacility = async (facilityId: string, updatedData: FacilityFo
   if (updatedData.notes !== undefined) dataToUpdate['Key Sources/Notes'] = updatedData.notes ?? null;
   if (updatedData.technology_name !== undefined) dataToUpdate['Primary Recycling Technology'] = updatedData.technology_name ?? null;
   if (updatedData.technology_category !== undefined) dataToUpdate['technology_category'] = updatedData.technology_category ?? null; // Handle technology_category updates
+  // if (updatedData.technology_description !== undefined) dataToUpdate['technology_description'] = updatedData.technology_description ?? null; // REVERTED - Column does not exist in DB
 
   // Add other mappings as needed - COMMENTED OUT potentially non-existent columns based on error feedback
   // if (updatedData.website !== undefined) dataToUpdate['website'] = updatedData.website ?? null;

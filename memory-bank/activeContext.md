@@ -7,6 +7,8 @@
 
 ## Current Focus
 
+
+*   [2025-04-17 20:08:40] - Implement the redesign of `FacilityDetailPage.tsx` according to the plan in `docs/facility-detail-redesign-plan.md` (multi-column layout, in-page editing).
 *   
 
 ## Recent Changes
