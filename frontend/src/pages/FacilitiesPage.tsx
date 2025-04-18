@@ -116,111 +116,52 @@ const FacilitiesPage: React.FC = () => {
     }
   }, []); // Dependency removed as it uses the filter argument directly
 
-  // More robust Realtime update handler
-  const handleRealtimeUpdate = (payload: RealtimePostgresChangesPayload<any>) => { // Use 'any' for more flexibility
+  // Realtime update handler with type
+  const handleRealtimeUpdate = (payload: RealtimePostgresChangesPayload<Facility>) => {
     console.log('Realtime change received:', payload);
-    const { eventType, new: newRecord, old: oldRecord, errors } = payload;
-
-    if (errors) {
-        console.error('Realtime payload error:', errors);
-        return; // Don't process if payload itself has errors
-    }
+    const { eventType, new: newRecord, old: oldRecord } = payload;
 
     setFacilities(currentFacilities => {
       let updatedFacilities = [...currentFacilities];
       let facilityMatchesFilter = true;
 
-      const getSafeFacility = (record: any): Facility | null => {
-          if (!record || typeof record !== 'object' || !record.ID) return null;
-          // Ensure all fields from the Facility interface are present with correct types or null
-          return {
-              ID: record.ID, // Required
-              Company: record.Company ?? null,
-              "Facility Name/Site": record["Facility Name/Site"] ?? null,
-              Location: record.Location ?? null,
-              "Operational Status": record["Operational Status"] ?? null,
-              "Primary Recycling Technology": record["Primary Recycling Technology"] ?? null,
-              technology_category: record.technology_category ?? null,
-              // Ensure numeric fields are numbers or null
-              "Annual Processing Capacity (tonnes/year)": typeof record["Annual Processing Capacity (tonnes/year)"] === 'number' ? record["Annual Processing Capacity (tonnes/year)"] : null,
-              Latitude: typeof record.Latitude === 'number' ? record.Latitude : null,
-              Longitude: typeof record.Longitude === 'number' ? record.Longitude : null,
-              capacity_tonnes_per_year: typeof record.capacity_tonnes_per_year === 'number' ? record.capacity_tonnes_per_year : null,
-              jobs: typeof record.jobs === 'number' ? record.jobs : null,
-              investment_usd: typeof record.investment_usd === 'number' ? record.investment_usd : null,
-              ev_equivalent_per_year: typeof record.ev_equivalent_per_year === 'number' ? record.ev_equivalent_per_year : null,
-              // String fields default to null
-              "Key Sources/Notes": record["Key Sources/Notes"] ?? null,
-              created_at: record.created_at ?? undefined, // Optional string
-              website: record.website ?? null,
-              feedstock: record.feedstock ?? null,
-              product: record.product ?? null,
-              contactPerson: record.contactPerson ?? null,
-              contactEmail: record.contactEmail ?? null,
-              contactPhone: record.contactPhone ?? null,
-              // 'any' type fields - assign directly or provide default
-              timeline: record.timeline ?? null,
-              images: record.images ?? null,
-              documents: record.documents ?? null,
-              environmentalImpact: record.environmentalImpact ?? null,
-          };
-      };
       switch (eventType) {
         case 'INSERT':
-          const newFacilityInsert = getSafeFacility(newRecord);
-          if (newFacilityInsert && !updatedFacilities.some(f => f.ID === newFacilityInsert.ID)) {
-            updatedFacilities.push(newFacilityInsert);
-            facilityMatchesFilter = activeFilter === 'all' || getCanonicalStatus(newFacilityInsert['Operational Status']) === activeFilter;
-          } else if (!newFacilityInsert) {
-              console.warn("Realtime INSERT event received with invalid data:", newRecord);
-              facilityMatchesFilter = false; // Don't consider it matching if invalid
+          if (!updatedFacilities.some(f => f.ID === newRecord.ID)) {
+            updatedFacilities.push(newRecord as Facility);
           }
+          facilityMatchesFilter = activeFilter === 'all' || getCanonicalStatus(newRecord['Operational Status']) === activeFilter;
           break;
-
         case 'UPDATE':
-          const updatedFacilityData = getSafeFacility(newRecord);
-          if (updatedFacilityData) {
-              const index = updatedFacilities.findIndex(f => f.ID === updatedFacilityData.ID);
-              if (index > -1) {
-                  // Merge safely: Keep existing fields, overwrite with new valid ones
-                  updatedFacilities[index] = { ...updatedFacilities[index], ...updatedFacilityData };
-                  const newCanonicalStatus = getCanonicalStatus(updatedFacilities[index]['Operational Status']);
-                  facilityMatchesFilter = activeFilter === 'all' || newCanonicalStatus === activeFilter;
-              } else {
-                  // Record to update not found? Could happen with race conditions. Log it.
-                  console.warn(`Realtime UPDATE received for facility ID ${updatedFacilityData.ID} not found in current state.`);
-                  facilityMatchesFilter = false;
-              }
-          } else {
-              console.warn("Realtime UPDATE event received with invalid data:", newRecord);
-              facilityMatchesFilter = false; // Don't consider it matching if invalid
+          const oldCanonicalStatus = oldRecord ? getCanonicalStatus(oldRecord['Operational Status']) : 'unknown';
+          const newCanonicalStatus = newRecord ? getCanonicalStatus(newRecord['Operational Status']) : 'unknown';
+
+          updatedFacilities = updatedFacilities.map(f =>
+            f.ID === newRecord.ID ? { ...f, ...newRecord } : f
+          );
+
+          if (activeFilter !== 'all') {
+            facilityMatchesFilter = newCanonicalStatus === activeFilter;
           }
           break;
-
         case 'DELETE':
-           const oldId = oldRecord?.ID; // Use optional chaining
-           if (oldId) {
-             updatedFacilities = updatedFacilities.filter(f => f.ID !== oldId);
+           if (oldRecord && 'ID' in oldRecord) {
+             updatedFacilities = updatedFacilities.filter(f => f.ID !== oldRecord.ID);
+             facilityMatchesFilter = false;
            } else {
              console.warn("Realtime DELETE event received without old record ID:", payload);
+             facilityMatchesFilter = false;
            }
-           facilityMatchesFilter = true; // Bypass removal check below
           break;
-
         default:
           console.warn('Unhandled realtime event type:', eventType);
-          facilityMatchesFilter = true; // Be safe
+          facilityMatchesFilter = false;
       }
 
-      // Post-switch logic: If the event was INSERT or UPDATE, and the record *doesn't* match the filter (and filter isn't 'all'), remove it.
       if ((eventType === 'INSERT' || eventType === 'UPDATE') && !facilityMatchesFilter && activeFilter !== 'all') {
-          const recordIdToPotentiallyRemove = newRecord?.ID;
-          if (recordIdToPotentiallyRemove) {
-              const indexToRemove = updatedFacilities.findIndex(f => f.ID === recordIdToPotentiallyRemove);
-              if (indexToRemove > -1) {
-                  console.log(`Removing facility ${recordIdToPotentiallyRemove} as it no longer matches filter '${activeFilter}'`);
-                  updatedFacilities.splice(indexToRemove, 1);
-              }
+          const indexToRemove = updatedFacilities.findIndex(f => f.ID === newRecord.ID);
+          if (indexToRemove > -1) {
+              updatedFacilities.splice(indexToRemove, 1);
           }
       }
 
@@ -228,39 +169,32 @@ const FacilitiesPage: React.FC = () => {
     });
   };
 
-  // Effect for initial data load and refetch on filter change
+  // Add error handling for Realtime subscription
   useEffect(() => {
     fetchFacilitiesData(activeFilter);
-  }, [activeFilter, fetchFacilitiesData]);
 
-  // Effect for setting up and tearing down the subscription (runs once)
-  useEffect(() => {
-    console.log('Setting up Supabase realtime subscription for facilities...');
     const channel = supabase
       .channel('public:facilities')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'facilities' },
-        // Pass the robust handler
-        (payload: RealtimePostgresChangesPayload<any>) => handleRealtimeUpdate(payload)
+        (payload: RealtimePostgresChangesPayload<Facility>) => handleRealtimeUpdate(payload)
       )
       .subscribe((status: string, err?: Error) => {
          if (status === 'SUBSCRIBED') {
-           console.log('Successfully subscribed to facilities changes!');
+           console.log('Subscribed to facilities changes!');
          }
          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
            console.error(`Realtime subscription error: ${status}`, err);
-           // Display error to user, but maybe less critical now?
-           setError(prev => prev ? `${prev}\nRealtime connection issue: ${err?.message || status}.` : `Realtime connection error: ${err?.message || status}. Data may not be live.`);
+           setError(`Realtime connection error: ${err?.message || status}. Data may not be live.`);
          }
       });
 
-    // Cleanup function runs only on unmount
     return () => {
-      console.log('Unsubscribing from facilities changes on component unmount.');
+      console.log('Unsubscribing from facilities changes.');
       supabase.removeChannel(channel);
     };
-  }, []); // Empty dependency array ensures this runs only once
+  }, [activeFilter, fetchFacilitiesData]);
 
   const handleFilterClick = (filter: CanonicalStatus | 'all'): void => {
     setActiveFilter(filter);

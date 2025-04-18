@@ -17,4 +17,6 @@
 
 ## Open Questions/Issues
 
+*   [2025-04-18 12:58:30] - Starting code refactoring phase for database schema changes (related tables for facility details). Focus on `supabaseDataService.ts` first.
+
 *

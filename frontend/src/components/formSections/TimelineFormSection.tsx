@@ -9,66 +9,28 @@ interface TimelineEvent {
 // Define the props for the TimelineFormSection component
 interface TimelineFormSectionProps {
   data?: {
-    timeline?: TimelineEvent[];
+    // Expects items matching { date: string; event: string; description?: string }
+    timeline?: Array<{ id?: string; date: string; event: string; description?: string }>;
   };
-  // Using standard event handler type based on current usage,
-  // acknowledge TODOs about needing a more specific handler for array updates.
   onChange: React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
   isSaving: boolean;
-  // TODO: Define and use props like onAddItem, onRemoveItem, onTimelineChange
-  // when the corresponding functionality is fully implemented.
-  // onAddItem?: (newItem: TimelineEvent) => void;
-  // onRemoveItem?: (index: number) => void;
-  // onTimelineChange?: (updatedTimeline: TimelineEvent[]) => void;
+  // Add props for adding/removing items
+  onAddItem: () => void;
+  onRemoveItem: (index: number) => void;
 }
 
-const TimelineFormSection: React.FC<TimelineFormSectionProps> = ({ data, onChange, isSaving }) => {
+const TimelineFormSection: React.FC<TimelineFormSectionProps> = ({
+  data,
+  onChange,
+  isSaving,
+  onAddItem,
+  onRemoveItem
+}) => {
   // Provide default empty object for data and empty array for timeline
   const formData = data || {};
-  const timeline: TimelineEvent[] = formData.timeline || [];
+  const timeline = formData.timeline || [];
 
-  // TODO: Implement more robust change handling for array items
-  // This basic handler won't work correctly for updating specific items in the array.
-  // It needs to know the index and field (date/event) being changed.
-  const handleItemChange = (index: number, field: 'date' | 'event', value: string): void => {
-    const updatedTimeline = [...timeline];
-    // Ensure the item exists before trying to update it
-    if (updatedTimeline[index]) {
-        updatedTimeline[index] = { ...updatedTimeline[index], [field]: value };
-    } else {
-        // Handle potential edge case where index might be out of bounds, though unlikely with map
-        console.error("Attempted to update non-existent timeline item at index:", index);
-        return;
-    }
-    // Need a way to pass this structured update back to the parent via a dedicated prop
-    // For now, logging it. The parent `handleFormChange` needs enhancement.
-    console.log("Timeline item change (needs proper handler):", updatedTimeline);
-    // Example of how a dedicated handler might be called:
-    // if (onTimelineChange) {
-    //   onTimelineChange(updatedTimeline);
-    // } else {
-    //   // Fallback or error if the required handler isn't provided
-    // }
-  };
-
-  // TODO: Implement Add Item functionality using a dedicated prop like onAddItem
-  const handleAddItem = (): void => {
-    console.log("Add Timeline Item clicked (handler needed)");
-    // const newItem: TimelineEvent = { date: '', event: '' };
-    // if (onAddItem) {
-    //   onAddItem(newItem); // Or pass the whole updated array: onTimelineChange([...timeline, newItem]);
-    // }
-  };
-
-  // TODO: Implement Remove Item functionality using a dedicated prop like onRemoveItem
-  const handleRemoveItem = (index: number): void => {
-    console.log("Remove Timeline Item clicked (handler needed):", index);
-    // const updatedTimeline = timeline.filter((_, i) => i !== index);
-    // if (onRemoveItem) {
-    //    onRemoveItem(index); // Or pass the whole updated array: onTimelineChange(updatedTimeline);
-    // }
-  };
-
+  // Internal handlers removed as logic is now in parent via props
 
   return (
     <fieldset disabled={isSaving}>
@@ -83,13 +45,12 @@ const TimelineFormSection: React.FC<TimelineFormSectionProps> = ({ data, onChang
                 type="date" // Use date input type
                 className="form-control"
                 id={`timeline-date-${index}`}
-                // Using a generic name; specific handling would require the custom handler
-                name={`timeline_date_${index}`}
+                // Use naming convention expected by parent's handleFormChange
+                name={`timeline[${index}].event_date`}
                 value={item.date || ''}
-                // onChange={(e) => handleItemChange(index, 'date', e.target.value)} // Requires proper handler setup
-                onChange={onChange} // Using basic parent handler for now (will likely overwrite entire timeline object or fail)
-                placeholder="Date"
-                disabled={isSaving} // Ensure inputs are disabled when saving
+                onChange={onChange} // Pass parent's general handler
+                placeholder="Date (YYYY-MM-DD)"
+                disabled={isSaving}
               />
             </div>
             <div className="col-md-6">
@@ -98,20 +59,19 @@ const TimelineFormSection: React.FC<TimelineFormSectionProps> = ({ data, onChang
                 type="text"
                 className="form-control"
                 id={`timeline-event-${index}`}
-                // Using a generic name; specific handling would require the custom handler
-                name={`timeline_event_${index}`}
+                // Use naming convention expected by parent's handleFormChange
+                name={`timeline[${index}].event_name`}
                 value={item.event || ''}
-                // onChange={(e) => handleItemChange(index, 'event', e.target.value)} // Requires proper handler setup
-                onChange={onChange} // Using basic parent handler for now
+                onChange={onChange} // Pass parent's general handler
                 placeholder="Event/Milestone Description"
-                disabled={isSaving} // Ensure inputs are disabled when saving
+                disabled={isSaving}
               />
             </div>
             <div className="col-md-2 text-end">
               <button
                 type="button"
                 className="btn btn-sm btn-outline-danger"
-                onClick={() => handleRemoveItem(index)} // Needs proper handler wired to parent
+                onClick={() => onRemoveItem(index)} // Call parent's remove handler
                 disabled={isSaving}
                 title="Remove Item"
               >
@@ -127,7 +87,7 @@ const TimelineFormSection: React.FC<TimelineFormSectionProps> = ({ data, onChang
       <button
         type="button"
         className="btn btn-sm btn-outline-success mt-2"
-        onClick={handleAddItem} // Needs proper handler wired to parent
+        onClick={onAddItem} // Call parent's add handler
         disabled={isSaving}
       >
         <i className="fas fa-plus me-1"></i> Add Timeline Item

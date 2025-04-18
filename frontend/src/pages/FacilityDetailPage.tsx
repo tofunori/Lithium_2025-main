@@ -1,13 +1,17 @@
 // frontend/src/pages/FacilityDetailPage.tsx
 import React, { useState, useEffect, ChangeEvent, SyntheticEvent } from 'react';
 import { useParams, Link, useLocation, Location } from 'react-router-dom';
-// UPDATED: Import Facility and FacilityFormData from supabaseDataService
+// UPDATED: Import necessary types from supabaseDataService
 import {
     getFacilityById,
     updateFacility,
-    Facility, // Use the new flat Facility interface
-    FacilityFormData as SupabaseFacilityFormData, // Keep using this for form state structure
-    FacilityTimelineEvent // Import for timeline type consistency
+    // Facility, // Base type, might not be needed directly here anymore
+    FullFacilityData, // Combined type for fetched data
+    FacilityFormData, // Type for form state (nested)
+    FacilityTimelineEvent, // Keep for timeline item structure
+    FacilityDocument, // New type
+    FacilityImage, // New type
+    getFilePublicUrl // Import the helper function
 } from '../supabaseDataService';
 import { useAuth } from '../context/AuthContext'; // Assuming AuthContext provides user info
 
@@ -19,7 +23,7 @@ import TimelineFormSection from '../components/formSections/TimelineFormSection'
 import DocumentsFormSection from '../components/formSections/DocumentsFormSection';
 import EnvironmentalFormSection from '../components/formSections/EnvironmentalFormSection';
 import InvestmentFormSection from '../components/formSections/InvestmentFormSection';
-import ContactFormSection from '../components/formSections/ContactFormSection';
+// import ContactFormSection from '../components/formSections/ContactFormSection'; // Removed import
 
 // Import status utils
 import { getCanonicalStatus } from '../utils/statusUtils';
@@ -44,13 +48,16 @@ const FacilityDetailPage: React.FC = () => {
   const location = useLocation() as Location<LocationState | undefined>;
   const { currentUser } = useAuth();
 
-  const [facility, setFacility] = useState<Facility | null>(null); // UPDATED: Use Facility type
+  // UPDATED: State uses FullFacilityData for fetched data
+  const [facility, setFacility] = useState<FullFacilityData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false); // New state for in-page editing
-  // Use the imported SupabaseFacilityFormData type for edit state
-  const [editFormData, setEditFormData] = useState<SupabaseFacilityFormData | null>(null);
+  // UPDATED: State uses the nested FacilityFormData for editing
+  const [editFormData, setEditFormData] = useState<FacilityFormData | null>(null);
+  // State to store generated public URLs for display
+  const [imagePublicUrls, setImagePublicUrls] = useState<Record<string, string>>({});
 
   // Check if user is authenticated
   const isAuthenticated = !!currentUser;
@@ -65,7 +72,8 @@ const FacilityDetailPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const facilityData = await getFacilityById(id); // Returns Facility | null
+        // getFacilityById now returns FullFacilityData | null
+        const facilityData = await getFacilityById(id);
         if (facilityData) {
           setFacility(facilityData);
         } else {
@@ -84,7 +92,28 @@ const FacilityDetailPage: React.FC = () => {
     fetchFacility();
   }, [id]);
 
-  // Removed useEffect for activeTab history update
+  // Effect to generate public URLs when facility data changes (and not editing)
+  useEffect(() => {
+    if (facility?.facility_images && !isEditing) {
+      const generateUrls = async () => {
+        const urls: Record<string, string> = {};
+        for (const img of facility.facility_images) {
+          if (img.image_url) { // image_url here is the path
+            const publicUrl = await getFilePublicUrl('facility-images', img.image_url);
+            if (publicUrl) {
+              urls[img.image_url] = publicUrl; // Map path to public URL
+            }
+          }
+        }
+        setImagePublicUrls(urls);
+      };
+      generateUrls();
+    } else if (!isEditing) {
+        // Clear URLs if no images or when exiting edit mode without saving new ones
+        setImagePublicUrls({});
+    }
+    // Dependency array includes facility.facility_images and isEditing
+  }, [facility?.facility_images, isEditing]);
 
 
   // UPDATED: renderStatusBadge accepts status_name and returns React.ReactNode
@@ -102,60 +131,57 @@ const FacilityDetailPage: React.FC = () => {
     return <span className={className}>{label}</span>;
   };
 
-  // Prepare data in the structure expected by the forms (SupabaseFacilityFormData) when editing starts
-  // UPDATED: Map from flat Facility structure (using correct DB property names)
-  const prepareFormData = (facilityData: Facility): SupabaseFacilityFormData => {
-      // Map Facility (DB structure) to SupabaseFacilityFormData (Form structure)
+  // UPDATED: prepareFormData maps from FullFacilityData to nested FacilityFormData
+  const prepareFormData = (facilityData: FullFacilityData): FacilityFormData => {
+      // Map FullFacilityData (DB structure + relations) to FacilityFormData (Form structure)
       return {
-          id: facilityData.ID, // Use DB 'ID'
-          // Map flat properties from DB to form fields
-          company_name: facilityData.Company ?? '', // Use DB 'Company'
-          address: facilityData.Location ?? '', // Use DB 'Location'
-          // city: facilityData.city ?? '', // 'city' is not directly on Facility DB model
-          status_name: facilityData["Operational Status"] ?? 'Planned', // Use DB 'Operational Status'
-          // status_effective_date_text: facilityData.status_effective_date_text ?? '', // Not directly on Facility DB model
-          processing_capacity_mt_year: facilityData["Annual Processing Capacity (tonnes/year)"] ?? '', // Use DB 'Annual Processing Capacity (tonnes/year)'
-          ev_equivalent_per_year: facilityData.ev_equivalent_per_year ?? '', // Use DB 'ev_equivalent_per_year' (if exists)
-          jobs: facilityData.jobs ?? '', // Use DB 'jobs' (if exists)
-          technology_name: facilityData["Primary Recycling Technology"] ?? '', // Use DB 'Primary Recycling Technology'
-          // technology_description: facilityData.technology_description ?? '', // Not directly on Facility DB model
-          notes: facilityData["Key Sources/Notes"] ?? '', // Use DB 'Key Sources/Notes'
-          latitude: facilityData.Latitude ?? null, // Use DB 'Latitude'
-          longitude: facilityData.Longitude ?? null, // Use DB 'Longitude'
-          website: facilityData.website ?? '', // Use DB 'website' (if exists)
-          feedstock: facilityData.feedstock ?? '', // Use DB 'feedstock' (if exists)
-          product: facilityData.product ?? '', // Use DB 'product' (if exists)
-          contactPerson: facilityData.contactPerson ?? '', // Use DB 'contactPerson' (if exists)
-          contactEmail: facilityData.contactEmail ?? '', // Use DB 'contactEmail' (if exists)
-          contactPhone: facilityData.contactPhone ?? '', // Use DB 'contactPhone' (if exists)
+          // Core Fields
+          id: facilityData.ID,
+          company_name: facilityData.Company ?? '',
+          facility_name_site: facilityData["Facility Name/Site"] ?? '',
+          address: facilityData.Location ?? '',
+          status_name: facilityData["Operational Status"] ?? 'Planned',
+          technology_name: facilityData["Primary Recycling Technology"] ?? '',
+          technology_category: facilityData.technology_category ?? '',
+          processing_capacity_mt_year: facilityData.capacity_tonnes_per_year ?? '', // Use numeric column name
+          latitude: facilityData.Latitude ?? '', // Keep as string/number for form
+          longitude: facilityData.Longitude ?? '', // Keep as string/number for form
 
-          // Map investment_usd (DB) to investment.total (Form)
-          investment: { total: facilityData.investment_usd ?? '' }, // Use DB 'investment_usd' (if exists)
-
-          // Map potentially nested or related data safely, providing defaults
-          // These might be 'any' on Facility type, handle safely
-          timeline: (facilityData.timeline && Array.isArray(facilityData.timeline))
-              ? facilityData.timeline
-              : [{ date: '', event: '', description: '' }], // Default structure matching FacilityTimelineEvent
-          images: (facilityData.images && Array.isArray(facilityData.images))
-              ? facilityData.images
-              : [''], // Default empty image
-          documents: (facilityData.documents && Array.isArray(facilityData.documents))
-              ? facilityData.documents
-              : [{ title: '', url: '' }], // Default empty document
-          environmentalImpact: {
-              details: facilityData.environmentalImpact?.details ?? '' // Use nullish coalescing
+          // Nested Details Fields
+          details: {
+              technology_description: facilityData.facility_details?.technology_description ?? '',
+              notes: facilityData.facility_details?.notes ?? '',
+              website: facilityData.facility_details?.website ?? '',
+              feedstock: facilityData.facility_details?.feedstock ?? '',
+              product: facilityData.facility_details?.product ?? '',
+              investment_usd: facilityData.facility_details?.investment_usd ?? '',
+              jobs: facilityData.facility_details?.jobs ?? '',
+              ev_equivalent_per_year: facilityData.facility_details?.ev_equivalent_per_year ?? '',
+              environmental_impact_details: facilityData.facility_details?.environmental_impact_details ?? '',
+              status_effective_date_text: facilityData.facility_details?.status_effective_date_text ?? '',
           },
-          // Add defaults for fields present in FormData but not directly in Facility DB model
-          // city: '', // Removed: 'city' is not in FacilityFormData
-          status_effective_date_text: '', // Default status date text to empty string
-          technology_description: '', // Default tech description to empty string
+
+          // Related Lists
+          // Ensure timeline dates are strings for form inputs if necessary
+          timeline: facilityData.facility_timeline_events?.map(event => ({
+              ...event,
+              event_date: event.event_date ? String(event.event_date) : null
+          })) || [{ event_date: '', event_name: '', description: '' }], // Default empty item
+
+          documents: facilityData.facility_documents?.length > 0
+              ? facilityData.facility_documents
+              : [{ title: '', url: '' }], // Default empty item
+
+          images: facilityData.facility_images?.length > 0
+              ? facilityData.facility_images
+              : [{ image_url: '', alt_text: '', order: 0 }], // Default empty item structure
       };
   };
 
 
   const handleEdit = () => {
     if (isAuthenticated && facility) {
+      // Prepare form data using the updated function
       const initialFormData = prepareFormData(facility);
       setEditFormData(initialFormData);
       console.log('[handleEdit] Initial editFormData:', JSON.stringify(initialFormData, null, 2));
@@ -172,7 +198,7 @@ const FacilityDetailPage: React.FC = () => {
     setError(null); // Clear any previous errors
   };
 
-  // handleSave uses Supabase updateFacility which now accepts FacilityFormData
+  // handleSave uses Supabase updateFacility which now accepts the nested FacilityFormData
   const handleSave = async () => {
     if (!editFormData || !id) return;
 
@@ -180,15 +206,14 @@ const FacilityDetailPage: React.FC = () => {
     setIsSaving(true);
     setError(null);
     try {
-        // Pass the facility ID and the entire editFormData object to the Supabase updateFacility function
-        // The Supabase function handles mapping this form data to the DB structure
+        // Pass the facility ID and the entire nested editFormData object
         await updateFacility(id, editFormData);
 
-      // Re-fetch data to show the latest version
+      // Re-fetch data to show the latest version (getFacilityById returns FullFacilityData)
       const refreshedFacility = await getFacilityById(id);
       console.log('[handleSave] Refreshed facility data:', refreshedFacility);
       if (refreshedFacility) {
-        setFacility(refreshedFacility);
+        setFacility(refreshedFacility); // Update state with FullFacilityData
       }
 
       // Update state to exit edit mode *before* the alert
@@ -206,91 +231,120 @@ const FacilityDetailPage: React.FC = () => {
     }
   };
 
-  // Handles changes in form section components - Type event and enhance logic
-  // Updates SupabaseFacilityFormData structure
+  // UPDATED: handleFormChange needs to handle nested 'details' object and arrays
   const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked; // For checkboxes
 
-    // Convert numeric fields properly
     let processedValue: string | number | boolean | null = type === 'checkbox' ? checked : value;
     // Allow empty string for number inputs initially, convert to null or number on processing
-    if (type === 'number' && name !== 'latitude' && name !== 'longitude') { // Handle general numbers
-        processedValue = value === '' ? '' : Number(value); // Keep empty string for controlled input, parse to number later
-    } else if ((name === 'latitude' || name === 'longitude') && type === 'number') { // Handle lat/lng specifically
-        processedValue = value === '' ? '' : parseFloat(value); // Keep empty string, parse to float later
+    const isNumericDetailField = ['details.investment_usd', 'details.jobs', 'details.ev_equivalent_per_year'].includes(name);
+    const isCoordField = ['latitude', 'longitude'].includes(name);
+    const isCapacityField = name === 'processing_capacity_mt_year';
+
+    if (type === 'number' || isNumericDetailField || isCoordField || isCapacityField) {
+         processedValue = value === '' ? '' : (isCoordField ? parseFloat(value) : Number(value));
     }
 
 
     setEditFormData(prevData => {
-      if (!prevData) return null; // Should not happen if called correctly
+      if (!prevData) return null;
 
-      // Handle nested properties (e.g., "environmentalImpact.details", "investment.total")
-      if (name.includes('.')) {
-        const [outerKey, innerKey] = name.split('.') as [keyof SupabaseFacilityFormData, string];
-        // Ensure the outer key exists and is an object
-        if (prevData[outerKey] && typeof prevData[outerKey] === 'object') {
-            // Create a new nested object with the updated value
-            const updatedNestedObject = {
-                ...(prevData[outerKey] as object), // Cast to object
-                [innerKey]: processedValue, // Use processed value
-            };
-            return {
-                ...prevData,
-                [outerKey]: updatedNestedObject,
-            };
-        } else {
-             // Initialize the outer key if it doesn't exist
-             const updatedNestedObject = { [innerKey]: processedValue };
-             return {
-                 ...prevData,
-                 [outerKey]: updatedNestedObject,
-             };
-        }
+      // Handle nested 'details' properties
+      if (name.startsWith('details.')) {
+        const detailKey = name.split('.')[1] as keyof NonNullable<FacilityFormData['details']>; // Use NonNullable
+        return {
+          ...prevData,
+          details: {
+            ...(prevData.details || {}), // Ensure details object exists
+            [detailKey]: processedValue,
+          },
+        };
       }
 
-      // Handle top-level properties
-      return {
-        ...prevData,
-        [name]: processedValue, // Use processed value
-      };
+      // Handle array properties (Timeline, Documents) - Requires specific logic based on input names like 'timeline[0].event_name'
+      const arrayMatch = name.match(/^(\w+)\[(\d+)\]\.(\w+)$/); // e.g., timeline[0].event_name
+      if (arrayMatch) {
+          const arrayName = arrayMatch[1] as keyof Pick<FacilityFormData, 'timeline' | 'documents'>; // 'timeline' or 'documents'
+          const index = parseInt(arrayMatch[2], 10);
+          const fieldName = arrayMatch[3]; // 'event_name', 'title', 'url', etc.
+
+          if (arrayName === 'timeline' && prevData.timeline && prevData.timeline[index]) {
+              const updatedTimeline = [...prevData.timeline];
+              // Ensure the field exists on FacilityTimelineEvent before assigning
+              if (fieldName in updatedTimeline[index]) {
+                  updatedTimeline[index] = {
+                      ...updatedTimeline[index],
+                      [fieldName as keyof FacilityTimelineEvent]: processedValue // Update specific field
+                  };
+                  return { ...prevData, timeline: updatedTimeline };
+              }
+          } else if (arrayName === 'documents' && prevData.documents && prevData.documents[index]) {
+              const updatedDocuments = [...prevData.documents];
+               // Ensure the field exists on FacilityDocument before assigning
+              if (fieldName in updatedDocuments[index]) {
+                  updatedDocuments[index] = {
+                      ...updatedDocuments[index],
+                      [fieldName as keyof FacilityDocument]: processedValue // Update specific field
+                  };
+                  return { ...prevData, documents: updatedDocuments };
+              }
+          } else {
+               console.warn(`[handleFormChange] Invalid array update: ${name}`);
+               return prevData;
+          }
+      }
+
+
+      // Handle top-level properties (core facility fields)
+      // Ensure the key exists on FacilityFormData before assigning
+      const topLevelKey = name as keyof FacilityFormData;
+      if (topLevelKey in prevData) {
+          return {
+              ...prevData,
+              [topLevelKey]: processedValue,
+          };
+      } else {
+          console.warn(`[handleFormChange] Attempted to update unknown field: ${name}`);
+          return prevData; // Return previous state if field name is not recognized
+      }
     });
   };
 
-  // Handles updates specifically from the MediaFormSection (images array) - Type update
-  // Updates SupabaseFacilityFormData structure
-  const handleMediaFormChange = (update: Partial<Pick<SupabaseFacilityFormData, 'images'>>): void => {
-    setEditFormData(prevData => {
-        if (!prevData) return null;
-        // Ensure update contains the 'images' key if that's expected
-        if ('images' in update) {
-            return {
-                ...prevData,
-                images: update.images || [], // Update images, default to empty array if undefined
-            };
-        }
-        return prevData; // Return previous state if update structure is unexpected
-    });
+  // UPDATED: handleMediaFormChange accepts image URLs/paths (string[]) from MediaFormSection
+  // and maps them to FacilityImage[] for the main state.
+  // The 'update' parameter type matches MediaFormSection's onFormDataChange prop type.
+  const handleMediaFormChange = (update: Partial<{ images: string[] }>): void => {
+      setEditFormData(prevData => {
+          if (!prevData) return null;
+          if (update.images !== undefined) { // Check if images array is being updated
+              // Map the incoming string array (URLs/paths) to FacilityImage objects
+              const newImages: FacilityImage[] = update.images.map((url, index) => ({
+                  id: undefined, // Let DB generate ID
+                  facility_id: id, // Link to current facility
+                  image_url: url, // Store the path/url
+                  alt_text: `Facility Image ${index + 1}`, // Default alt text
+                  order: index
+              }));
+              // Update the images array in the main form state
+              return {
+                  ...prevData,
+                  images: newImages,
+              };
+          }
+          return prevData; // Return previous state if 'images' wasn't in the update
+      });
   };
 
-   // Handlers for Timeline array changes
-   // Updates SupabaseFacilityFormData structure (using FacilityTimelineEvent)
-   const handleTimelineChange = (index: number, field: keyof FacilityTimelineEvent, value: string | number): void => {
-       setEditFormData(prevData => {
-           if (!prevData || !prevData.timeline) return prevData; // Ensure timeline exists
-           const updatedTimeline = [...prevData.timeline];
-           // Ensure field is 'date' or 'event' or 'description' before updating
-           const updatedItem = { ...updatedTimeline[index], [field]: value };
-           updatedTimeline[index] = updatedItem;
-           return { ...prevData, timeline: updatedTimeline };
-       });
-   };
 
+   // Add/Remove handlers are now passed to the components if they expect them,
+   // otherwise they might be handled internally by those components via buttons.
+   // Check TimelineFormSection and DocumentsFormSection implementations.
    const addTimelineItem = (): void => {
        setEditFormData(prevData => {
            if (!prevData) return null;
-           // Add item with 'date' and 'event' fields matching FacilityTimelineEvent
-           const newTimeline = [...(prevData.timeline || []), { date: '', event: '' }];
+           // Add item matching FacilityTimelineEvent structure
+           const newTimeline = [...(prevData.timeline || []), { event_date: '', event_name: '', description: '' }];
            return { ...prevData, timeline: newTimeline };
        });
    };
@@ -299,27 +353,16 @@ const FacilityDetailPage: React.FC = () => {
        setEditFormData(prevData => {
            if (!prevData || !prevData.timeline) return prevData;
            const updatedTimeline = prevData.timeline.filter((_, i) => i !== index);
-           // Ensure at least one item remains, using 'date' field
-           return { ...prevData, timeline: updatedTimeline.length > 0 ? updatedTimeline : [{ date: '', event: '' }] };
+           // Ensure at least one item remains if needed, or allow empty
+           return { ...prevData, timeline: updatedTimeline };
        });
    };
 
-   // Handlers for Documents array changes
-   // Updates SupabaseFacilityFormData structure (assuming {title, url} for form)
-    const handleDocumentChange = (index: number, field: 'title' | 'url', value: string): void => {
-       setEditFormData(prevData => {
-           if (!prevData || !prevData.documents) return prevData;
-           const updatedDocuments = [...prevData.documents];
-           // Assuming documents are objects like {title, url} in the form state
-           const updatedItem = { ...(updatedDocuments[index] || {}), [field]: value };
-           updatedDocuments[index] = updatedItem;
-           return { ...prevData, documents: updatedDocuments };
-       });
-   };
-
-   const addDocumentItem = (): void => {
+    // Add/Remove handlers for documents
+    const addDocumentItem = (): void => {
        setEditFormData(prevData => {
            if (!prevData) return null;
+           // Add item matching FacilityDocument structure
            const newDocuments = [...(prevData.documents || []), { title: '', url: '' }];
            return { ...prevData, documents: newDocuments };
        });
@@ -329,7 +372,7 @@ const FacilityDetailPage: React.FC = () => {
        setEditFormData(prevData => {
            if (!prevData || !prevData.documents) return prevData;
            const updatedDocuments = prevData.documents.filter((_, i) => i !== index);
-           return { ...prevData, documents: updatedDocuments.length > 0 ? updatedDocuments : [{ title: '', url: '' }] };
+           return { ...prevData, documents: updatedDocuments };
        });
    };
 
@@ -347,17 +390,17 @@ const FacilityDetailPage: React.FC = () => {
     return <div className="container mt-4"><p>Facility data not available.</p></div>;
   }
 
-  // Use the prepared form data structure for consistency, only when editing
-  // Otherwise, use the direct facility data for display
-  // Use editFormData when editing, otherwise prepare fresh data for display mapping consistency
-  const currentFormDataForDisplay = editFormData || prepareFormData(facility);
+  // Use fetched facility data for display, editFormData for editing
+  const displayData = facility;
+  const formDataForEdit = editFormData;
 
   // Define common props for form sections when editing
-  const commonEditProps = {
-      data: editFormData, // Pass the edit form data state
+  // Ensure editFormData is not null when passing to sections
+  const commonEditProps = formDataForEdit ? {
+      data: formDataForEdit, // Pass the whole edit form data state
       onChange: handleFormChange, // General handler for simple inputs
       isSaving: isSaving,
-  };
+  } : { data: null, onChange: () => {}, isSaving: isSaving }; // Provide default/empty props if not editing
 
 
   // --- Render ---
@@ -367,8 +410,8 @@ const FacilityDetailPage: React.FC = () => {
         <div className="card-header facility-header d-flex justify-content-between align-items-center flex-wrap">
           <div>
             {/* Display Company and Status from the fetched facility data */}
-            <h1 className="h3 mb-0">{facility.Company || 'Facility Details'}</h1>
-            {renderStatusBadge(facility["Operational Status"])}
+            <h1 className="h3 mb-0">{displayData.Company || 'Facility Details'}</h1>
+            {renderStatusBadge(displayData["Operational Status"])}
           </div>
           <div>
             {/* Edit/Save/Cancel Buttons - Logic based on isEditing state */}
@@ -404,94 +447,82 @@ const FacilityDetailPage: React.FC = () => {
               {/* Basic Info Section */}
               <div className="facility-section">
                 <h3>Basic Information</h3>
-                {isEditing && editFormData ? (
+                {isEditing && formDataForEdit ? (
                   <>
                     {/* Pass specific props needed by BasicInfoFormSection, handling potential nulls */}
                     <BasicInfoFormSection
-                        data={{ company: editFormData.company_name ?? '', location: editFormData.address ?? '', status: editFormData.status_name ?? '' }}
+                        data={{ company: formDataForEdit.company_name ?? '', location: formDataForEdit.address ?? '', status: formDataForEdit.status_name ?? '' }}
                         onChange={handleFormChange}
                         isSaving={isSaving}
                     />
-                     {/* Website Input */}
+                     {/* Website Input - now part of details */}
                      <div className="mb-3">
-                         <label htmlFor="edit-website" className="form-label">Website:</label>
-                         <input type="url" className="form-control" id="edit-website" name="website" value={editFormData.website || ''} onChange={handleFormChange} disabled={isSaving} />
+                         <label htmlFor="edit-details.website" className="form-label">Website:</label>
+                         <input type="url" className="form-control" id="edit-details.website" name="details.website" value={formDataForEdit.details?.website || ''} onChange={handleFormChange} disabled={isSaving} />
                      </div>
-                     {/* Coordinates Input */}
+                     {/* Coordinates Input - core fields */}
                       <div className="row">
                           <div className="col-md-6 mb-3">
                               <label htmlFor="edit-latitude" className="form-label">Latitude:</label>
-                              <input type="number" step="any" className="form-control" id="edit-latitude" name="latitude" value={editFormData.latitude ?? ''} onChange={handleFormChange} disabled={isSaving} />
+                              <input type="number" step="any" className="form-control" id="edit-latitude" name="latitude" value={formDataForEdit.latitude ?? ''} onChange={handleFormChange} disabled={isSaving} />
                           </div>
                           <div className="col-md-6 mb-3">
                               <label htmlFor="edit-longitude" className="form-label">Longitude:</label>
-                              <input type="number" step="any" className="form-control" id="edit-longitude" name="longitude" value={editFormData.longitude ?? ''} onChange={handleFormChange} disabled={isSaving} />
+                              <input type="number" step="any" className="form-control" id="edit-longitude" name="longitude" value={formDataForEdit.longitude ?? ''} onChange={handleFormChange} disabled={isSaving} />
                           </div>
                       </div>
                   </>
                 ) : (
                   <>
                     <div className="row mb-3">
-                      <div className="col-md-6"><strong>Location:</strong><p>{currentFormDataForDisplay.address || 'N/A'}</p></div>
-                      <div className="col-md-6"><strong>Status:</strong><p>{renderStatusBadge(currentFormDataForDisplay.status_name)}</p></div>
+                      {/* Display data from fetched 'displayData' */}
+                      <div className="col-md-6"><strong>Location:</strong><p>{displayData.Location || 'N/A'}</p></div>
+                      <div className="col-md-6"><strong>Status:</strong><p>{renderStatusBadge(displayData["Operational Status"])}</p></div>
                     </div>
                     <div className="row mb-3">
-                      <div className="col-md-6"><strong>Website:</strong><p>{currentFormDataForDisplay.website ? <a href={currentFormDataForDisplay.website} target="_blank" rel="noopener noreferrer">{currentFormDataForDisplay.website}</a> : 'N/A'}</p></div>
-                      {typeof currentFormDataForDisplay.latitude === 'number' && typeof currentFormDataForDisplay.longitude === 'number' && (
-                           <div className="col-md-6"><strong>Coordinates:</strong><p>{currentFormDataForDisplay.latitude.toFixed(5)}, {currentFormDataForDisplay.longitude.toFixed(5)}</p></div>
+                      <div className="col-md-6"><strong>Website:</strong><p>{displayData.facility_details?.website ? <a href={displayData.facility_details.website} target="_blank" rel="noopener noreferrer">{displayData.facility_details.website}</a> : 'N/A'}</p></div>
+                      {typeof displayData.Latitude === 'number' && typeof displayData.Longitude === 'number' && (
+                           <div className="col-md-6"><strong>Coordinates:</strong><p>{displayData.Latitude.toFixed(5)}, {displayData.Longitude.toFixed(5)}</p></div>
                       )}
                     </div>
                   </>
                 )}
               </div>
 
-              {/* Contact Info Section */}
-              <div className="facility-section">
-                <h3>Contact Information</h3>
-                {isEditing && editFormData ? (
-                  <ContactFormSection
-                    data={{ contactPerson: editFormData.contactPerson ?? '', contactEmail: editFormData.contactEmail ?? '', contactPhone: editFormData.contactPhone ?? '' }}
-                    onChange={handleFormChange}
-                    isSaving={isSaving}
-                  />
-                ) : (
-                  <div className="row">
-                    <div className="col-md-4"><strong>Person:</strong><p>{currentFormDataForDisplay.contactPerson || 'N/A'}</p></div>
-                    <div className="col-md-4"><strong>Email:</strong><p>{currentFormDataForDisplay.contactEmail || 'N/A'}</p></div>
-                    <div className="col-md-4"><strong>Phone:</strong><p>{currentFormDataForDisplay.contactPhone || 'N/A'}</p></div>
-                  </div>
-                )}
-              </div>
+              {/* Contact Info Section Removed */}
 
               {/* Investment Section */}
                <div className="facility-section">
                  <h3>Investment & Funding</h3>
-                 {isEditing && editFormData ? (
+                 {isEditing && formDataForEdit ? (
                    <InvestmentFormSection
-                     data={{ investment: editFormData.investment }}
-                     onChange={handleFormChange}
+                     // Pass only the relevant part of the form data
+                     data={{ investment: { total: formDataForEdit.details?.investment_usd } }}
+                     onChange={handleFormChange} // Use general handler with name="details.investment_usd"
                      isSaving={isSaving}
                    />
                  ) : (
-                   <p>Total Investment (USD): {currentFormDataForDisplay.investment?.total || 'N/A'}</p>
+                   // Display data from fetched 'displayData'
+                   <p>Total Investment (USD): {displayData.facility_details?.investment_usd || 'N/A'}</p>
                  )}
                </div>
 
               {/* Notes Section */}
               <div className="facility-section">
                 <h3>Notes</h3>
-                {isEditing && editFormData ? (
+                {isEditing && formDataForEdit ? (
                   <textarea
                     className="form-control"
-                    id="edit-notes"
-                    name="notes"
-                    value={editFormData.notes || ''}
+                    id="edit-details.notes"
+                    name="details.notes" // Use nested name
+                    value={formDataForEdit.details?.notes || ''}
                     onChange={handleFormChange}
                     rows={5}
                     disabled={isSaving}
                   ></textarea>
                 ) : (
-                  <p>{currentFormDataForDisplay.notes || 'No notes available.'}</p>
+                   // Display data from fetched 'displayData'
+                  <p>{displayData.facility_details?.notes || 'No notes available.'}</p>
                 )}
               </div>
             </div>
@@ -501,30 +532,32 @@ const FacilityDetailPage: React.FC = () => {
               {/* Technical Details Section */}
               <div className="facility-section">
                 <h3>Technical Details</h3>
-                {isEditing && editFormData ? (
+                {isEditing && formDataForEdit ? (
                   <TechnicalFormSection
+                    // Pass relevant core and detail fields
                     data={{
-                        processing_capacity_mt_year: editFormData.processing_capacity_mt_year,
-                        technology_name: editFormData.technology_name,
-                        feedstock: editFormData.feedstock,
-                        product: editFormData.product,
-                        technology_description: editFormData.technology_description
+                        processing_capacity_mt_year: formDataForEdit.processing_capacity_mt_year,
+                        technology_name: formDataForEdit.technology_name,
+                        feedstock: formDataForEdit.details?.feedstock,
+                        product: formDataForEdit.details?.product,
+                        technology_description: formDataForEdit.details?.technology_description
                     }}
-                    onChange={handleFormChange}
+                    onChange={handleFormChange} // Use general handler
                     isSaving={isSaving}
                    />
                 ) : (
                   <>
                     <div className="row mb-3">
-                      <div className="col-md-6"><strong>Volume (tons/year):</strong><p>{currentFormDataForDisplay.processing_capacity_mt_year || 'N/A'}</p></div>
-                      <div className="col-md-6"><strong>Method/Technology:</strong><p>{currentFormDataForDisplay.technology_name || 'N/A'}</p></div>
+                       {/* Display data from fetched 'displayData' */}
+                      <div className="col-md-6"><strong>Volume (tons/year):</strong><p>{displayData.capacity_tonnes_per_year || 'N/A'}</p></div>
+                      <div className="col-md-6"><strong>Method/Technology:</strong><p>{displayData["Primary Recycling Technology"] || 'N/A'}</p></div>
                     </div>
                     <div className="row mb-3">
-                      <div className="col-md-6"><strong>Feedstock:</strong><p>{currentFormDataForDisplay.feedstock || 'N/A'}</p></div>
-                      <div className="col-md-6"><strong>Product:</strong><p>{currentFormDataForDisplay.product || 'N/A'}</p></div>
+                      <div className="col-md-6"><strong>Feedstock:</strong><p>{displayData.facility_details?.feedstock || 'N/A'}</p></div>
+                      <div className="col-md-6"><strong>Product:</strong><p>{displayData.facility_details?.product || 'N/A'}</p></div>
                     </div>
-                    <div className="row mb-0"> {/* Removed mb-4 */}
-                      <div className="col-12"><strong>Technology Description:</strong><pre>{currentFormDataForDisplay.technology_description || 'Description not available.'}</pre></div>
+                    <div className="row mb-0">
+                      <div className="col-12"><strong>Technology Description:</strong><pre>{displayData.facility_details?.technology_description || 'Description not available.'}</pre></div>
                     </div>
                   </>
                 )}
@@ -533,19 +566,29 @@ const FacilityDetailPage: React.FC = () => {
               {/* Timeline Section */}
               <div className="facility-section">
                 <h3>Timeline</h3>
-                {isEditing && editFormData ? (
+                {isEditing && formDataForEdit ? (
                   <TimelineFormSection
-                    // Map timeline data to ensure date is a string, pass general handler
-                    data={{ timeline: editFormData.timeline?.map(item => ({ ...item, date: String(item.date) })) }}
-                    onChange={handleFormChange} // Use general handler
-                    // onAddItem and onRemoveItem likely handled internally by the component
+                    // Map timeline data to match expected { date, event, description } structure
+                    data={{
+                        timeline: formDataForEdit.timeline?.map(item => ({
+                            id: item.id, // Pass id if needed by component key
+                            date: String(item.event_date || ''), // Ensure string, map from event_date
+                            event: item.event_name || '', // Map from event_name
+                            description: item.description || ''
+                        }))
+                    }}
+                    onChange={handleFormChange} // Use general handler (expects names like timeline[0].event)
+                    // Re-adding Add/Remove handlers as component expects them
+                    onAddItem={addTimelineItem}
+                    onRemoveItem={removeTimelineItem}
                     isSaving={isSaving}
                   />
                 ) : (
                   <ul className="list-group list-group-flush">
-                    {Array.isArray(currentFormDataForDisplay.timeline) && currentFormDataForDisplay.timeline.length > 0 && currentFormDataForDisplay.timeline[0]?.event ? (
-                        currentFormDataForDisplay.timeline.map((item, index) => (
-                            <li key={index} className="list-group-item bg-transparent px-0"><strong>{item.date}:</strong> {item.event} {item.description ? `- ${item.description}` : ''}</li>
+                     {/* Display data from fetched 'displayData' */}
+                    {Array.isArray(displayData.facility_timeline_events) && displayData.facility_timeline_events.length > 0 && displayData.facility_timeline_events[0]?.event_name ? (
+                        displayData.facility_timeline_events.map((item, index) => (
+                            <li key={item.id || index} className="list-group-item bg-transparent px-0"><strong>{item.event_date}:</strong> {item.event_name} {item.description ? `- ${item.description}` : ''}</li>
                         ))
                     ) : (<li className="list-group-item bg-transparent px-0">No timeline events available.</li>)}
                   </ul>
@@ -555,19 +598,29 @@ const FacilityDetailPage: React.FC = () => {
               {/* Documents Section */}
               <div className="facility-section">
                 <h3>Documents</h3>
-                 {isEditing && editFormData ? (
+                 {isEditing && formDataForEdit ? (
                    <DocumentsFormSection
-                     // Pass the correct subset of data and the general handler
-                     data={{ documents: editFormData.documents }}
-                     onChange={handleFormChange} // Use general handler
-                     // onAddItem and onRemoveItem likely handled internally
+                     // Map data to match expected { title, url } structure
+                     data={{
+                         documents: formDataForEdit.documents?.map(doc => ({
+                             id: doc.id, // Pass id if needed by component key
+                             title: doc.title || '',
+                             url: doc.url || '' // Assuming component expects string URL
+                         }))
+                     }}
+                     onChange={handleFormChange} // Use general handler (expects names like documents[0].title)
+                     // Add/Remove handlers are needed by the component
+                     onAddItem={addDocumentItem}
+                     onRemoveItem={removeDocumentItem}
                      isSaving={isSaving}
                    />
                  ) : (
                    <ul className="list-group list-group-flush">
-                     {Array.isArray(currentFormDataForDisplay.documents) && currentFormDataForDisplay.documents.length > 0 && (currentFormDataForDisplay.documents[0]?.title || currentFormDataForDisplay.documents[0]?.url) ? (
-                         currentFormDataForDisplay.documents.map((doc: { title?: string; url?: string }, index: number) => (
-                             <li key={index} className="list-group-item bg-transparent px-0">
+                     {/* Display data from fetched 'displayData' */}
+                     {Array.isArray(displayData.facility_documents) && displayData.facility_documents.length > 0 && (displayData.facility_documents[0]?.title || displayData.facility_documents[0]?.url) ? (
+                         displayData.facility_documents.map((doc, index) => (
+                             <li key={doc.id || index} className="list-group-item bg-transparent px-0">
+                                 {/* TODO: Need getFilePublicUrl helper */}
                                  {doc.url ? <a href={doc.url} target="_blank" rel="noopener noreferrer">{doc.title || 'View Document'}</a> : (doc.title || 'N/A')}
                              </li>
                          ))
@@ -579,20 +632,32 @@ const FacilityDetailPage: React.FC = () => {
               {/* Media Section */}
               <div className="facility-section">
                 <h3>Media</h3>
-                 {isEditing && editFormData ? (
-                    // Pass specific handler for media updates
+                 {isEditing && formDataForEdit ? (
                     <MediaFormSection
                         facilityId={id!} // Use non-null assertion if id is guaranteed
-                        data={{ images: editFormData.images }} // Pass only images array
-                        onFormDataChange={handleMediaFormChange} // Use the specific handler
+                        // Pass image paths/URLs based on what ImageUploader expects
+                        data={{ images: formDataForEdit.images?.map(img => img.image_url || '') }}
+                        onFormDataChange={handleMediaFormChange} // Use the specific handler for image array updates
                         isSaving={isSaving}
                     />
                  ) : (
                    <div className="image-gallery-placeholder">
-                     {Array.isArray(currentFormDataForDisplay.images) && currentFormDataForDisplay.images.length > 0 && currentFormDataForDisplay.images[0] !== '' ? (
+                     {/* Display data from fetched 'displayData' */}
+                     {Array.isArray(displayData.facility_images) && displayData.facility_images.length > 0 && displayData.facility_images[0]?.image_url ? (
                          <div className="image-gallery-container d-flex flex-wrap">
-                             {currentFormDataForDisplay.images.map((imageUrl, index) => (
-                                 imageUrl && <img key={index} src={imageUrl} alt={`Facility ${index + 1}`} className="img-thumbnail me-2 mb-2 facility-gallery-image" style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'cover', cursor: 'pointer' }} onError={(e: SyntheticEvent<HTMLImageElement, Event>) => { e.currentTarget.style.display = 'none'; }} onClick={() => window.open(imageUrl, '_blank')} />
+                             {displayData.facility_images.map((img, index) => (
+                                 // Use the generated public URL from state, ensuring img.image_url is not null/undefined
+                                 img.image_url && imagePublicUrls[img.image_url] && (
+                                     <img
+                                         key={img.id || index}
+                                         src={imagePublicUrls[img.image_url]} // Use the public URL from state
+                                         alt={img.alt_text || `Facility ${index + 1}`}
+                                         className="img-thumbnail me-2 mb-2 facility-gallery-image"
+                                         style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'cover', cursor: 'pointer' }}
+                                         onError={(e: SyntheticEvent<HTMLImageElement, Event>) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                         onClick={() => window.open(imagePublicUrls[img.image_url!], '_blank')} // Use non-null assertion if confident
+                                     />
+                                 )
                              ))}
                          </div>
                      ) : (<p>No images available.</p>)}
@@ -603,14 +668,16 @@ const FacilityDetailPage: React.FC = () => {
               {/* Environmental Impact Section */}
               <div className="facility-section">
                 <h3>Environmental Impact</h3>
-                {isEditing && editFormData ? (
+                {isEditing && formDataForEdit ? (
                    <EnvironmentalFormSection
-                     data={{ environmentalImpact: editFormData.environmentalImpact }}
-                     onChange={handleFormChange}
+                     // Pass only relevant detail field, ensuring string | undefined
+                     data={{ environmentalImpact: { details: formDataForEdit.details?.environmental_impact_details ?? '' } }} // Already correctly handles null -> ''
+                     onChange={handleFormChange} // Use general handler with name="details.environmental_impact_details"
                      isSaving={isSaving}
                    />
                 ) : (
-                  <p>{currentFormDataForDisplay.environmentalImpact?.details || 'Details not available.'}</p>
+                   // Display data from fetched 'displayData'
+                  <p>{displayData.facility_details?.environmental_impact_details || 'Details not available.'}</p>
                 )}
               </div>
 

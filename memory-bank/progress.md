@@ -11,6 +11,8 @@ This file tracks the project's progress using a task list format.
 
 ## Current Tasks
 
+
+*   [2025-04-18 12:58:30] - Begin refactoring `supabaseDataService.ts` for new database schema.
 *   
 
 ## Next Steps
