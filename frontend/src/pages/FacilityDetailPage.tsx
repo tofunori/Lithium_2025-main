@@ -25,8 +25,8 @@ import EnvironmentalFormSection from '../components/formSections/EnvironmentalFo
 import InvestmentFormSection from '../components/formSections/InvestmentFormSection';
 // import ContactFormSection from '../components/formSections/ContactFormSection'; // Removed import
 
-// Import status utils
-import { getCanonicalStatus } from '../utils/statusUtils';
+// Import status utils - Get all needed functions
+import { getCanonicalStatus, getStatusLabel, getStatusClass } from '../utils/statusUtils';
 
 import './FacilityDetailPage.css';
 import '../components/EditFacilityForm.css'; // Keep for now
@@ -38,8 +38,8 @@ interface LocationState {
     // activeTab?: string; // Removed as tabs are gone
 }
 
-// Type for status badge keys used locally for styling
-type FacilityStatusStyleKey = 'planned' | 'construction' | 'operating' | 'unknown';
+// REMOVED Local type definition - Use CanonicalStatus from utils if needed elsewhere
+// type FacilityStatusStyleKey = 'planned' | 'construction' | 'operating' | 'unknown';
 
 
 // --- Component ---
@@ -116,20 +116,16 @@ const FacilityDetailPage: React.FC = () => {
   }, [facility?.facility_images, isEditing]);
 
 
-  // UPDATED: renderStatusBadge accepts status_name and returns React.ReactNode
+  // REFACTORED: renderStatusBadge uses utility functions for consistency
   const renderStatusBadge = (statusName: string | undefined | null): React.ReactNode => {
-    const canonicalStatus = getCanonicalStatus(statusName); // Use canonical status for logic
-    const statusClasses: Record<FacilityStatusStyleKey, string> = {
-      planned: 'status-badge status-planned',
-      construction: 'status-badge status-construction',
-      operating: 'status-badge status-operating',
-      unknown: 'status-badge status-unknown',
-    };
-    const label = statusName || 'Unknown'; // Display the original status label
-    const validKey = canonicalStatus in statusClasses ? canonicalStatus as FacilityStatusStyleKey : 'unknown';
-    const className = statusClasses[validKey];
-    return <span className={className}>{label}</span>;
+    const canonicalStatus = getCanonicalStatus(statusName);
+    const label = getStatusLabel(canonicalStatus); // Get label from utils
+    const className = `status-badge ${getStatusClass(canonicalStatus)}`; // Get base class + specific class from utils
+    // Use the original statusName for display if it exists and isn't handled by getStatusLabel (e.g., "On Hold"), otherwise use the canonical label.
+    const displayLabel = statusName && label === 'Unknown' ? statusName : label;
+    return <span className={className}>{displayLabel}</span>;
   };
+
 
   // UPDATED: prepareFormData maps from FullFacilityData to nested FacilityFormData
   const prepareFormData = (facilityData: FullFacilityData): FacilityFormData => {
@@ -209,12 +205,55 @@ const FacilityDetailPage: React.FC = () => {
         // Pass the facility ID and the entire nested editFormData object
         await updateFacility(id, editFormData);
 
-      // Re-fetch data to show the latest version (getFacilityById returns FullFacilityData)
-      const refreshedFacility = await getFacilityById(id);
-      console.log('[handleSave] Refreshed facility data:', refreshedFacility);
-      if (refreshedFacility) {
-        setFacility(refreshedFacility); // Update state with FullFacilityData
-      }
+      // Instead of re-fetching, update local state directly from saved form data
+      // Construct the updated FullFacilityData object from editFormData
+      // Note: This assumes editFormData contains all necessary fields or
+      // we merge it with the existing facility state if needed.
+      // For simplicity, we'll reconstruct based on editFormData, assuming it's complete.
+      const updatedFacilityState: FullFacilityData = {
+          // Map core fields back
+          ID: editFormData.id!, // Assume id exists
+          Company: editFormData.company_name ?? null,
+          "Facility Name/Site": editFormData.facility_name_site ?? null,
+          Location: editFormData.address ?? null,
+          "Operational Status": editFormData.status_name ?? null,
+          "Primary Recycling Technology": editFormData.technology_name ?? null,
+          technology_category: editFormData.technology_category ?? null,
+          capacity_tonnes_per_year: editFormData.processing_capacity_mt_year ? Number(editFormData.processing_capacity_mt_year) : null,
+          Latitude: editFormData.latitude ? Number(editFormData.latitude) : null,
+          Longitude: editFormData.longitude ? Number(editFormData.longitude) : null,
+          created_at: facility?.created_at, // Preserve original created_at
+          // Map details back
+          facility_details: editFormData.details ? {
+              facility_id: editFormData.id!,
+              technology_description: editFormData.details.technology_description ?? null,
+              notes: editFormData.details.notes ?? null,
+              website: editFormData.details.website ?? null,
+              feedstock: editFormData.details.feedstock ?? null,
+              product: editFormData.details.product ?? null,
+              // Ensure value assigned to state matches the FacilityDetails interface (string | null)
+              investment_usd: editFormData.details.investment_usd !== null && editFormData.details.investment_usd !== undefined ? String(editFormData.details.investment_usd) : null,
+              jobs: editFormData.details.jobs ? Number(editFormData.details.jobs) : null,
+              ev_equivalent_per_year: editFormData.details.ev_equivalent_per_year ? Number(editFormData.details.ev_equivalent_per_year) : null,
+              environmental_impact_details: editFormData.details.environmental_impact_details ?? null,
+              status_effective_date_text: editFormData.details.status_effective_date_text ?? null,
+          } : null,
+          // Map related lists back
+          facility_timeline_events: editFormData.timeline || [],
+          facility_documents: editFormData.documents || [],
+          facility_images: editFormData.images || [],
+      };
+
+      // Update the local state with the reconstructed data
+      setFacility(updatedFacilityState);
+      console.log('[handleSave] Updated local facility state from form data:', updatedFacilityState);
+
+      // REMOVED Re-fetch:
+      // const refreshedFacility = await getFacilityById(id);
+      // console.log('[handleSave] Refreshed facility data:', refreshedFacility);
+      // if (refreshedFacility) {
+      //   setFacility(refreshedFacility); // Update state with FullFacilityData
+      // }
 
       // Update state to exit edit mode *before* the alert
       setIsEditing(false); // Set editing state to false
@@ -238,7 +277,8 @@ const FacilityDetailPage: React.FC = () => {
 
     let processedValue: string | number | boolean | null = type === 'checkbox' ? checked : value;
     // Allow empty string for number inputs initially, convert to null or number on processing
-    const isNumericDetailField = ['details.investment_usd', 'details.jobs', 'details.ev_equivalent_per_year'].includes(name);
+    // REMOVED 'details.investment_usd' from this check as its textarea expects text
+    const isNumericDetailField = ['details.jobs', 'details.ev_equivalent_per_year'].includes(name);
     const isCoordField = ['latitude', 'longitude'].includes(name);
     const isCapacityField = name === 'processing_capacity_mt_year';
 
@@ -250,15 +290,18 @@ const FacilityDetailPage: React.FC = () => {
     setEditFormData(prevData => {
       if (!prevData) return null;
 
-      // Handle nested 'details' properties
+      // Handle nested 'details' properties more robustly
       if (name.startsWith('details.')) {
-        const detailKey = name.split('.')[1] as keyof NonNullable<FacilityFormData['details']>; // Use NonNullable
+        const detailKey = name.split('.')[1] as keyof NonNullable<FacilityFormData['details']>;
+        // Create a new details object with the updated value
+        const newDetails = {
+          ...(prevData.details || {}), // Copy existing details
+          [detailKey]: processedValue, // Set the new value (which is the pasted string)
+        };
+        // Return the updated state with the new details object
         return {
           ...prevData,
-          details: {
-            ...(prevData.details || {}), // Ensure details object exists
-            [detailKey]: processedValue,
-          },
+          details: newDetails,
         };
       }
 
@@ -496,14 +539,15 @@ const FacilityDetailPage: React.FC = () => {
                  <h3>Investment & Funding</h3>
                  {isEditing && formDataForEdit ? (
                    <InvestmentFormSection
-                     // Pass only the relevant part of the form data
-                     data={{ investment: { total: formDataForEdit.details?.investment_usd } }}
+                     // Pass the value directly using the new 'value' prop
+                     value={formDataForEdit.details?.investment_usd}
                      onChange={handleFormChange} // Use general handler with name="details.investment_usd"
                      isSaving={isSaving}
                    />
                  ) : (
                    // Display data from fetched 'displayData'
-                   <p>Total Investment (USD): {displayData.facility_details?.investment_usd || 'N/A'}</p>
+                   // Simplify display to show raw value or empty string
+                   <p>Total Investment (USD): {displayData.facility_details?.investment_usd || ''}</p>
                  )}
                </div>
 
@@ -557,7 +601,8 @@ const FacilityDetailPage: React.FC = () => {
                       <div className="col-md-6"><strong>Product:</strong><p>{displayData.facility_details?.product || 'N/A'}</p></div>
                     </div>
                     <div className="row mb-0">
-                      <div className="col-12"><strong>Technology Description:</strong><pre>{displayData.facility_details?.technology_description || 'Description not available.'}</pre></div>
+                      {/* Changed <pre> to <p> for consistent styling */}
+                      <div className="col-12"><strong>Technology Description:</strong><p>{displayData.facility_details?.technology_description || 'Description not available.'}</p></div>
                     </div>
                   </>
                 )}
@@ -670,8 +715,8 @@ const FacilityDetailPage: React.FC = () => {
                 <h3>Environmental Impact</h3>
                 {isEditing && formDataForEdit ? (
                    <EnvironmentalFormSection
-                     // Pass only relevant detail field, ensuring string | undefined
-                     data={{ environmentalImpact: { details: formDataForEdit.details?.environmental_impact_details ?? '' } }} // Already correctly handles null -> ''
+                     // Pass the value directly using the new 'value' prop
+                     value={formDataForEdit.details?.environmental_impact_details}
                      onChange={handleFormChange} // Use general handler with name="details.environmental_impact_details"
                      isSaving={isSaving}
                    />

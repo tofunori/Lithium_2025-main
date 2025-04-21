@@ -29,7 +29,7 @@ export interface FacilityDetails {
   website?: string | null;
   feedstock?: string | null;
   product?: string | null;
-  investment_usd?: number | null;
+  investment_usd?: string | null; // Changed from number to string to match form/DB change
   jobs?: number | null;
   ev_equivalent_per_year?: number | null;
   environmental_impact_details?: string | null;
@@ -271,25 +271,9 @@ export const getFacilityById = async (facilityId: string): Promise<FullFacilityD
         event_date: event.event_date ? String(event.event_date) : null // Ensure string or null
     })) || [];
 
-    // Example: Ensure details numbers are numbers (if stored as text/varchar)
-    let details = data.facility_details;
-    if (details) {
-        details = {
-            ...details,
-            investment_usd: details.investment_usd ? Number(details.investment_usd) : null,
-            jobs: details.jobs ? Number(details.jobs) : null,
-            ev_equivalent_per_year: details.ev_equivalent_per_year ? Number(details.ev_equivalent_per_year) : null,
-        };
-        // Handle NaN
-        if (isNaN(details.investment_usd as number)) details.investment_usd = null;
-        if (isNaN(details.jobs as number)) details.jobs = null;
-        if (isNaN(details.ev_equivalent_per_year as number)) details.ev_equivalent_per_year = null;
-    }
-
-
-    // Construct the FullFacilityData object
+    // Construct the FullFacilityData object directly, handling type conversions here
     const fullData: FullFacilityData = {
-        // Spread core facility data
+        // Core facility data
         ID: data.ID,
         Company: data.Company,
         "Facility Name/Site": data["Facility Name/Site"],
@@ -297,13 +281,26 @@ export const getFacilityById = async (facilityId: string): Promise<FullFacilityD
         "Operational Status": data["Operational Status"],
         "Primary Recycling Technology": data["Primary Recycling Technology"],
         technology_category: data.technology_category,
-        capacity_tonnes_per_year: data.capacity_tonnes_per_year ? Number(data.capacity_tonnes_per_year) : null, // Ensure number
-        Latitude: data.Latitude ? Number(data.Latitude) : null, // Ensure number
-        Longitude: data.Longitude ? Number(data.Longitude) : null, // Ensure number
+        capacity_tonnes_per_year: data.capacity_tonnes_per_year ? Number(data.capacity_tonnes_per_year) : null,
+        Latitude: data.Latitude ? Number(data.Latitude) : null,
+        Longitude: data.Longitude ? Number(data.Longitude) : null,
         created_at: data.created_at,
-        // Add related data
-        facility_details: details as FacilityDetails | null, // Cast after potential parsing
-        facility_timeline_events: timeline as FacilityTimelineEvent[], // Cast after mapping
+        // Construct facility_details explicitly
+        facility_details: data.facility_details ? {
+            facility_id: data.facility_details.facility_id,
+            technology_description: data.facility_details.technology_description ?? null,
+            notes: data.facility_details.notes ?? null,
+            website: data.facility_details.website ?? null,
+            feedstock: data.facility_details.feedstock ?? null,
+            product: data.facility_details.product ?? null,
+            investment_usd: data.facility_details.investment_usd ?? null, // Keep as string/null
+            jobs: data.facility_details.jobs ? Number(data.facility_details.jobs) : null, // Convert to number
+            ev_equivalent_per_year: data.facility_details.ev_equivalent_per_year ? Number(data.facility_details.ev_equivalent_per_year) : null, // Convert to number
+            environmental_impact_details: data.facility_details.environmental_impact_details ?? null,
+            status_effective_date_text: data.facility_details.status_effective_date_text ?? null,
+        } : null,
+        // Related data
+        facility_timeline_events: timeline as FacilityTimelineEvent[],
         facility_documents: data.facility_documents || [],
         facility_images: data.facility_images || [],
     };
@@ -424,8 +421,8 @@ export const addFacility = async (facilityInput: FacilityFormData): Promise<{ id
             website: facilityInput.details.website ?? null,
             feedstock: facilityInput.details.feedstock ?? null,
             product: facilityInput.details.product ?? null,
-            investment_usd: facilityInput.details.investment_usd !== null && facilityInput.details.investment_usd !== undefined && !isNaN(Number(facilityInput.details.investment_usd))
-                ? Number(facilityInput.details.investment_usd) : null,
+            // Convert to string or null before sending, assuming DB column is now text type
+            investment_usd: facilityInput.details.investment_usd !== null && facilityInput.details.investment_usd !== undefined ? String(facilityInput.details.investment_usd) : null,
             jobs: facilityInput.details.jobs !== null && facilityInput.details.jobs !== undefined && !isNaN(Number(facilityInput.details.jobs))
                 ? Number(facilityInput.details.jobs) : null,
             ev_equivalent_per_year: facilityInput.details.ev_equivalent_per_year !== null && facilityInput.details.ev_equivalent_per_year !== undefined && !isNaN(Number(facilityInput.details.ev_equivalent_per_year))
@@ -561,8 +558,8 @@ export const updateFacility = async (facilityId: string, updatedData: FacilityFo
               website: updatedData.details.website ?? null,
               feedstock: updatedData.details.feedstock ?? null,
               product: updatedData.details.product ?? null,
-              investment_usd: updatedData.details.investment_usd !== null && !isNaN(Number(updatedData.details.investment_usd))
-                  ? Number(updatedData.details.investment_usd) : null,
+              // Convert to string or null before sending, assuming DB column is now text type
+              investment_usd: updatedData.details.investment_usd !== null && updatedData.details.investment_usd !== undefined ? String(updatedData.details.investment_usd) : null,
               jobs: updatedData.details.jobs !== null && !isNaN(Number(updatedData.details.jobs))
                   ? Number(updatedData.details.jobs) : null,
               ev_equivalent_per_year: updatedData.details.ev_equivalent_per_year !== null && !isNaN(Number(updatedData.details.ev_equivalent_per_year))
@@ -999,12 +996,12 @@ export const listStorageItems = async (bucket: string, pathPrefix: string = ''):
                      } else {
                          // It's a file
                          // Optionally get public URL here if needed immediately, otherwise store path
-                         // const publicUrl = await getFilePublicUrl(bucket, fullPath); // Uncomment if URL needed now
+                         const publicUrl = await getFilePublicUrl(bucket, fullPath); // Get the public URL
                          return {
                              name: fileObject.name,
                              path: fullPath, // Store the path
                              type: 'file',
-                             url: null, // Set URL to null initially, generate on demand
+                             url: publicUrl, // Assign the fetched URL
                              metadata: fileObject.metadata,
                              created_at: fileObject.created_at,
                              updated_at: fileObject.updated_at,
@@ -1087,11 +1084,12 @@ export const getAllStorageItems = async (bucket: string): Promise<StorageItem[]>
                              id: null,
                          };
                      } else { // It's a file
+                         const publicUrl = await getFilePublicUrl(bucket, fullPath); // Get the public URL
                          return {
                              name: fileObject.name,
                              path: fullPath,
                              type: 'file',
-                             url: null, // Store path, generate URL on demand
+                             url: publicUrl, // Assign the fetched URL
                              metadata: fileObject.metadata,
                              created_at: fileObject.created_at,
                              updated_at: fileObject.updated_at,
