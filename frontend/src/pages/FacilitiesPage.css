@@ -409,3 +409,34 @@
   flex-grow: 1; /* Allow it to grow if there's extra space */
   flex-shrink: 0; /* Prevent shrinking below min-width */
 }
+
+/* --- Sorting Styles --- */
+.facilities-table th.sortable-header {
+  cursor: pointer;
+  position: relative; /* Needed for absolute positioning of icons if desired */
+}
+
+.facilities-table th.sortable-header:hover {
+  background-color: rgba(0, 0, 0, 0.05); /* Subtle hover effect */
+}
+
+/* Style for sort icons */
+.facilities-table th.sortable-header i.fa-sort,
+.facilities-table th.sortable-header i.fa-sort-up,
+.facilities-table th.sortable-header i.fa-sort-down {
+  margin-left: 5px; /* Space between text and icon */
+  color: var(--secondary-color); /* Use muted color for icons */
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.facilities-table th.sortable-header:hover i {
+  opacity: 1; /* Make icon fully visible on hover */
+}
+
+/* Active sort column icon */
+.facilities-table th.sortable-header i.fa-sort-up,
+.facilities-table th.sortable-header i.fa-sort-down {
+  color: var(--primary-color); /* Highlight active sort icon */
+  opacity: 1;
+}
