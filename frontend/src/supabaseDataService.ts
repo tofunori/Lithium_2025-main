@@ -952,79 +952,76 @@ export const deleteFacilityImage = async (imageUrl: string): Promise<void> => {
 };
 
 
-// --- Advanced Storage Functions (Keep as is for now) ---
+// --- Advanced Storage Functions ---
 
-// Lists all items (files and folders) recursively, returning StorageItem objects
-// TODO: Review if this needs changes (likely not)
+// NEW: listStorageItems - Lists ONLY direct children (files and folders) for the current view pane. Non-recursive.
 export const listStorageItems = async (bucket: string, pathPrefix: string = ''): Promise<StorageItem[]> => {
-    console.log(`Recursively listing all items in: Bucket=${bucket}, PathPrefix=${pathPrefix}`);
-    const allItems: StorageItem[] = [];
-    const foldersToProcess: string[] = [pathPrefix]; // Start with the initial path
-
+    console.log(`Listing direct children in: Bucket=${bucket}, PathPrefix=${pathPrefix}`);
     try {
-        while (foldersToProcess.length > 0) {
-            const currentPath = foldersToProcess.shift()!; // Non-null assertion as we check length
-            console.log(`Processing path: ${currentPath}`);
+        const { data: fileObjects, error } = await supabase.storage
+            .from(bucket)
+            .list(pathPrefix, {
+                limit: 1000, // Adjust limit as needed
+                offset: 0,
+                sortBy: { column: 'name', order: 'asc' },
+            });
 
-            const { data: fileObjects, error } = await supabase.storage
-                .from(bucket)
-                .list(currentPath);
+        handleStorageError(error, `listStorageItems (Bucket: ${bucket}, PathPrefix: ${pathPrefix})`);
 
-            handleStorageError(error, `listStorageItems - list path (Bucket: ${bucket}, Path: ${currentPath})`);
-
-            if (fileObjects) {
-                 // Use Promise.all to handle potential async operations inside map (like getting URLs)
-                 const storageItemsPromises = fileObjects.map(async (fileObject): Promise<StorageItem | null> => {
-                     const fullPath = `${currentPath ? currentPath + '/' : ''}${fileObject.name}`;
-                     // Check if it's a folder (folders don't have 'id' in Supabase list results)
-                     if (fileObject.id === null) {
-                         // It's a folder
-                         if (fullPath !== pathPrefix) { // Avoid re-adding the root prefix if it's empty
-                             foldersToProcess.push(fullPath); // Add subfolder to process queue
-                         }
-                         return {
-                             name: fileObject.name,
-                             path: fullPath,
-                             type: 'folder',
-                             metadata: fileObject.metadata, // Folders might have metadata
-                             // Timestamps might be null for folders depending on Supabase version/config
-                             created_at: fileObject.created_at,
-                             updated_at: fileObject.updated_at,
-                             last_accessed_at: fileObject.last_accessed_at,
-                             id: null,
-                         };
-                     } else {
-                         // It's a file
-                         // Optionally get public URL here if needed immediately, otherwise store path
-                         const publicUrl = await getFilePublicUrl(bucket, fullPath); // Get the public URL
-                         return {
-                             name: fileObject.name,
-                             path: fullPath, // Store the path
-                             type: 'file',
-                             url: publicUrl, // Assign the fetched URL
-                             metadata: fileObject.metadata,
-                             created_at: fileObject.created_at,
-                             updated_at: fileObject.updated_at,
-                             last_accessed_at: fileObject.last_accessed_at,
-                             id: fileObject.id,
-                         };
-                     }
-                 });
-
-                 const resolvedItems = await Promise.all(storageItemsPromises);
-                 allItems.push(...resolvedItems.filter((item): item is StorageItem => item !== null)); // Add valid items
-            }
+        if (!fileObjects) {
+            console.warn(`No items returned for path: ${bucket}/${pathPrefix}`);
+            return [];
         }
-        console.log(`Finished listing items. Found ${allItems.length} total items.`);
-        return allItems;
+
+        // Map FileObject to StorageItem, fetching URLs for files
+        const storageItemsPromises = fileObjects.map(async (fileObject): Promise<StorageItem> => {
+            // Construct the full path relative to the bucket root
+            // Ensure pathPrefix ends with '/' if it's not empty
+            const prefixWithSlash = pathPrefix && !pathPrefix.endsWith('/') ? `${pathPrefix}/` : pathPrefix;
+            const fullPath = `${prefixWithSlash}${fileObject.name}`;
+
+            if (fileObject.id === null) {
+                // It's a folder (based on Supabase list behavior where folders have null id)
+                return {
+                    name: fileObject.name,
+                    path: fullPath, // Path for folder includes its name
+                    type: 'folder',
+                    metadata: fileObject.metadata,
+                    created_at: fileObject.created_at,
+                    updated_at: fileObject.updated_at,
+                    last_accessed_at: fileObject.last_accessed_at,
+                    id: null,
+                    url: null, // Folders don't have a direct public URL
+                };
+            } else {
+                // It's a file
+                const publicUrl = await getFilePublicUrl(bucket, fullPath); // Fetch URL
+                return {
+                    name: fileObject.name,
+                    path: fullPath,
+                    type: 'file',
+                    url: publicUrl,
+                    metadata: fileObject.metadata,
+                    created_at: fileObject.created_at,
+                    updated_at: fileObject.updated_at,
+                    last_accessed_at: fileObject.last_accessed_at,
+                    id: fileObject.id,
+                };
+            }
+        });
+
+        const storageItems = await Promise.all(storageItemsPromises);
+        console.log(`Successfully listed ${storageItems.length} direct children in ${bucket}/${pathPrefix}`);
+        return storageItems;
+
     } catch (error: unknown) {
         console.error(`Caught error in listStorageItems (Bucket: ${bucket}, PathPrefix: ${pathPrefix}):`, error instanceof Error ? error.message : error);
         throw error;
     }
 };
 
-// Gets only files, converting StorageItem to StorageFile (potentially adding public URL)
-// TODO: Review if this needs changes (likely not)
+
+// Gets only files, converting StorageItem to StorageFile (potentially adding public URL) - USES THE NEW listStorageItems
 export const getStorageFiles = async (bucket: string, pathPrefix?: string): Promise<StorageFile[]> => {
     const allItems = await listStorageItems(bucket, pathPrefix);
     const files = allItems.filter(item => item.type === 'file');
