@@ -177,7 +177,7 @@ const FacilitiesPage: React.FC = () => {
     fetchFacilitiesData(activeFilter);
 
     const channel = supabase
-      .channel('public:facilities')
+      .channel('facilities-channel') // Changed channel name
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'facilities' },
@@ -302,6 +302,8 @@ const FacilitiesPage: React.FC = () => {
       try {
         await deleteFacility(facilityId);
         console.log(`Facility ${facilityId} delete initiated.`);
+        // Manually update state immediately for faster UI feedback
+        setFacilities(currentFacilities => currentFacilities.filter(f => f.ID !== facilityId));
       } catch (error: any) {
         console.error(`Error deleting facility ${facilityId}:`, error);
         alert(`Failed to delete facility: ${error.message || 'Unknown error'}. Please try again.`);
