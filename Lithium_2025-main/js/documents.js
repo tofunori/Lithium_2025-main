@@ -1328,7 +1328,7 @@ function handleUploadFileClick() {
             const newItemData = {
                 name: storageResult.name,
                 type: 'file',
-                parentId: storageResult.parentId, // Use parentId passed back from storage endpoint
+                parentId: currentFolderId, // Fix: Use currentFolderId instead of storageResult.parentId
                 tags: newTags,
                 storagePath: storageResult.storagePath,
                 contentType: storageResult.contentType,
