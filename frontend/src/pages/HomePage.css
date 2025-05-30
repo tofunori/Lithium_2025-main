@@ -1,55 +1,66 @@
 /* Styles migrated from css/styles.css relevant to HomePage */
 
-/* Using placeholder variables or direct values for now. 
-   Ideally, these would come from a global CSS setup (like index.css or App.css) */
+/* Using academic professional design variables */
 :root {
     --card-bg: #ffffff; 
-    --text-color: #212529;
-    --border-color: #dee2e6;
-    --subtle-shadow: 0 2px 4px rgba(0, 0, 0, 0.075);
-    --card-border-radius: 8px;
-    --legend-bg: rgba(255, 255, 255, 0.95);
+    --text-color: #0f172a;
+    --border-color: #e2e8f0;
+    --subtle-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --card-border-radius: 6px;
+    --legend-bg: rgba(255, 255, 255, 0.97);
     --map-bg: #ffffff;
-    --primary-color: #0d6efd;
-    --form-switch-bg: #eee;
-    --light-bg: #f8f9fa;
-    --sidebar-bg: #f8f9fa; /* Background for the new sidebar */
-    --sidebar-width: 240px; /* Reduced width of the sidebar */
+    --primary-color: #1e3a8a;
+    --form-switch-bg: #e2e8f0;
+    --light-bg: #f8fafc;
+    --sidebar-bg: #f8fafc;
+    --sidebar-width: 280px; /* Slightly wider for better content */
+    --secondary-color: #64748b;
 }
 
-/* New Layout Styles */
+/* Academic Layout Styles */
 .home-page-container {
     display: flex;
-    height: 80vh; /* Adjust overall height as needed, maybe calc(100vh - header_height) */
-    gap: 15px; /* Space between map and sidebar */
-    padding: 15px; /* Padding around the whole container */
+    height: 85vh; /* More professional height */
+    gap: 20px; /* Better spacing */
+    padding: 20px; /* More generous padding */
     box-sizing: border-box;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .map-area {
-    flex: 1; /* Map takes remaining space */
+    flex: 1;
     height: 100%;
     border-radius: var(--card-border-radius);
     overflow: hidden;
     box-shadow: var(--subtle-shadow);
     border: 1px solid var(--border-color);
     background-color: var(--map-bg);
-    /* Removed transition from map area */
-    /* transition: background-color 0.3s ease, border-color 0.3s ease; */
+    position: relative;
+}
+
+/* Professional Map Styling */
+.map-area::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, #3b82f6 50%, var(--primary-color) 100%);
+    z-index: 1001;
 }
 
 .map-sidebar {
     width: var(--sidebar-width);
-    flex-shrink: 0; /* Prevent sidebar from shrinking */
+    flex-shrink: 0;
     height: 100%;
-    overflow-y: auto; /* Allow scrolling if content exceeds height */
-    /* Ensure sidebar container itself has no visual styling */
+    overflow-y: auto;
     background-color: transparent;
     border: none;
     box-shadow: none;
-    padding: 0; /* No padding on the container */
+    padding: 0;
     box-sizing: border-box;
-    transition: none !important;
 }
 
 #map {
@@ -58,59 +69,63 @@
     line-height: normal;
 }
 
-/* Updated Legend styles (now inside sidebar) */
+/* Professional Legend Design */
 .map-sidebar .legend {
-    /* Remove absolute positioning */
-    /* position: absolute; */
-    /* bottom: 30px; */
-    /* right: 15px; */
-    /* z-index: 1000; */ /* No longer needed */
-
-    /* Apply the frame styling directly to the legend */
-    background-color: var(--legend-bg);
-    padding: 15px; /* Use the padding originally intended for the sidebar */
-    border-radius: var(--card-border-radius); /* Use the sidebar's intended radius */
-    box-shadow: var(--subtle-shadow); /* Use the sidebar's intended shadow */
-    border: 1px solid var(--border-color); /* Use the sidebar's intended border */
-    width: 100%; /* Fill the sidebar container */
-    box-sizing: border-box;
-}
-
-/* Force disable transitions/transforms and apply frame styles */
-.map-sidebar .legend {
-    background-color: var(--legend-bg);
-    padding: 15px; /* Use sidebar padding */
-    border-radius: var(--card-border-radius); /* Use sidebar radius */
-    box-shadow: var(--subtle-shadow); /* Use sidebar shadow */
-    border: 1px solid var(--border-color); /* Use sidebar border */
+    background: linear-gradient(135deg, var(--legend-bg) 0%, rgba(255, 255, 255, 0.95) 100%);
+    padding: 24px;
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--subtle-shadow);
+    border: 1px solid var(--border-color);
     width: 100%;
     box-sizing: border-box;
-    transition: none !important;
-    transform: none !important;
-    margin: 0;
-    text-align: left; /* Ensure all content is left-aligned */
+    backdrop-filter: blur(10px);
+    position: relative;
 }
 
-/* Ensure card body is also left-aligned */
+.legend::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary-color);
+    border-radius: var(--card-border-radius) var(--card-border-radius) 0 0;
+}
+
 .legend .card-body {
     text-align: left;
-    padding: 15px;
+    padding: 0;
 }
 
-/* Styles for elements within the legend remain largely the same */
+/* Academic Typography in Legend */
 .legend h6 {
-    margin-bottom: 10px; /* Slightly more space */
-    font-size: 0.9rem;
+    margin-bottom: 16px;
+    font-size: 1rem;
     font-weight: 600;
-    color: var(--text-color); 
+    color: var(--text-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    margin-bottom: 6px;
-    font-size: 0.85rem;
-    color: var(--text-color); 
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+    color: var(--text-color);
+    font-weight: 500;
+    transition: all 0.15s ease;
+    padding: 4px 0;
+}
+
+.legend-item:hover {
+    background: rgba(30, 58, 138, 0.03);
+    border-radius: 4px;
+    margin: 0 -8px 8px -8px;
+    padding: 4px 8px;
 }
 
 .legend-item:last-child {
@@ -118,43 +133,157 @@
 }
 
 .legend-color {
-    width: 16px;
-    height: 16px;
-    margin-right: 8px;
-    border-radius: 50%;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    width: 18px;
+    height: 18px;
+    margin-right: 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* Legend Toggle Switch Specific Styles */
-.legend .form-check-label {
-    font-size: 0.85rem; /* Keep original size */
-    margin-left: 5px; /* Keep original margin */
-    color: var(--text-color); 
+/* Professional Toggle Controls */
+.toggle-section {
+    margin: 20px 0;
+    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
 }
-.legend .form-check-input {
-    width: 2.5em; /* Keep original size */
-    height: 1.25em; /* Keep original size */
-    /* Inherit general form-switch styles if available globally, or define here */
+
+.legend .form-check.form-switch {
+    margin-bottom: 0;
+    padding-left: 2.8em;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background: var(--light-bg);
+    border-radius: 6px;
+    padding: 12px 16px 12px 2.8em;
+    transition: all 0.15s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.legend .form-check.form-switch:hover {
+    background: rgba(30, 58, 138, 0.05);
+}
+
+.legend .form-check.form-switch .form-check-input {
+    margin-left: -2.8em;
+    width: 2.5em;
+    height: 1.3em;
     background-color: var(--form-switch-bg);
-    border-color: rgba(0, 0, 0, 0.25);
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
+    border: 1px solid var(--border-color);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,.25)'/%3e%3c/svg%3e");
+    background-position: left center;
+    border-radius: 2em;
+    transition: background-position .15s ease-in-out, background-color 0.2s ease;
 }
-.legend .form-check-input:focus {
-    border-color: rgba(0, 0, 0, 0.25);
-    box-shadow: 0 0 0 0.25rem rgba(211, 212, 213, 0.5);
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
-}
-.legend .form-check-input:checked {
+
+.legend .form-check.form-switch .form-check-input:checked {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
+    background-position: right center;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
 }
 
+.legend .form-check.form-switch .form-check-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(30, 58, 138, 0.15);
+}
+
+.legend .form-check.form-switch .form-check-label {
+    margin-left: 8px;
+    line-height: 1.4;
+    font-weight: 600;
+    text-align: left;
+    flex: 1;
+    color: var(--text-color);
+    font-size: 0.875rem;
+}
+
+/* Capacity helper text styling */
+.capacity-helper {
+    font-size: 0.75rem;
+    color: var(--secondary-color);
+    margin-top: 8px;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(30, 58, 138, 0.05);
+    border-radius: 4px;
+    border-left: 3px solid var(--primary-color);
+    font-weight: 500;
+}
+
+/* Professional separators */
 .legend hr {
-    margin: 10px 0; /* Keep original margin */
-    border-top: 1px solid var(--border-color);
-    /* Removed transition from hr */
-    /* transition: border-color 0.3s ease; */
+    margin: 20px 0;
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--border-color) 20%, var(--border-color) 80%, transparent 100%);
+    opacity: 0.8;
+}
+
+/* Enhanced marker styles for capacity sizing */
+.custom-div-icon {
+    transform-origin: center center;
+    will-change: transform, box-shadow;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Improved hover state for capacity markers */
+.custom-div-icon div {
+    transform-origin: center center;
+    will-change: transform, box-shadow;
+}
+
+/* Professional popup styling */
+.facility-popup {
+    min-width: 220px;
+    padding: 16px;
+    font-family: "Inter", sans-serif;
+}
+
+.popup-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 8px;
+    display: block;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 6px;
+}
+
+.popup-detail {
+    font-size: 0.875rem;
+    color: var(--secondary-color);
+    line-height: 1.5;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.popup-details-link {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.15s ease;
+    font-family: "Inter", sans-serif;
+}
+
+.popup-details-link:hover {
+    background: var(--link-hover-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.25);
 }
 
 /* Ensure Bootstrap grid classes work if Bootstrap CSS isn't loaded globally */
@@ -245,18 +374,6 @@
 
 /* Removed custom CSS for technology filter container/select,
    relying on react-bootstrap Form.Select component now */
-
-/* Enhanced marker styles for capacity sizing */
-.custom-div-icon {
-  transform-origin: center center;
-  will-change: transform, box-shadow;
-}
-
-/* Improved hover state for capacity markers */
-.custom-div-icon div {
-  transform-origin: center center;
-  will-change: transform, box-shadow;
-}
 
 /* Popup styling improvements */
 .facility-popup {

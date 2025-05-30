@@ -6,7 +6,7 @@ import LoginModal from './LoginModal';
 import './Header.css';
 
 const Header: React.FC = () => {
-  const { currentUser, signOut } = useAuth(); // Updated to use signOut from context
+  const { currentUser, signOut } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
 
   const openLoginModal = (): void => setIsLoginModalOpen(true);
@@ -29,59 +29,86 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <div className="dashboard-header">
-        <div className="row align-items-center">
-          <div className="col-md-6">
-            <h1>Lithium Battery Recycling Networks in North America: Structure & Capacity</h1>
-            <p id="page-subtitle" className="text-muted"></p>
+      <header className="academic-header">
+        <div className="header-content">
+          {/* Academic Title Section */}
+          <div className="title-section">
+            <div className="research-badge">
+              <span className="badge-icon">⚡</span>
+              <span className="badge-text">Research Platform</span>
+            </div>
+            <h1 className="research-title">
+              Lithium Battery Recycling Networks
+            </h1>
+            <p className="research-subtitle">
+              Structure & Capacity Analysis in North America
+            </p>
           </div>
-          <div className="col-md-6">
-            <nav className="navbar navbar-expand navbar-light bg-light rounded p-2 float-end">
-              <div className="container-fluid">
-                <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-                  <li className="nav-item">
-                    <Link className={`nav-link ${isActive('/')}`} to="/">Map</Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className={`nav-link ${isActive('/facilities')}`} to="/facilities">Facilities</Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className={`nav-link ${isActive('/charts')}`} to="/charts">Charts</Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className={`nav-link ${isActive('/documents')}`} to="/documents">Documents</Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className={`nav-link ${isActive('/about')}`} to="/about">About</Link>
-                  </li>
-                </ul>
-                <div className="form-check form-switch me-3">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                    id="themeSwitch"
-                    checked={isDarkMode}
-                    onChange={toggleDarkMode}
-                  />
-                  <label className="form-check-label" htmlFor="themeSwitch">
-                    <i className={`fas ${isDarkMode ? 'fa-moon' : 'fa-sun'}`}></i>
-                  </label>
-                </div>
-                <div id="authStatus" className="d-flex align-items-center">
-                  {currentUser ? (
-                    <>
-                      <button className="btn btn-outline-secondary btn-sm" onClick={handleSignOut}>Logout</button>
-                    </>
-                  ) : (
-                    <button className="btn btn-outline-primary btn-sm" onClick={openLoginModal}>Login</button>
-                  )}
-                </div>
-              </div>
+
+          {/* Navigation & Controls */}
+          <div className="header-controls">
+            <nav className="academic-nav">
+              <ul className="nav-list">
+                <li className="nav-item">
+                  <Link className={`nav-link ${isActive('/')}`} to="/">
+                    <span className="nav-icon">🗺️</span>
+                    Map
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className={`nav-link ${isActive('/facilities')}`} to="/facilities">
+                    <span className="nav-icon">🏭</span>
+                    Facilities
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className={`nav-link ${isActive('/charts')}`} to="/charts">
+                    <span className="nav-icon">📊</span>
+                    Analytics
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className={`nav-link ${isActive('/documents')}`} to="/documents">
+                    <span className="nav-icon">📄</span>
+                    Documents
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className={`nav-link ${isActive('/about')}`} to="/about">
+                    <span className="nav-icon">ℹ️</span>
+                    About
+                  </Link>
+                </li>
+              </ul>
             </nav>
+
+            {/* Header Actions */}
+            <div className="header-actions">
+              <button 
+                className="theme-toggle"
+                onClick={toggleDarkMode}
+                title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                <i className={`fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+              </button>
+              
+              <div className="auth-section">
+                {currentUser ? (
+                  <button className="btn btn-outline auth-btn" onClick={handleSignOut}>
+                    <i className="fas fa-sign-out-alt"></i>
+                    Logout
+                  </button>
+                ) : (
+                  <button className="btn btn-primary auth-btn" onClick={openLoginModal}>
+                    <i className="fas fa-sign-in-alt"></i>
+                    Login
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
       <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
     </>
   );
