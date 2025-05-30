@@ -117,15 +117,7 @@
     font-size: 0.875rem;
     color: var(--text-color);
     font-weight: 500;
-    transition: all 0.15s ease;
     padding: 4px 0;
-}
-
-.legend-item:hover {
-    background: rgba(30, 58, 138, 0.03);
-    border-radius: 4px;
-    margin: 0 -8px 8px -8px;
-    padding: 4px 8px;
 }
 
 .legend-item:last-child {
@@ -160,13 +152,8 @@
     background: var(--light-bg);
     border-radius: 6px;
     padding: 12px 16px 12px 2.8em;
-    transition: all 0.15s ease;
     width: 100%;
     box-sizing: border-box;
-}
-
-.legend .form-check.form-switch:hover {
-    background: rgba(30, 58, 138, 0.05);
 }
 
 .legend .form-check.form-switch .form-check-input {
@@ -178,7 +165,6 @@
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,.25)'/%3e%3c/svg%3e");
     background-position: left center;
     border-radius: 2em;
-    transition: background-position .15s ease-in-out, background-color 0.2s ease;
 }
 
 .legend .form-check.form-switch .form-check-input:checked {
@@ -267,23 +253,14 @@
 }
 
 .popup-details-link {
-    background: var(--primary-color);
+    background-color: #007bff;
     color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85em;
     cursor: pointer;
-    margin-top: 12px;
-    transition: all 0.15s ease;
-    font-family: "Inter", sans-serif;
-}
-
-.popup-details-link:hover {
-    background: var(--link-hover-color);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.25);
+    margin-top: 8px;
 }
 
 /* Ensure Bootstrap grid classes work if Bootstrap CSS isn't loaded globally */
@@ -339,7 +316,6 @@
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,.25)'/%3e%3c/svg%3e");
   background-position: left center;
   border-radius: 2em;
-  transition: background-position .15s ease-in-out;
 }
 .form-switch .form-check-input:focus {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,.25)'/%3e%3c/svg%3e");
@@ -354,26 +330,6 @@
 .mb-2 {
     margin-bottom: .5rem!important;
 }
-
-/* Styles for the 'View Details' link in map popups */
-.popup-details-link {
-  background: none;
-  border: none;
-  color: #0d6efd; /* Bootstrap's default blue */
-  padding: 0;
-  margin-top: 5px; /* Spacing from content above */
-  font: inherit; /* Inherit font from popup */
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.popup-details-link:hover {
-  text-decoration: none;
-  color: #0a58ca; /* Darker blue on hover */
-}
-
-/* Removed custom CSS for technology filter container/select,
-   relying on react-bootstrap Form.Select component now */
 
 /* Popup styling improvements */
 .facility-popup {
@@ -404,11 +360,6 @@
   font-size: 0.85em;
   cursor: pointer;
   margin-top: 8px;
-  transition: background-color 0.2s ease;
-}
-
-.popup-details-link:hover {
-  background-color: #0056b3;
 }
 
 /* Capacity helper text styling */
