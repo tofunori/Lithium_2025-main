@@ -76,8 +76,6 @@
     box-sizing: border-box;
 }
 
-/* Removed hover rule */
-
 /* Force disable transitions/transforms and apply frame styles */
 .map-sidebar .legend {
     background-color: var(--legend-bg);
@@ -90,8 +88,14 @@
     transition: none !important;
     transform: none !important;
     margin: 0;
+    text-align: left; /* Ensure all content is left-aligned */
 }
 
+/* Ensure card body is also left-aligned */
+.legend .card-body {
+    text-align: left;
+    padding: 15px;
+}
 
 /* Styles for elements within the legend remain largely the same */
 .legend h6 {
@@ -241,3 +245,102 @@
 
 /* Removed custom CSS for technology filter container/select,
    relying on react-bootstrap Form.Select component now */
+
+/* Enhanced marker styles for capacity sizing */
+.custom-div-icon {
+  transform-origin: center center;
+  will-change: transform, box-shadow;
+}
+
+/* Improved hover state for capacity markers */
+.custom-div-icon div {
+  transform-origin: center center;
+  will-change: transform, box-shadow;
+}
+
+/* Popup styling improvements */
+.facility-popup {
+  min-width: 200px;
+  padding: 8px;
+}
+
+.popup-title {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.popup-detail {
+  font-size: 0.9em;
+  color: #5a6c7d;
+  line-height: 1.4;
+}
+
+.popup-details-link {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.popup-details-link:hover {
+  background-color: #0056b3;
+}
+
+/* Capacity helper text styling */
+.capacity-helper {
+  font-size: 0.75em;
+  color: #6c757d;
+  margin-top: 4px;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Improved toggle switch spacing and layout */
+.legend .form-check.form-switch {
+  margin-bottom: 8px;
+  padding-left: 2.8em; /* More space for the switch */
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start; /* Ensure left alignment */
+}
+
+.legend .form-check.form-switch .form-check-input {
+  margin-left: -2.8em; /* Align with increased padding */
+  width: 2.2em; /* Slightly wider switch */
+  height: 1.2em; /* Slightly taller for better visibility */
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.legend .form-check.form-switch .form-check-label {
+  margin-left: 8px; /* Better spacing between switch and label */
+  line-height: 1.4; /* Better vertical alignment */
+  font-weight: 500; /* Slightly bolder for better readability */
+  text-align: left; /* Ensure text is left-aligned */
+  flex: 1; /* Take remaining space */
+}
+
+/* Add spacing around toggle sections */
+.toggle-section {
+  margin: 12px 0;
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Left align the entire section */
+}
+
+/* Improve separator lines */
+.legend hr {
+  margin: 12px 0; /* More space around separators */
+  border-top: 1px solid var(--border-color);
+  opacity: 0.5; /* Lighter separator lines */
+}

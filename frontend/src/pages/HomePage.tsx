@@ -13,6 +13,11 @@ import {
   getStatusLabel,
   ALL_CANONICAL_STATUSES // Use this to include 'unknown' in legend/colors
 } from '../utils/statusUtils'; // Import status utilities
+import {
+  getTechnologyCategoryColor,
+  getAllTechnologyCategories,
+  getTechnologyCategoryLabel
+} from '../utils/technologyUtils'; // Import technology utilities
 import './HomePage.css';
 
 // Define Basemap configuration type
@@ -53,6 +58,7 @@ const HomePage: React.FC = () => {
   const [facilitiesData, setFacilitiesData] = useState<Facility[]>([]);
   const [selectedTechnology, setSelectedTechnology] = useState<string>('all');
   const [selectedBasemap, setSelectedBasemap] = useState<string>('osm'); // State for selected basemap key
+  const [colorByTechnology, setColorByTechnology] = useState<boolean>(false); // New state for color mode
   const { isDarkMode } = useTheme(); // Keep theme state for potential future use or initial default
 
   // Define react-select option type
@@ -93,11 +99,11 @@ const HomePage: React.FC = () => {
 
 
   // Function to calculate marker size based on capacity
-  // UPDATED: Parameter type to match Facility.processing_capacity_mt_year
+  // UPDATED: Improved scaling algorithm for better visual differentiation
   const calculateMarkerSize = useCallback((capacity: number | null | undefined): number => {
-    const baseSize = 16; // Base size for the circle diameter
-    const maxSize = 50; // Max size for the largest capacity
-    const minSize = 10; // Min size for zero or small capacity
+    const baseSize = 12; // Smaller base size to allow more room for growth
+    const maxSize = 60; // Increased max size for larger capacity facilities
+    const minSize = 8; // Smaller min size for better contrast
 
     // Use capacity directly as it's already number | null | undefined
     const numericCapacity = capacity ?? 0;
@@ -106,17 +112,44 @@ const HomePage: React.FC = () => {
       return minSize;
     }
 
-    // Use a logarithmic scale for better visual differentiation
-    // Adjust the scaling factor (e.g., 5) and base (e.g., 1000) as needed
-    const scaledSize = baseSize + Math.log(numericCapacity / 1000 + 1) * 5;
+    // Use a square root scale for better visual differentiation
+    // This provides more balanced scaling across the capacity range
+    // From the data: small facilities ~5,000t, large facilities ~40,000t+
+    const normalizedCapacity = Math.sqrt(numericCapacity / 1000); // Normalize and take square root
+    const scaledSize = baseSize + (normalizedCapacity * 2.5); // Scale factor for visual appeal
 
-    return Math.max(minSize, Math.min(maxSize, Math.round(scaledSize)));
+    // Ensure size is within bounds and round to nearest pixel
+    const finalSize = Math.max(minSize, Math.min(maxSize, Math.round(scaledSize)));
+    
+    // Add some visual debugging if needed (can be removed later)
+    // console.log(`Capacity: ${numericCapacity}t -> Size: ${finalSize}px`);
+    
+    return finalSize;
   }, []);
 
   // Function to create the icon HTML
   const createIconHtml = (color: string, size: number): string => {
-    // Simple colored circle
-    return `<div style="background-color: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 0 3px rgba(0,0,0,0.5);"></div>`;
+    // Calculate proportional border and shadow based on size
+    const borderWidth = Math.max(1, Math.round(size * 0.08)); // 8% of size, minimum 1px
+    const shadowBlur = Math.max(2, Math.round(size * 0.15)); // 15% of size for shadow
+    const shadowSpread = Math.max(1, Math.round(size * 0.05)); // 5% of size for shadow spread
+    
+    // Enhanced colored circle with better visual effects
+    return `<div style="
+      background-color: ${color}; 
+      width: ${size}px; 
+      height: ${size}px; 
+      border-radius: 50%; 
+      border: ${borderWidth}px solid rgba(255,255,255,0.8); 
+      box-shadow: 
+        0 0 ${shadowBlur}px rgba(0,0,0,0.4),
+        0 ${Math.round(shadowSpread/2)}px ${shadowSpread}px rgba(0,0,0,0.2);
+      transition: all 0.2s ease-in-out;
+      cursor: pointer;
+    " 
+    onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 ${shadowBlur * 1.5}px rgba(0,0,0,0.6), 0 ${shadowSpread}px ${shadowSpread * 1.5}px rgba(0,0,0,0.3)';" 
+    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 ${shadowBlur}px rgba(0,0,0,0.4), 0 ${Math.round(shadowSpread/2)}px ${shadowSpread}px rgba(0,0,0,0.2)';"
+    ></div>`;
   };
 
   // Define status colors using CanonicalStatus keys
@@ -127,6 +160,15 @@ const HomePage: React.FC = () => {
     closed: '#000000', // Black for closed
     unknown: '#6c757d' // Grey for unknown
   };
+
+  // Define technology colors using the technology categories
+  const technologyColors: Record<string, string> = useMemo(() => {
+    const colors: Record<string, string> = {};
+    getAllTechnologyCategories().forEach(category => {
+      colors[category] = getTechnologyCategoryColor(category);
+    });
+    return colors;
+  }, []);
   
   // Function to update all marker sizes and styles
   const updateMarkerSizes = useCallback(() => {
@@ -144,12 +186,21 @@ const HomePage: React.FC = () => {
       // Use correct DB column name "Operational Status"
       const statusName = facility["Operational Status"]; // Use DB column name
       const canonicalStatus = getCanonicalStatus(statusName);
-      const color = statusColors[canonicalStatus]; // Use the map defined above
+      
+      // Determine color based on color mode
+      let color: string;
+      if (colorByTechnology) {
+        const techCategory = facility.technology_category || 'Other';
+        color = technologyColors[techCategory] || technologyColors['Other'];
+      } else {
+        color = statusColors[canonicalStatus];
+      }
+
       let size = 16; // Default fixed size
 
       if (sizeByCapacity) {
-        // Use correct DB column name "Annual Processing Capacity (tonnes/year)"
-        size = calculateMarkerSize(facility["Annual Processing Capacity (tonnes/year)"]); // Use DB column name
+        // Use correct property name from Facility interface
+        size = calculateMarkerSize(facility.capacity_tonnes_per_year);
       }
 
       const newIcon: DivIcon = L.divIcon({
@@ -161,7 +212,7 @@ const HomePage: React.FC = () => {
 
       marker.setIcon(newIcon);
     });
-  }, [sizeByCapacity, facilitiesData, calculateMarkerSize, statusColors]); // Dependencies updated
+  }, [sizeByCapacity, facilitiesData, calculateMarkerSize, statusColors, colorByTechnology, technologyColors]); // Dependencies updated
 
 
   // Effect to load map and initial facilities
@@ -240,13 +291,21 @@ const HomePage: React.FC = () => {
         // Use correct DB column name "Operational Status"
         const statusName = facility["Operational Status"]; // Use DB column name
         const canonicalStatus = getCanonicalStatus(statusName);
-        const color = statusColors[canonicalStatus]; // Use the map defined above
+        
+        // Determine color based on color mode
+        let color: string;
+        if (colorByTechnology) {
+          const techCategory = facility.technology_category || 'Other';
+          color = technologyColors[techCategory] || technologyColors['Other'];
+        } else {
+          color = statusColors[canonicalStatus];
+        }
 
         // Determine size based on toggle
         let size = 16; // Default fixed size
         if (sizeByCapacity) {
-          // Use correct DB column name "Annual Processing Capacity (tonnes/year)"
-          size = calculateMarkerSize(facility["Annual Processing Capacity (tonnes/year)"]); // Use DB column name
+          // Use correct property name from Facility interface
+          size = calculateMarkerSize(facility.capacity_tonnes_per_year);
         }
 
         // Create DivIcon with correct color and size
@@ -263,11 +322,23 @@ const HomePage: React.FC = () => {
               const popupContent = document.createElement('div');
               popupContent.className = 'facility-popup'; // Add class for styling
               // Use correct DB column names
-              popupContent.innerHTML = `
+              let popupHtml = `
                 <strong class="popup-title">${facility.Company || 'Unknown'}</strong><br>
                 <span class="popup-detail">Location: ${facility.Location || 'N/A'}</span><br>
                 <span class="popup-detail">Status: ${statusName || 'N/A'}</span><br>
               `;
+              
+              // Add capacity information if available
+              if (facility.capacity_tonnes_per_year) {
+                popupHtml += `<span class="popup-detail">Capacity: ${facility.capacity_tonnes_per_year.toLocaleString()} tonnes/year</span><br>`;
+              }
+              
+              // Add technology information when color by technology is enabled
+              if (colorByTechnology && facility.technology_category) {
+                popupHtml += `<span class="popup-detail">Technology: ${getTechnologyCategoryLabel(facility.technology_category)}</span><br>`;
+              }
+              
+              popupContent.innerHTML = popupHtml;
 
               const viewDetailsButton = document.createElement('button');
               viewDetailsButton.innerText = 'View Details';
@@ -292,12 +363,17 @@ const HomePage: React.FC = () => {
     // updateMarkerSizes(); // Remove this call
 
   // Dependencies: map instance, data, filters, and sizing logic
-  }, [mapInstanceRef, facilitiesData, selectedTechnology, sizeByCapacity, calculateMarkerSize, statusColors, navigate, createIconHtml]); // Added selectedTechnology
+  }, [mapInstanceRef, facilitiesData, selectedTechnology, sizeByCapacity, calculateMarkerSize, statusColors, navigate, createIconHtml, colorByTechnology, technologyColors]); // Added selectedTechnology
 
 
   // Handler for the size toggle switch - Type event
   const handleSizeToggle = (event: ChangeEvent<HTMLInputElement>) => {
     setSizeByCapacity(event.target.checked);
+  };
+
+  // Handler for the color mode toggle
+  const handleColorModeToggle = (event: ChangeEvent<HTMLInputElement>) => {
+    setColorByTechnology(event.target.checked);
   };
 
   const handleTechnologyChange = (selectedOption: SingleValue<OptionType>) => {
@@ -401,28 +477,71 @@ const HomePage: React.FC = () => {
         {/* Legend and Filters moved here */}
         <div className="legend card shadow-sm"> {/* Keep card styling for the content block */}
           <div className="card-body p-2">
-            <h6 className="mb-2 card-title">Facility Status</h6>
-            {/* Dynamically generate legend items from statusUtils */}
-                {ALL_CANONICAL_STATUSES.map(statusKey => (
-                  <div className="legend-item" key={statusKey}>
-                    <div className="legend-color" style={{ backgroundColor: statusColors[statusKey] }}></div>
-                    <span>{getStatusLabel(statusKey)}</span>
-                  </div>
-                ))}
-                <hr style={{ margin: '8px 0' }} />
-                <div className="form-check form-switch form-check-sm">
-                <input
-                    className="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                    id="sizeByCapacityToggle"
-                    checked={sizeByCapacity}
-                    onChange={handleSizeToggle}
-                />
-                <label className="form-check-label" htmlFor="sizeByCapacityToggle" style={{ fontSize: '0.9em' }}>Size by Capacity</label>
+            <h6 className="mb-2 card-title">
+              {colorByTechnology ? 'Technology Categories' : 'Facility Status'}
+            </h6>
+            {/* Dynamically generate legend items based on color mode */}
+            {colorByTechnology ? (
+              // Show technology categories
+              getAllTechnologyCategories().map(techCategory => (
+                <div className="legend-item" key={techCategory}>
+                  <div className="legend-color" style={{ backgroundColor: technologyColors[techCategory] }}></div>
+                  <span>{getTechnologyCategoryLabel(techCategory)}</span>
                 </div>
-                  {/* Technology Filter Dropdown using react-select */}
-                  <hr style={{ margin: '8px 0' }} />
+              ))
+            ) : (
+              // Show status categories
+              ALL_CANONICAL_STATUSES.map(statusKey => (
+                <div className="legend-item" key={statusKey}>
+                  <div className="legend-color" style={{ backgroundColor: statusColors[statusKey] }}></div>
+                  <span>{getStatusLabel(statusKey)}</span>
+                </div>
+              ))
+            )}
+                <hr />
+                
+                {/* Toggle Controls Section */}
+                <div className="toggle-section">
+                  {/* Color Mode Toggle */}
+                  <div className="form-check form-switch form-check-sm">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="colorByTechnologyToggle"
+                      checked={colorByTechnology}
+                      onChange={handleColorModeToggle}
+                    />
+                    <label className="form-check-label" htmlFor="colorByTechnologyToggle" style={{ fontSize: '0.9em' }}>
+                      Color by Technology
+                    </label>
+                  </div>
+                  
+                  {/* Size by Capacity Toggle */}
+                  <div className="form-check form-switch form-check-sm">
+                    <input
+                        className="form-check-input"
+                        type="checkbox"
+                        role="switch"
+                        id="sizeByCapacityToggle"
+                        checked={sizeByCapacity}
+                        onChange={handleSizeToggle}
+                    />
+                    <label className="form-check-label" htmlFor="sizeByCapacityToggle" style={{ fontSize: '0.9em' }}>Size by Capacity</label>
+                  </div>
+                  
+                  {/* Size by Capacity Helper Text */}
+                  {sizeByCapacity && (
+                    <div className="capacity-helper">
+                      <i className="fas fa-info-circle"></i>
+                      Larger markers = higher capacity
+                    </div>
+                  )}
+                </div>
+                
+                <hr />
+                
+                {/* Technology Filter Dropdown using react-select */}
                   <div className="technology-filter-container"> {/* Keep container for label spacing */}
                     <label htmlFor="technologySelect" className="form-label mb-1" style={{ fontSize: '0.9em' }}>Category:</label>
                     <Select<OptionType>
@@ -437,7 +556,7 @@ const HomePage: React.FC = () => {
                     />
                   </div>
                   {/* Basemap Filter Dropdown */}
-                  <hr style={{ margin: '8px 0' }} />
+                  <hr />
                   <div className="basemap-filter-container">
                     <label htmlFor="basemapSelect" className="form-label mb-1" style={{ fontSize: '0.9em' }}>Basemap:</label>
                     <Select<OptionType>
