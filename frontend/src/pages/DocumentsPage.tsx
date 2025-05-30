@@ -306,9 +306,7 @@ const DocumentsPage: React.FC = () => {
         // Create a path within the current folder
         const timestamp = new Date().getTime();
         // Prepend currentPath (which should end in '/') if not in root
-        const path = `${currentPath}${timestamp}_${file.name}`;
-        console.log(`Uploading to path: ${path}`);
-
+        const path = `${currentPath}${timestamp}_${file.name}`; // Path construction
         // Upload the file to Supabase Storage
         const result = await uploadFile(documentsBucket, path, file);
         console.log(`File uploaded successfully to path: ${result.path}`);

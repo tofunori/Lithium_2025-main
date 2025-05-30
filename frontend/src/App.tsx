@@ -1,5 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { DndProvider } from 'react-dnd'; // Import DndProvider
+import { HTML5Backend } from 'react-dnd-html5-backend'; // Import the backend
 import { ThemeProvider } from './context/ThemeContext'; // Import ThemeProvider
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
@@ -16,11 +18,13 @@ import './App.css';
 
 const App: React.FC = () => {
   return (
-    <div className="App">
-      <ThemeProvider> {/* Wrap Routes with ThemeProvider */}
-        <Routes>
-          <Route element={<MainLayout />}>
-            {/* Public routes */}
+    // Wrap the entire app with DndProvider
+    <DndProvider backend={HTML5Backend}>
+      <div className="App">
+        <ThemeProvider> {/* Wrap Routes with ThemeProvider */}
+          <Routes>
+            <Route element={<MainLayout />}>
+              {/* Public routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/facilities" element={<FacilitiesPage />} />
@@ -33,10 +37,11 @@ const App: React.FC = () => {
               <Route path="/facilities/new" element={<FacilityCreatePage />} />
               <Route path="/facilities/edit/:facilityId" element={<FacilityEditPage />} />
             </Route>
-          </Route>
-        </Routes>
-      </ThemeProvider>
-    </div>
+            </Route>
+          </Routes>
+        </ThemeProvider>
+      </div>
+    </DndProvider>
   );
 };
 

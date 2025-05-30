@@ -62,6 +62,14 @@ body {
     color: var(--primary-color);
 }
 
+/* Added rule for h3 in header */
+.dashboard-header h3 {
+    font-size: 1.0rem !important; /* Even smaller font size, forced */
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem; /* Adjust margin if needed */
+}
+
 .dashboard-header .text-muted {
     color: var(--text-muted-color) !important;
 }
@@ -921,5 +929,3 @@ li.tree-node[draggable="true"]:active {
     line-height: 1;        /* Adjust line height for smaller size */
     /* max-width: 30px; Removed width limit */
 }
-
-

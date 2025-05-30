@@ -33,37 +33,7 @@
   align-items: center;
 }
 
-/* Status Badge Styles (copied and adapted from FacilitiesPage.css for consistency) */
-.status-badge {
-  padding: 0.3em 0.6em;
-  border-radius: 0.25rem;
-  font-size: 0.85em;
-  font-weight: bold;
-  text-transform: capitalize;
-  display: inline-block; /* Ensure badges behave correctly */
-  color: #fff; /* Default text color */
-}
-
-.status-operating {
-  background-color: #4CAF50; /* Green (Matches map) */
-}
-
-.status-construction {
-  background-color: #ffc107; /* Yellow */
-  color: #333; /* Darker text for yellow */
-}
-
-.status-planned {
-  background-color: #2196F3; /* Blue (Matches map) */
-}
-
-.status-pilot {
-  background-color: #9C27B0; /* Purple (Matches map) */
-}
-
-.status-unknown {
-  background-color: #dc3545; /* Red for unknown/error */
-}
+/* REMOVED Status Badge Styles - Defined globally in App.css */
 
 /* Ensure consistent spacing for rows */
 .facility-detail-page .row {
@@ -123,4 +93,52 @@
 
 .facility-detail-page li {
   margin-bottom: 0.5rem;
+
+
+/* --- Multi-Column Layout Styles --- */
+.facility-content-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Default to single column */
+  gap: 2rem; /* Spacing between columns/rows */
+}
+
+/* Apply two columns on medium screens and up */
+@media (min-width: 768px) {
+  .facility-content-grid {
+    grid-template-columns: repeat(2, 1fr); /* Two equal columns */
+  }
+}
+
+.facility-section {
+  background-color: #f8f9fa; /* Light background for sections */
+  padding: 1.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #dee2e6;
+  margin-bottom: 1.5rem; /* Space below each section */
+}
+
+.facility-section h3 {
+  font-size: 1.25rem;
+  color: #495057;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* Adjustments for specific sections if needed */
+.facility-section .list-group {
+  margin-bottom: 0; /* Remove default bottom margin inside sections */
+}
+
+.facility-section .image-gallery-placeholder {
+  margin-top: 1rem;
+}
+
+/* Ensure form sections fit well */
+.facility-section .form-section {
+  padding: 0; /* Remove extra padding if form sections have their own */
+  border: none;
+  background-color: transparent;
+}
+
 }

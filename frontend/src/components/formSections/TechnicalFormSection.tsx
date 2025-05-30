@@ -1,22 +1,24 @@
 import React, { ChangeEvent, FC } from 'react';
 
 // Define the structure for the technical data this section handles
+// UPDATED: Keys match SupabaseFacilityFormData for direct compatibility
 interface TechnicalData {
-  capacity?: string | number; // Matches FacilityFormData.capacity
-  technology?: string;
-  feedstock?: string;
-  product?: string;
-  technicalSpecs?: string;
+  processing_capacity_mt_year?: string | number | null;
+  technology_name?: string | null;
+  feedstock?: string | null;
+  product?: string | null;
+  technology_description?: string | null;
 }
 
 // Define the props for the component
 interface TechnicalFormSectionProps {
-  data?: TechnicalData;
+  data?: TechnicalData; // Expects data structure matching SupabaseFacilityFormData subset
   onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   isSaving?: boolean;
 }
 
 const TechnicalFormSection: FC<TechnicalFormSectionProps> = ({ data, onChange, isSaving }) => {
+  // Use provided data directly, default to empty object if undefined
   const formData = data || {};
 
   return (
@@ -24,28 +26,28 @@ const TechnicalFormSection: FC<TechnicalFormSectionProps> = ({ data, onChange, i
       <legend className="mb-3">Technical Details</legend>
       <div className="row mb-3">
         <div className="col-md-6">
-          <label htmlFor="edit-capacity" className="form-label">Volume (tons/year):</label>
+          <label htmlFor="edit-processing_capacity_mt_year" className="form-label">Volume (tons/year):</label>
           <input
-            type="text" // Kept as text to allow flexible input, parent might parse to number
+            type="text" // Keep as text, parent handles parsing
             className="form-control"
-            id="edit-capacity"
-            name="capacity" // Matches key in FacilityFormData
-            // Ensure value is treated as string for input
-            value={formData.capacity !== undefined ? String(formData.capacity) : ''}
+            id="edit-processing_capacity_mt_year"
+            name="processing_capacity_mt_year" // UPDATED: Matches SupabaseFacilityFormData key
+            // Ensure value is treated as string for input, handle null/undefined
+            value={formData.processing_capacity_mt_year != null ? String(formData.processing_capacity_mt_year) : ''}
             onChange={onChange}
-            disabled={isSaving} // Add disabled attribute
+            disabled={isSaving}
           />
         </div>
         <div className="col-md-6">
-          <label htmlFor="edit-technology" className="form-label">Method/Technology:</label>
+          <label htmlFor="edit-technology_name" className="form-label">Method/Technology:</label>
           <input
             type="text"
             className="form-control"
-            id="edit-technology"
-            name="technology" // Matches key in editFormData (assuming it exists)
-            value={formData.technology || ''}
+            id="edit-technology_name"
+            name="technology_name" // UPDATED: Matches SupabaseFacilityFormData key
+            value={formData.technology_name || ''}
             onChange={onChange}
-            disabled={isSaving} // Add disabled attribute
+            disabled={isSaving}
           />
         </div>
       </div>
@@ -56,10 +58,10 @@ const TechnicalFormSection: FC<TechnicalFormSectionProps> = ({ data, onChange, i
             type="text"
             className="form-control"
             id="edit-feedstock"
-            name="feedstock" // Matches key in editFormData (assuming it exists)
+            name="details.feedstock" // Matches nested details key
             value={formData.feedstock || ''}
             onChange={onChange}
-            disabled={isSaving} // Add disabled attribute
+            disabled={isSaving}
           />
         </div>
         <div className="col-md-6">
@@ -68,23 +70,23 @@ const TechnicalFormSection: FC<TechnicalFormSectionProps> = ({ data, onChange, i
             type="text"
             className="form-control"
             id="edit-product"
-            name="product" // Matches key in editFormData (assuming it exists)
+            name="details.product" // Matches nested details key
             value={formData.product || ''}
             onChange={onChange}
-            disabled={isSaving} // Add disabled attribute
+            disabled={isSaving}
           />
         </div>
       </div>
       <div className="mb-3">
-        <label htmlFor="edit-technicalSpecs" className="form-label">Technical Specifications:</label>
+        <label htmlFor="edit-technology_description" className="form-label">Technical Specifications:</label>
         <textarea
           className="form-control"
-          id="edit-technicalSpecs"
-          name="technicalSpecs" // Matches key in editFormData (assuming it exists)
-          value={formData.technicalSpecs || ''}
+          id="edit-technology_description"
+        name="details.technology_description" // UPDATED: Matches nested details key
+          value={formData.technology_description || ''}
           onChange={onChange}
-          rows={5} // Adjust rows as needed
-          disabled={isSaving} // Add disabled attribute
+          rows={5}
+          disabled={isSaving}
         ></textarea>
       </div>
     </fieldset>

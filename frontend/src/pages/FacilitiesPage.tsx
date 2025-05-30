@@ -1,5 +1,5 @@
 // frontend/src/pages/FacilitiesPage.tsx
-import React, { useState, useEffect, ChangeEvent, useCallback } from 'react';
+import React, { useState, useEffect, ChangeEvent, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
@@ -36,7 +36,7 @@ const columnsConfig: ColumnConfig[] = [
   { key: 'Operational Status', label: 'Status', defaultVisible: true },
   { key: 'Latitude', label: 'Latitude', defaultVisible: false },
   { key: 'Longitude', label: 'Longitude', defaultVisible: false },
-  { key: 'Key Sources/Notes', label: 'Sources/Notes', defaultVisible: false },
+  // Removed 'Key Sources/Notes' as it's not fetched in the list view
   { key: 'Actions', label: 'Actions', defaultVisible: true },
 ];
 
@@ -51,6 +51,9 @@ const FacilitiesPage: React.FC = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  // Default sort by Company ascending
+  const [sortColumn, setSortColumn] = useState<keyof Facility | null>('Company'); // State for sort column
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); // State for sort direction
   // No longer need state for availableStatuses
   // const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
 
@@ -227,6 +230,60 @@ const FacilitiesPage: React.FC = () => {
     return company.includes(term) || location.includes(term) || category.includes(term) || facilityName.includes(term);
   });
 
+  // Sorting Logic
+  const sortedFacilities = useMemo(() => {
+    if (!sortColumn) return searchFilteredFacilities;
+
+    return [...searchFilteredFacilities].sort((a, b) => {
+      const aValue = a[sortColumn];
+      const bValue = b[sortColumn];
+
+      // Handle null/undefined values - place them at the end for asc, beginning for desc
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return sortDirection === 'asc' ? 1 : -1;
+      if (bValue == null) return sortDirection === 'asc' ? -1 : 1;
+
+      // Type-specific comparison
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+      // Add more type comparisons if needed (e.g., dates)
+
+      // Fallback comparison (treat as strings)
+      const stringA = String(aValue).toLowerCase();
+      const stringB = String(bValue).toLowerCase();
+      return sortDirection === 'asc'
+        ? stringA.localeCompare(stringB)
+        : stringB.localeCompare(stringA);
+    });
+  }, [searchFilteredFacilities, sortColumn, sortDirection]);
+
+
+  const handleSort = (columnKey: keyof Facility) => {
+    if (sortColumn === columnKey) {
+      // If clicking the same column, reverse the direction
+      setSortDirection(prevDirection => (prevDirection === 'asc' ? 'desc' : 'asc'));
+    } else {
+      // If clicking a new column, set it and default to ascending
+      setSortColumn(columnKey);
+      setSortDirection('asc');
+    }
+  };
+
+  const renderSortIcon = (columnKey: keyof Facility) => {
+    if (sortColumn !== columnKey) {
+      return <i className="fas fa-sort ms-1 text-muted"></i>; // Default sort icon
+    }
+    return sortDirection === 'asc'
+      ? <i className="fas fa-sort-up ms-1"></i> // Ascending icon
+      : <i className="fas fa-sort-down ms-1"></i>; // Descending icon
+  };
+
+
   const renderStatusBadge = (statusName: string | undefined | null): React.ReactNode => {
     const canonicalStatus = getCanonicalStatus(statusName);
     const className = `status-badge ${getStatusClass(canonicalStatus)}`;
@@ -349,14 +406,28 @@ const FacilitiesPage: React.FC = () => {
             <table className="table table-hover facilities-table">
               <thead className="table-light">
                 <tr>
-                  {/* Render headers based on visibility */}
-                  {columnsConfig.map(col => (
-                    // Exclude the old text capacity column header
-                    col.key !== 'Annual Processing Capacity (tonnes/year)' &&
-                    visibleColumns.hasOwnProperty(col.key) && visibleColumns[col.key] && (col.key !== 'Actions' || currentUser)
-                      ? <th key={col.key}>{col.label}</th>
-                      : null
-                  ))}
+                  {/* Render headers based on visibility and add sorting */}
+                  {columnsConfig.map(col => {
+                    // Exclude the old text capacity column header and non-sortable columns like Actions
+                    if (col.key === 'Annual Processing Capacity (tonnes/year)' || !visibleColumns.hasOwnProperty(col.key) || !visibleColumns[col.key] || (col.key === 'Actions' && !currentUser)) {
+                      return null;
+                    }
+
+                    // Check if the column is sortable (exclude 'Actions')
+                    const isSortable = col.key !== 'Actions'; // Add other non-sortable keys if needed
+
+                    return (
+                      <th
+                        key={col.key}
+                        onClick={isSortable ? () => handleSort(col.key as keyof Facility) : undefined}
+                        style={isSortable ? { cursor: 'pointer' } : {}}
+                        className={isSortable ? 'sortable-header' : ''}
+                      >
+                        {col.label}
+                        {isSortable && renderSortIcon(col.key as keyof Facility)}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -366,14 +437,14 @@ const FacilitiesPage: React.FC = () => {
                       <i className="fas fa-spinner fa-spin fa-2x"></i>
                     </td>
                   </tr>
-                ) : !error && searchFilteredFacilities.length === 0 ? (
+                ) : !error && sortedFacilities.length === 0 ? ( // Use sortedFacilities here
                   <tr>
                     <td colSpan={visibleColumnCount} className="text-center text-muted p-4">
                       No facilities found matching your criteria.
                     </td>
                   </tr>
                 ) : (
-                  searchFilteredFacilities.map(facility => (
+                  sortedFacilities.map(facility => ( // Use sortedFacilities here
                     <tr key={facility.ID}>
                       {/* Render cells based on visibility */}
                       {columnsConfig.map(col => {
@@ -415,11 +486,8 @@ const FacilitiesPage: React.FC = () => {
                           cellContent = facility.capacity_tonnes_per_year?.toLocaleString() ?? 'N/A';
                         } else if (col.key === 'Operational Status') {
                           cellContent = renderStatusBadge(facility["Operational Status"]);
-                        } else if (col.key === 'Key Sources/Notes') {
-                          const notes = facility["Key Sources/Notes"];
-                          cellContent = (notes || 'N/A').substring(0, 50) + (notes && notes.length > 50 ? '...' : '');
-                          return <td key={col.key} title={notes || ''}>{cellContent}</td>;
                         }
+                        // Removed rendering logic for 'Key Sources/Notes'
 
                         return <td key={col.key} className={cellClass}>{cellContent}</td>;
                       })}

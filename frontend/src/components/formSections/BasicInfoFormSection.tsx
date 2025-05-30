@@ -4,7 +4,8 @@ import React, { ChangeEvent, FC } from 'react';
 interface BasicInfoData {
   company?: string;
   location?: string;
-  status?: 'Planning' | 'Under Construction' | 'Operational' | 'On Hold' | 'Cancelled' | 'Decommissioned' | string;
+  // Allow any string for status, including our specific options + Unknown
+  status?: string;
 }
 
 // Define the props for the component
@@ -15,14 +16,15 @@ interface BasicInfoFormSectionProps {
 }
 
 const BasicInfoFormSection: FC<BasicInfoFormSectionProps> = ({ data, onChange, isSaving }) => {
-  // Status options remain the same
+  // Status options - Change 'Planning' to 'Planned' for consistency
   const statusOptions = [
-    'Planning',
+    'Planned', // Changed from 'Planning'
     'Under Construction',
     'Operational',
     'On Hold',
     'Cancelled',
     'Decommissioned',
+    'Unknown', // Add Unknown as a valid option
   ];
 
   return (
@@ -47,8 +49,8 @@ const BasicInfoFormSection: FC<BasicInfoFormSectionProps> = ({ data, onChange, i
             type="text"
             className="form-control"
             id="edit-location"
-            name="location" // Matches key in FacilityFormData
-            value={data?.location || ''} // Use optional chaining
+            name="address" // Correct name to match FacilityFormData
+            value={data?.location || ''} // Value comes from the 'location' prop mapped in parent
             onChange={onChange}
             required // Keep required if needed
           />
@@ -60,10 +62,12 @@ const BasicInfoFormSection: FC<BasicInfoFormSectionProps> = ({ data, onChange, i
            <select
              className="form-select"
              id="edit-status"
-             name="status" // Matches key in FacilityFormData
-             value={data?.status || 'Planning'} // Use optional chaining, default if undefined
+             name="status_name" // Use the correct field name for the state update
+             value={data?.status || ''} // Value comes from the 'status' prop mapped in parent
              onChange={onChange}
            >
+             {/* Optional: Add a default disabled option if '' is the value */}
+             {/* <option value="" disabled>Select status...</option> */}
              {statusOptions.map(option => (
                <option key={option} value={option}>{option}</option>
              ))}
