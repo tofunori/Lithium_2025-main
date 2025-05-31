@@ -161,60 +161,6 @@ const HomePage: React.FC = () => {
     unknown: '#6c757d' // Grey for unknown
   };
 
-  // Define technology colors using the technology categories
-  const technologyColors: Record<string, string> = useMemo(() => {
-    const colors: Record<string, string> = {};
-    getAllTechnologyCategories().forEach(category => {
-      colors[category] = getTechnologyCategoryColor(category);
-    });
-    return colors;
-  }, []);
-  
-  // Function to update all marker sizes and styles
-  const updateMarkerSizes = useCallback(() => {
-    // Add validation to filter out facilities with invalid coordinates before creating markers
-    const validFacilities = facilitiesData.filter(facility => 
-      facility.Latitude !== null && facility.Longitude !== null &&
-      typeof facility.Latitude === 'number' && typeof facility.Longitude === 'number'
-    );
-
-    // Update the loop to use validFacilities instead of facilitiesData
-    validFacilities.forEach(facility => {
-      const marker = markersRef.current[facility.ID]; // Use facility.ID (uppercase)
-      if (!marker) return;
-
-      // Use correct DB column name "Operational Status"
-      const statusName = facility["Operational Status"]; // Use DB column name
-      const canonicalStatus = getCanonicalStatus(statusName);
-      
-      // Determine color based on color mode
-      let color: string;
-      if (colorByTechnology) {
-        const techCategory = facility.technology_category || 'Other';
-        color = technologyColors[techCategory] || technologyColors['Other'];
-      } else {
-        color = statusColors[canonicalStatus];
-      }
-
-      let size = 16; // Default fixed size
-
-      if (sizeByCapacity) {
-        // Use correct property name from Facility interface
-        size = calculateMarkerSize(facility.capacity_tonnes_per_year);
-      }
-
-      const newIcon: DivIcon = L.divIcon({
-        className: 'custom-div-icon', // Keep class for potential global styling
-        html: createIconHtml(color, size),
-        iconSize: [size, size], // Icon size matches the div size
-        iconAnchor: [size / 2, size / 2] // Anchor to the center
-      });
-
-      marker.setIcon(newIcon);
-    });
-  }, [sizeByCapacity, facilitiesData, calculateMarkerSize, statusColors, colorByTechnology, technologyColors]); // Dependencies updated
-
-
   // Effect to load map and initial facilities
   useEffect(() => {
     const loadMapAndFacilities = async () => {
@@ -295,8 +241,12 @@ const HomePage: React.FC = () => {
         // Determine color based on color mode
         let color: string;
         if (colorByTechnology) {
-          const techCategory = facility.technology_category || 'Other';
-          color = technologyColors[techCategory] || technologyColors['Other'];
+          const rawCategory = facility.technology_category || 'Mechanical';
+          const techCategory = rawCategory.trim();
+          const normalized = techCategory.toLowerCase();
+          const validCategories = ['hydrometallurgy', 'pyrometallurgy', 'mechanical', 'hybrid'];
+          const categoryToUse = validCategories.includes(normalized) ? techCategory : 'Mechanical';
+          color = getTechnologyCategoryColor(categoryToUse);
         } else {
           color = statusColors[canonicalStatus];
         }
@@ -406,7 +356,7 @@ const HomePage: React.FC = () => {
     // updateMarkerSizes(); // Remove this call
 
   // Dependencies: map instance, data, filters, and sizing logic
-  }, [mapInstanceRef, facilitiesData, selectedTechnology, sizeByCapacity, calculateMarkerSize, statusColors, navigate, createIconHtml, colorByTechnology, technologyColors]); // Added selectedTechnology
+  }, [mapInstanceRef, facilitiesData, selectedTechnology, sizeByCapacity, calculateMarkerSize, statusColors, navigate, createIconHtml, colorByTechnology]); // Added selectedTechnology
 
 
   // Handler for the size toggle switch - Type event
@@ -507,7 +457,6 @@ const HomePage: React.FC = () => {
 
   }, [selectedBasemap]); // Dependency on selected basemap
 
-
   return (
     <div className="home-page-container"> {/* This will be the flex container */}
       {/* Map Area */}
@@ -528,7 +477,7 @@ const HomePage: React.FC = () => {
               // Show technology categories
               getAllTechnologyCategories().map(techCategory => (
                 <div className="legend-item" key={techCategory}>
-                  <div className="legend-color" style={{ backgroundColor: technologyColors[techCategory] }}></div>
+                  <div className="legend-color" style={{ backgroundColor: getTechnologyCategoryColor(techCategory) }}></div>
                   <span>{getTechnologyCategoryLabel(techCategory)}</span>
                 </div>
               ))

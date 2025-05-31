@@ -24,7 +24,12 @@ const Header: React.FC = () => {
   const { isDarkMode, toggleDarkMode } = useTheme();
 
   const isActive = (path: string): string => {
-    return location.pathname === path ? 'active' : '';
+    // Special case for homepage - need exact match
+    if (path === '/') {
+      return location.pathname === '/' ? 'active' : '';
+    }
+    // For other paths, check if current path starts with the given path
+    return location.pathname.startsWith(path) ? 'active' : '';
   };
 
   return (

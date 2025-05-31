@@ -512,26 +512,26 @@
 
 .tab-button {
   padding: 10px 18px;
-  border: 1px solid var(--tab-border);
+ border: 1px solid var(--border-color);
   border-bottom: none;
-  background-color: var(--tab-bg);
+ background-color: var(--light-bg);
   border-radius: 5px 5px 0 0;
   margin-right: 3px;
   cursor: pointer;
-  color: var(--tab-color);
+ color: var(--secondary-color);
   font-weight: 500;
 }
 
 .tab-button:hover {
-  background-color: rgba(0,0,0,0.05);
+ background-color: var(--list-item-hover-bg);
   color: var(--link-hover-color);
 }
 
 .tab-button.active {
-  background-color: var(--tab-active-bg);
-  color: var(--tab-active-color);
+ background-color: var(--white-bg);
+ color: var(--primary-color);
   font-weight: 600;
-  border-color: var(--tab-border);
+ border-color: var(--border-color);
   position: relative;
   top: 1px;
 }

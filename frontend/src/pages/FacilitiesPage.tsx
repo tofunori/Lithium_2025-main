@@ -19,7 +19,7 @@ import './FacilitiesPage.css';
 // Define an interface for column configuration
 interface ColumnConfig {
   // Adjusted keyof Facility to include the new numeric capacity column if it's added to the interface
-  key: keyof Facility | 'Actions' | 'Annual Processing Capacity (tonnes/year)' | 'Facility Name/Site' | 'Primary Recycling Technology' | 'Operational Status' | 'Key Sources/Notes' | 'capacity_tonnes_per_year';
+  key: keyof Facility | 'Actions' | 'Annual Processing Capacity (tonnes/year)' | 'Facility Name/Site' | 'Operational Status' | 'Key Sources/Notes' | 'capacity_tonnes_per_year';
   label: string;
   defaultVisible: boolean;
 }
@@ -31,7 +31,6 @@ const columnsConfig: ColumnConfig[] = [
   { key: 'Location', label: 'Location', defaultVisible: true },
   // Use the new numeric column key and update the label
   { key: 'capacity_tonnes_per_year', label: 'Capacity (t/yr)', defaultVisible: true },
-  { key: 'Primary Recycling Technology', label: 'Primary Technology', defaultVisible: true },
   { key: 'technology_category', label: 'Technology', defaultVisible: true },
   { key: 'Operational Status', label: 'Status', defaultVisible: true },
   { key: 'Latitude', label: 'Latitude', defaultVisible: false },
@@ -251,7 +250,6 @@ const FacilitiesPage: React.FC = () => {
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
-      // Add more type comparisons if needed (e.g., dates)
 
       // Fallback comparison (treat as strings)
       const stringA = String(aValue).toLowerCase();
