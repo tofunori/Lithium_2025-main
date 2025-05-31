@@ -113,6 +113,7 @@ const DocumentsPage: React.FC = () => {
   const [currentItems, setCurrentItems] = useState<StorageItem[]>([]); // Items for the *current* path view
   const [folderTree, setFolderTree] = useState<TreeNode[]>([]); // State for the folder tree structure
   const [currentPath, setCurrentPath] = useState<string>(''); // State for current path (selected in tree or breadcrumbs)
+  const currentPathRef = useRef<string>(''); // Ref to track current path reliably
   const [loadingItems, setLoadingItems] = useState<boolean>(true); // Loading state for the item list (right pane)
   const [loadingTree, setLoadingTree] = useState<boolean>(true); // Loading state for the folder tree (left pane)
   const [error, setError] = useState<string | null>(null);
@@ -188,6 +189,8 @@ const DocumentsPage: React.FC = () => {
   // Effect to fetch items for the list view when currentPath changes
   useEffect(() => {
     fetchCurrentItems(currentPath);
+    // Update the ref whenever the state changes
+    currentPathRef.current = currentPath;
   }, [currentPath, fetchCurrentItems]); // Re-run when path changes or fetchItems changes
 
   // --- Drag and Drop Handlers ---
@@ -232,7 +235,7 @@ const DocumentsPage: React.FC = () => {
 
           // Optimistic UI update (remove from old list, potentially add to new if visible)
           // Or just refetch both lists for simplicity
-          await fetchCurrentItems(currentPath); // Refetch current folder contents
+          await fetchCurrentItems(currentPathRef.current); // Use ref for current path
           await fetchFolderTree(); // Refetch tree structure
 
           setActionSuccessMessage(`Moved "${filename}" successfully.`);
@@ -242,15 +245,14 @@ const DocumentsPage: React.FC = () => {
           console.error("Error moving item:", moveError);
           setError(`Failed to move ${filename}: ${moveError instanceof Error ? moveError.message : 'Unknown error'}`);
           // Optionally refetch to revert optimistic updates if they were implemented
-          await fetchCurrentItems(currentPath);
+          await fetchCurrentItems(currentPathRef.current); // Use ref
           await fetchFolderTree();
       } finally {
           setLoadingItems(false);
           setLoadingTree(false);
       }
 
-  }, [documentsBucket, currentPath, fetchCurrentItems, fetchFolderTree]); // Add dependencies
-  // --- End Drag and Drop Handlers ---
+  }, [documentsBucket, fetchCurrentItems, fetchFolderTree]); // Remove currentPath from deps, use ref
 
   // Handle search input changes
   const handleSearch = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -273,7 +275,11 @@ const DocumentsPage: React.FC = () => {
   // Handle navigation (clicking breadcrumbs or folders)
   const handleNavigate = (newPath: string): void => {
       console.log("Navigating to:", newPath);
-      setCurrentPath(newPath);
+      // Ensure path ends with '/' for non-root folders, otherwise use the provided path (handles root '')
+      const pathWithSlashIfNeeded = newPath && !newPath.endsWith('/') ? `${newPath}/` : newPath;
+      setCurrentPath(pathWithSlashIfNeeded);
+      // Update the ref immediately after setting state
+      currentPathRef.current = pathWithSlashIfNeeded;
       setSearchTerm(''); // Clear search on navigation
   };
 
@@ -290,8 +296,11 @@ const DocumentsPage: React.FC = () => {
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
+    // Use the ref's current value for the check
+    const currentUploadPath = currentPathRef.current;
+
     // Prevent uploads to the root (no folder selected)
-    if (!currentPath || currentPath.trim() === '') {
+    if (!currentUploadPath || currentUploadPath.trim() === '') {
       setError("Please select or create a folder before uploading files. Uploads to the root are not allowed.");
       e.target.value = '';
       return;
@@ -305,21 +314,25 @@ const DocumentsPage: React.FC = () => {
         setLoadingItems(true); // Use setLoadingItems
         // Create a path within the current folder
         const timestamp = new Date().getTime();
-        // Prepend currentPath (which should end in '/') if not in root
-        const path = `${currentPath}${timestamp}_${file.name}`; // Path construction
+        // --- Use the ref's value directly ---
+        const prefix = currentUploadPath; // Already guaranteed to have trailing slash by handleNavigate
+        // ------------------------------------
+        const path = `${prefix}${timestamp}_${file.name}`; // Use the prefix from the ref
+        console.log(`[handleFileUpload] Uploading to constructed path: ${path}`);
+
         // Upload the file to Supabase Storage
         const result = await uploadFile(documentsBucket, path, file);
         console.log(`File uploaded successfully to path: ${result.path}`);
 
         setUploadProgress(100); // Complete progress
 
-        // Refetch items for the current path after successful upload
-        await fetchCurrentItems(currentPath);
+        // Refetch items for the current path after successful upload (use ref value)
+        await fetchCurrentItems(currentUploadPath);
         // OPTIONAL: Consider refetching the tree if uploads might create new implicit folders
         // await fetchFolderTree(); // Uncomment if needed, but might be slow
 
         // Show success message using state
-        const successMsg = `File "${file.name}" uploaded successfully to ${currentPath || 'root'}.`;
+        const successMsg = `File "${file.name}" uploaded successfully to ${currentUploadPath || 'root'}.`;
         setActionSuccessMessage(successMsg); // Use renamed state setter
         // Clear the message after 5 seconds
         setTimeout(() => setActionSuccessMessage(null), 5000); // Use renamed state setter
@@ -401,8 +414,8 @@ const DocumentsPage: React.FC = () => {
           return;
       }
 
-      // Construct the full path for the new folder
-      const newFolderPath = `${currentPath}${folderName.trim()}/`; // Ensure trailing slash
+      // Construct the full path for the new folder using the ref
+      const newFolderPath = `${currentPathRef.current}${folderName.trim()}/`; // Ensure trailing slash
 
       setError(null);
       setActionSuccessMessage(null); // Clear success message on new action
@@ -415,8 +428,8 @@ const DocumentsPage: React.FC = () => {
           await createFolder(documentsBucket, newFolderPath);
           console.log(`Folder "${folderName}" created successfully.`);
 
-          // Refetch items for the current path to show the new folder
-          await fetchCurrentItems(currentPath);
+          // Refetch items for the current path to show the new folder (use ref)
+          await fetchCurrentItems(currentPathRef.current);
           // Refetch the tree to include the new folder
           await fetchFolderTree();
 
@@ -487,7 +500,7 @@ const DocumentsPage: React.FC = () => {
       await fetchFolderTree(); // Essential to update the tree view
       // Also refresh current items if the renamed folder was in the current view's parent
       // Or simply refresh current items always for simplicity, though less efficient
-      await fetchCurrentItems(currentPath);
+      await fetchCurrentItems(currentPathRef.current); // Use ref
 
       // Clear success message after a delay
       setTimeout(() => setActionSuccessMessage(null), 5000);
@@ -533,13 +546,13 @@ const DocumentsPage: React.FC = () => {
       // Refresh data
       await fetchFolderTree();
       // Navigate to parent folder if current folder was deleted
-      if (currentPath === folderToDelete.path) {
+      if (currentPathRef.current === folderToDelete.path) { // Use ref
           const pathSegments = folderToDelete.path.split('/').filter(Boolean);
           pathSegments.pop(); // Remove deleted folder name
           const parentPath = pathSegments.length > 0 ? `${pathSegments.join('/')}/` : '';
-          handleNavigate(parentPath); // Navigate up
+          handleNavigate(parentPath); // Navigate up (this will update state and ref)
       } else {
-          await fetchCurrentItems(currentPath); // Refresh current view if not inside deleted folder
+          await fetchCurrentItems(currentPathRef.current); // Refresh current view if not inside deleted folder (use ref)
       }
 
 

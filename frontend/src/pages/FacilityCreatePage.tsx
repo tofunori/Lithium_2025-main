@@ -8,7 +8,8 @@ import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import { useAuth } from '../context/AuthContext';
 // UPDATED: Import from supabaseDataService
 import { addFacility, FacilityFormData, FacilityTimelineEvent } from '../supabaseDataService'; // Use FacilityFormData
-// REMOVED: import { User } from 'firebase/auth';
+import { supabase } from '../supabaseClient'; // Import Supabase client for authentication check
+import { AuthChangeEvent } from '@supabase/supabase-js'; // Import type
 import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
 import 'leaflet-geosearch/dist/geosearch.css'; // Import leaflet-geosearch CSS
 import './FacilityDetailPage.css'; // Reuse detail page styles for consistency

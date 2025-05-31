@@ -1,55 +1,66 @@
 /* Styles migrated from css/styles.css relevant to HomePage */
 
-/* Using placeholder variables or direct values for now. 
-   Ideally, these would come from a global CSS setup (like index.css or App.css) */
+/* Using academic professional design variables */
 :root {
     --card-bg: #ffffff; 
-    --text-color: #212529;
-    --border-color: #dee2e6;
-    --subtle-shadow: 0 2px 4px rgba(0, 0, 0, 0.075);
-    --card-border-radius: 8px;
-    --legend-bg: rgba(255, 255, 255, 0.95);
+    --text-color: #0f172a;
+    --border-color: #e2e8f0;
+    --subtle-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --card-border-radius: 6px;
+    --legend-bg: rgba(255, 255, 255, 0.97);
     --map-bg: #ffffff;
-    --primary-color: #0d6efd;
-    --form-switch-bg: #eee;
-    --light-bg: #f8f9fa;
-    --sidebar-bg: #f8f9fa; /* Background for the new sidebar */
-    --sidebar-width: 240px; /* Reduced width of the sidebar */
+    --primary-color: #1e3a8a;
+    --form-switch-bg: #e2e8f0;
+    --light-bg: #f8fafc;
+    --sidebar-bg: #f8fafc;
+    --sidebar-width: 280px; /* Slightly wider for better content */
+    --secondary-color: #64748b;
 }
 
-/* New Layout Styles */
+/* Academic Layout Styles */
 .home-page-container {
     display: flex;
-    height: 80vh; /* Adjust overall height as needed, maybe calc(100vh - header_height) */
-    gap: 15px; /* Space between map and sidebar */
-    padding: 15px; /* Padding around the whole container */
+    height: 85vh; /* More professional height */
+    gap: 20px; /* Better spacing */
+    padding: 20px; /* More generous padding */
     box-sizing: border-box;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .map-area {
-    flex: 1; /* Map takes remaining space */
+    flex: 1;
     height: 100%;
     border-radius: var(--card-border-radius);
     overflow: hidden;
     box-shadow: var(--subtle-shadow);
     border: 1px solid var(--border-color);
     background-color: var(--map-bg);
-    /* Removed transition from map area */
-    /* transition: background-color 0.3s ease, border-color 0.3s ease; */
+    position: relative;
+}
+
+/* Professional Map Styling */
+.map-area::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, #3b82f6 50%, var(--primary-color) 100%);
+    z-index: 1001;
 }
 
 .map-sidebar {
     width: var(--sidebar-width);
-    flex-shrink: 0; /* Prevent sidebar from shrinking */
+    flex-shrink: 0;
     height: 100%;
-    overflow-y: auto; /* Allow scrolling if content exceeds height */
-    /* Ensure sidebar container itself has no visual styling */
+    overflow-y: auto;
     background-color: transparent;
     border: none;
     box-shadow: none;
-    padding: 0; /* No padding on the container */
+    padding: 0;
     box-sizing: border-box;
-    transition: none !important;
 }
 
 #map {
@@ -58,55 +69,55 @@
     line-height: normal;
 }
 
-/* Updated Legend styles (now inside sidebar) */
+/* Professional Legend Design */
 .map-sidebar .legend {
-    /* Remove absolute positioning */
-    /* position: absolute; */
-    /* bottom: 30px; */
-    /* right: 15px; */
-    /* z-index: 1000; */ /* No longer needed */
-
-    /* Apply the frame styling directly to the legend */
-    background-color: var(--legend-bg);
-    padding: 15px; /* Use the padding originally intended for the sidebar */
-    border-radius: var(--card-border-radius); /* Use the sidebar's intended radius */
-    box-shadow: var(--subtle-shadow); /* Use the sidebar's intended shadow */
-    border: 1px solid var(--border-color); /* Use the sidebar's intended border */
-    width: 100%; /* Fill the sidebar container */
-    box-sizing: border-box;
-}
-
-/* Removed hover rule */
-
-/* Force disable transitions/transforms and apply frame styles */
-.map-sidebar .legend {
-    background-color: var(--legend-bg);
-    padding: 15px; /* Use sidebar padding */
-    border-radius: var(--card-border-radius); /* Use sidebar radius */
-    box-shadow: var(--subtle-shadow); /* Use sidebar shadow */
-    border: 1px solid var(--border-color); /* Use sidebar border */
+    background: linear-gradient(135deg, var(--legend-bg) 0%, rgba(255, 255, 255, 0.95) 100%);
+    padding: 24px;
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--subtle-shadow);
+    border: 1px solid var(--border-color);
     width: 100%;
     box-sizing: border-box;
-    transition: none !important;
-    transform: none !important;
-    margin: 0;
+    backdrop-filter: blur(10px);
+    position: relative;
 }
 
+.legend::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary-color);
+    border-radius: var(--card-border-radius) var(--card-border-radius) 0 0;
+}
 
-/* Styles for elements within the legend remain largely the same */
+.legend .card-body {
+    text-align: left;
+    padding: 0;
+}
+
+/* Academic Typography in Legend */
 .legend h6 {
-    margin-bottom: 10px; /* Slightly more space */
-    font-size: 0.9rem;
+    margin-bottom: 16px;
+    font-size: 1rem;
     font-weight: 600;
-    color: var(--text-color); 
+    color: var(--text-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    margin-bottom: 6px;
-    font-size: 0.85rem;
-    color: var(--text-color); 
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+    color: var(--text-color);
+    font-weight: 500;
+    padding: 4px 0;
 }
 
 .legend-item:last-child {
@@ -114,43 +125,413 @@
 }
 
 .legend-color {
-    width: 16px;
-    height: 16px;
-    margin-right: 8px;
-    border-radius: 50%;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    width: 18px;
+    height: 18px;
+    margin-right: 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* Legend Toggle Switch Specific Styles */
-.legend .form-check-label {
-    font-size: 0.85rem; /* Keep original size */
-    margin-left: 5px; /* Keep original margin */
-    color: var(--text-color); 
+/* Professional Toggle Controls */
+.toggle-section {
+    margin: 20px 0;
+    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
 }
-.legend .form-check-input {
-    width: 2.5em; /* Keep original size */
-    height: 1.25em; /* Keep original size */
-    /* Inherit general form-switch styles if available globally, or define here */
+
+.legend .form-check.form-switch {
+    margin-bottom: 0;
+    padding-left: 2.8em;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background: var(--light-bg);
+    border-radius: 6px;
+    padding: 12px 16px 12px 2.8em;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.legend .form-check.form-switch .form-check-input {
+    margin-left: -2.8em;
+    width: 2.5em;
+    height: 1.3em;
     background-color: var(--form-switch-bg);
-    border-color: rgba(0, 0, 0, 0.25);
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
+    border: 1px solid var(--border-color);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,.25)'/%3e%3c/svg%3e");
+    background-position: left center;
+    border-radius: 2em;
 }
-.legend .form-check-input:focus {
-    border-color: rgba(0, 0, 0, 0.25);
-    box-shadow: 0 0 0 0.25rem rgba(211, 212, 213, 0.5);
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/%3e%3c/svg%3e");
-}
-.legend .form-check-input:checked {
+
+.legend .form-check.form-switch .form-check-input:checked {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
+    background-position: right center;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
 }
 
+.legend .form-check.form-switch .form-check-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(30, 58, 138, 0.15);
+}
+
+.legend .form-check.form-switch .form-check-label {
+    margin-left: 8px;
+    line-height: 1.4;
+    font-weight: 600;
+    text-align: left;
+    flex: 1;
+    color: var(--text-color);
+    font-size: 0.875rem;
+}
+
+/* Capacity helper text styling */
+.capacity-helper {
+    font-size: 0.75rem;
+    color: var(--secondary-color);
+    margin-top: 8px;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(30, 58, 138, 0.05);
+    border-radius: 4px;
+    border-left: 3px solid var(--primary-color);
+    font-weight: 500;
+}
+
+/* Professional separators */
 .legend hr {
-    margin: 10px 0; /* Keep original margin */
-    border-top: 1px solid var(--border-color);
-    /* Removed transition from hr */
-    /* transition: border-color 0.3s ease; */
+    margin: 20px 0;
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--border-color) 20%, var(--border-color) 80%, transparent 100%);
+    opacity: 0.8;
+}
+
+/* Enhanced marker styles for capacity sizing */
+.custom-div-icon {
+    transform-origin: center center;
+    will-change: transform, box-shadow;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Improved hover state for capacity markers */
+.custom-div-icon div {
+    transform-origin: center center;
+    will-change: transform, box-shadow;
+}
+
+/* Professional popup styling - Academic Minimalist */
+.facility-popup {
+    min-width: 260px;
+    max-width: 320px;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
+}
+
+/* Leaflet popup customization */
+.leaflet-popup-content-wrapper {
+    padding: 0;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.leaflet-popup-content {
+    margin: 0;
+    min-width: 260px;
+    max-width: 320px;
+}
+
+.leaflet-popup-tip {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Popup content structure */
+.popup-content-wrapper {
+    padding: 20px;
+}
+
+.popup-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 16px 0;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+}
+
+/* Detail rows with minimal styling */
+.popup-detail-row {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 12px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.popup-detail-row:last-of-type {
+    margin-bottom: 0;
+}
+
+.popup-detail-label {
+    flex-shrink: 0;
+    width: 90px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.popup-detail-value {
+    flex: 1;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+/* Status styling with better contrast - use simple colored text instead of badges */
+.popup-status {
+    display: inline-block;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.8125rem;
+}
+
+.popup-status.status-operating {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.popup-status.status-construction {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fed7aa;
+}
+
+.popup-status.status-planned {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.popup-status.status-closed {
+    background: #f9fafb;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.popup-status.status-unknown {
+    background: #f9fafb;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+/* Capacity value - subtle emphasis */
+.popup-capacity-value {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* Technology value */
+.popup-tech-value {
+    font-weight: 500;
+    color: #4338ca;
+}
+
+/* Divider line */
+.popup-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 16px 0;
+}
+
+/* View Details link - improved contrast and styling */
+.popup-details-link {
+    display: inline-block !important;
+    color: #ffffff !important;
+    background: #2563eb !important;
+    text-decoration: none !important;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    border: 1px solid #2563eb;
+    text-align: center;
+    min-width: 140px;
+}
+
+.popup-details-link:hover {
+    background: #1d4ed8 !important;
+    border-color: #1d4ed8;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.popup-details-link:active {
+    transform: translateY(0);
+    color: #ffffff !important;
+}
+
+.popup-details-link:focus {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+    color: #ffffff !important;
+}
+
+/* Remove old styles */
+.popup-header,
+.popup-body,
+.popup-detail-item,
+.popup-detail-icon,
+.popup-detail-content,
+.popup-status-badge,
+.popup-tech-badge,
+.popup-details-button,
+.popup-details-button-icon,
+.popup-detail {
+    display: none !important;
+}
+
+/* Dark mode support - minimal adjustments */
+.dark-mode .leaflet-popup-content-wrapper {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+.dark-mode .leaflet-popup-tip {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+.dark-mode .popup-title {
+    color: #f1f5f9;
+}
+
+.dark-mode .popup-detail-label {
+    color: #94a3b8;
+}
+
+.dark-mode .popup-detail-value {
+    color: #e2e8f0;
+}
+
+.dark-mode .popup-capacity-value {
+    color: #f1f5f9;
+}
+
+.dark-mode .popup-tech-value {
+    color: #a5b4fc;
+}
+
+.dark-mode .popup-divider {
+    background: #334155;
+}
+
+.dark-mode .popup-details-link {
+    background: #3730a3 !important;
+    border-color: #3730a3;
+    color: #ffffff !important;
+}
+
+.dark-mode .popup-details-link:hover {
+    background: #312e81 !important;
+    border-color: #312e81;
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(55, 48, 163, 0.3);
+}
+
+.dark-mode .popup-details-link:active {
+    color: #ffffff !important;
+}
+
+.dark-mode .popup-details-link:focus {
+    color: #ffffff !important;
+}
+
+.dark-mode .popup-status.status-operating {
+    background: #064e3b;
+    color: #a7f3d0;
+    border-color: #047857;
+}
+
+.dark-mode .popup-status.status-construction {
+    background: #78350f;
+    color: #fde68a;
+    border-color: #d97706;
+}
+
+.dark-mode .popup-status.status-planned {
+    background: #1e3a8a;
+    color: #bfdbfe;
+    border-color: #2563eb;
+}
+
+.dark-mode .popup-status.status-closed {
+    background: #1f2937;
+    color: #9ca3af;
+    border-color: #4b5563;
+}
+
+.dark-mode .popup-status.status-unknown {
+    background: #374151;
+    color: #9ca3af;
+    border-color: #6b7280;
+}
+
+/* Remove animations for minimalist approach */
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.leaflet-popup {
+    animation: popupFadeIn 0.15s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .facility-popup {
+        min-width: 240px;
+        max-width: 280px;
+    }
+    
+    .leaflet-popup-content {
+        min-width: 240px;
+        max-width: 280px;
+    }
+    
+    .popup-content-wrapper {
+        padding: 16px;
+    }
+    
+    .popup-title {
+        font-size: 1rem;
+        margin-bottom: 12px;
+    }
+    
+    .popup-detail-row {
+        margin-bottom: 10px;
+    }
+    
+    .popup-detail-label {
+        width: 80px;
+    }
 }
 
 /* Ensure Bootstrap grid classes work if Bootstrap CSS isn't loaded globally */
@@ -206,7 +587,6 @@
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,.25)'/%3e%3c/svg%3e");
   background-position: left center;
   border-radius: 2em;
-  transition: background-position .15s ease-in-out;
 }
 .form-switch .form-check-input:focus {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,.25)'/%3e%3c/svg%3e");
@@ -222,22 +602,84 @@
     margin-bottom: .5rem!important;
 }
 
-/* Styles for the 'View Details' link in map popups */
+/* Popup styling improvements */
+.facility-popup {
+  min-width: 200px;
+  padding: 8px;
+}
+
+.popup-title {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.popup-detail {
+  font-size: 0.9em;
+  color: #5a6c7d;
+  line-height: 1.4;
+}
+
 .popup-details-link {
-  background: none;
+  background-color: #007bff;
+  color: white;
   border: none;
-  color: #0d6efd; /* Bootstrap's default blue */
-  padding: 0;
-  margin-top: 5px; /* Spacing from content above */
-  font: inherit; /* Inherit font from popup */
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.85em;
   cursor: pointer;
-  text-decoration: underline;
+  margin-top: 8px;
 }
 
-.popup-details-link:hover {
-  text-decoration: none;
-  color: #0a58ca; /* Darker blue on hover */
+/* Capacity helper text styling */
+.capacity-helper {
+  font-size: 0.75em;
+  color: #6c757d;
+  margin-top: 4px;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-/* Removed custom CSS for technology filter container/select,
-   relying on react-bootstrap Form.Select component now */
+/* Improved toggle switch spacing and layout */
+.legend .form-check.form-switch {
+  margin-bottom: 8px;
+  padding-left: 2.8em; /* More space for the switch */
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start; /* Ensure left alignment */
+}
+
+.legend .form-check.form-switch .form-check-input {
+  margin-left: -2.8em; /* Align with increased padding */
+  width: 2.2em; /* Slightly wider switch */
+  height: 1.2em; /* Slightly taller for better visibility */
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.legend .form-check.form-switch .form-check-label {
+  margin-left: 8px; /* Better spacing between switch and label */
+  line-height: 1.4; /* Better vertical alignment */
+  font-weight: 500; /* Slightly bolder for better readability */
+  text-align: left; /* Ensure text is left-aligned */
+  flex: 1; /* Take remaining space */
+}
+
+/* Add spacing around toggle sections */
+.toggle-section {
+  margin: 12px 0;
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Left align the entire section */
+}
+
+/* Improve separator lines */
+.legend hr {
+  margin: 12px 0; /* More space around separators */
+  border-top: 1px solid var(--border-color);
+  opacity: 0.5; /* Lighter separator lines */
+}

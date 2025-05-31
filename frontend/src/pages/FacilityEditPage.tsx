@@ -1,14 +1,14 @@
 import React, { useEffect } from 'react'; // Import useEffect
 import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
-import { useAuth } from '../context/AuthContext'; // Assuming AuthContext.jsx is renamed or doesn't need extension
-import { User } from 'firebase/auth'; // Import User type
+import { useAuth } from '../context/AuthContext'; // Use AuthContext
+// import { User } from 'firebase/auth'; // Import User type
 
 const FacilityEditPage: React.FC = () => {
   // Type useParams if needed, though facilityId is likely string | undefined
   const { facilityId } = useParams<{ facilityId?: string }>();
   const navigate = useNavigate();
   // Type the user from context
-  const { currentUser }: { currentUser: User | null } = useAuth(); // Renamed user to currentUser
+  const { currentUser } = useAuth(); // Use the currentUser from AuthContext
 
   // Redirect if not logged in
   useEffect(() => {

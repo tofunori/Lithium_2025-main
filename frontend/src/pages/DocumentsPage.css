@@ -494,3 +494,44 @@
   --bs-gutter-x: 0.5rem;
   --bs-gutter-y: 0.5rem;
 }
+
+/* Facilities List */
+.facilities-list {
+  background-color: var(--card-bg);
+  border-radius: var(--card-border-radius);
+  padding: 15px 20px;
+  box-shadow: var(--subtle-shadow);
+  border: 1px solid var(--border-color);
+  /* animation removed */
+}
+
+/* Tab Navigation */
+.tabs-container {
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  padding: 10px 18px;
+ border: 1px solid var(--border-color);
+  border-bottom: none;
+ background-color: var(--light-bg);
+  border-radius: 5px 5px 0 0;
+  margin-right: 3px;
+  cursor: pointer;
+ color: var(--secondary-color);
+  font-weight: 500;
+}
+
+.tab-button:hover {
+ background-color: var(--list-item-hover-bg);
+  color: var(--link-hover-color);
+}
+
+.tab-button.active {
+ background-color: var(--white-bg);
+ color: var(--primary-color);
+  font-weight: 600;
+ border-color: var(--border-color);
+  position: relative;
+  top: 1px;
+}

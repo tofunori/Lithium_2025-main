@@ -4,31 +4,34 @@
  */
 
 /**
- * Standard technology categories
+ * Standard technology categories - ONLY 4 MAIN CATEGORIES
  */
 export const TECHNOLOGY_CATEGORIES = {
-  HYDROMETALLURGICAL: 'Hydrometallurgical',
-  PYROMETALLURGICAL: 'Pyrometallurgical', 
+  HYDROMETALLURGICAL: 'Hydrometallurgy',
+  PYROMETALLURGICAL: 'Pyrometallurgy',
   MECHANICAL: 'Mechanical',
-  HYBRID: 'Hybrid',
-  PROPRIETARY: 'Proprietary',
-  OTHER: 'Other'
+  HYBRID: 'Hybrid'
 };
 
 /**
  * Maps a technology name to a standardized category
  * @param technologyName - The raw technology name from the database
- * @returns Standardized technology category
+ * @returns Standardized technology category (one of the 4 main categories)
  */
 export const getTechnologyCategory = (technologyName: string | null | undefined): string => {
-  if (!technologyName) return TECHNOLOGY_CATEGORIES.OTHER;
+  if (!technologyName) return TECHNOLOGY_CATEGORIES.MECHANICAL; // Default to Mechanical
 
   const name = technologyName.toLowerCase();
 
   // Hydrometallurgical processes
   if (name.includes('hydrometallurgical') || 
       name.includes('chemical leaching') || 
-      name.includes('hydro-to-cathode')) {
+      name.includes('hydro-to-cathode') ||
+      name.includes('leaching') ||
+      name.includes('chemical') ||
+      name.includes('aqueous') ||
+      name.includes('solvent') ||
+      name.includes('extraction')) {
     return TECHNOLOGY_CATEGORIES.HYDROMETALLURGICAL;
   }
 
@@ -36,35 +39,27 @@ export const getTechnologyCategory = (technologyName: string | null | undefined)
   if (name.includes('pyrometallurgical') || 
       name.includes('smelting') || 
       name.includes('furnace') ||
-      name.includes('high-temperature')) {
+      name.includes('high-temperature') ||
+      name.includes('thermal') ||
+      name.includes('pyrolysis') ||
+      name.includes('incineration') ||
+      name.includes('calcination')) {
     return TECHNOLOGY_CATEGORIES.PYROMETALLURGICAL;
   }
 
-  // Mechanical processes
-  if (name.includes('mechanical processing') || 
-      name.includes('shredding') || 
-      name.includes('physical separation') ||
-      name.includes('de-manufacturing')) {
-    return TECHNOLOGY_CATEGORIES.MECHANICAL;
-  }
-
-  // Hybrid processes
-  if (name.includes('spoke & hub') || 
-      name.includes('spoke and hub') ||
+  // Hybrid processes (check before mechanical since it might contain mechanical keywords)
+  if (name.includes('spoke') || 
+      name.includes('hub') ||
       name.includes('integrated') ||
-      (name.includes('mechanical') && name.includes('hydro'))) {
+      name.includes('combined') ||
+      (name.includes('mechanical') && name.includes('hydro')) ||
+      (name.includes('physical') && name.includes('chemical'))) {
     return TECHNOLOGY_CATEGORIES.HYBRID;
   }
 
-  // Proprietary/unique processes
-  if (name.includes('proprietary') ||
-      name.includes('generation 3') ||
-      name.includes('multi-chemistry')) {
-    return TECHNOLOGY_CATEGORIES.PROPRIETARY;
-  }
-
-  // Default category if no match
-  return TECHNOLOGY_CATEGORIES.OTHER;
+  // Mechanical processes (includes proprietary mechanical and everything else)
+  // This is now the catch-all category
+  return TECHNOLOGY_CATEGORIES.MECHANICAL;
 };
 
 /**
@@ -91,19 +86,28 @@ export const getTechnologyCategoryLabel = (category: string): string => {
  * @returns CSS color string
  */
 export const getTechnologyCategoryColor = (category: string): string => {
-  switch (category) {
-    case TECHNOLOGY_CATEGORIES.HYDROMETALLURGICAL:
-      return '#4CAF50'; // Green
-    case TECHNOLOGY_CATEGORIES.PYROMETALLURGICAL:
-      return '#FF5722'; // Orange
-    case TECHNOLOGY_CATEGORIES.MECHANICAL:
-      return '#2196F3'; // Blue
-    case TECHNOLOGY_CATEGORIES.HYBRID:
-      return '#9C27B0'; // Purple
-    case TECHNOLOGY_CATEGORIES.PROPRIETARY:
-      return '#FFC107'; // Amber
-    case TECHNOLOGY_CATEGORIES.OTHER:
-    default:
-      return '#607D8B'; // Gray
+  if (!category) {
+    return '#2196F3'; // Default to Mechanical blue for empty/null
   }
+
+  // Normalize the category name for flexible matching
+  const normalized = category.toLowerCase().trim();
+
+  // Handle Hydrometallurgical variants
+  if (normalized === 'hydrometallurgical' || normalized === 'hydrometallurgy') {
+    return '#4CAF50'; // Green
+  }
+  
+  // Handle Pyrometallurgical variants  
+  if (normalized === 'pyrometallurgical' || normalized === 'pyrometallurgy') {
+    return '#FF5722'; // Orange
+  }
+  
+  // Handle Hybrid
+  if (normalized === 'hybrid') {
+    return '#9C27B0'; // Purple
+  }
+  
+  // Handle Mechanical (default for everything else)
+  return '#2196F3'; // Blue
 };

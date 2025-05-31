@@ -9,7 +9,7 @@ export const STATUS_LABELS: { [key in CanonicalStatus]: string } = {
   construction: 'Construction', // Standardized label
   planned: 'Planned',
   closed: 'Closed', // Added label for closed
-  unknown: 'Unknown',
+  unknown: 'On hold',
 };
 
 // Define the CSS classes corresponding to the canonical keys

@@ -107,9 +107,16 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
 
     // Only aggregate capacity for known, non-'unknown' statuses
     if (canonicalStatus !== 'unknown') {
-      // Use correct DB column name "Annual Processing Capacity (tonnes/year)"
-      // Note: getFacilities already parses this to number | null
-      const volume: number = facility["Annual Processing Capacity (tonnes/year)"] ?? 0;
+      // Extract the numeric capacity. Prefer the new DB column `capacity_tonnes_per_year`,
+      // but fall back to the legacy column name "Annual Processing Capacity (tonnes/year)" if needed.
+      const rawVolume = (facility as unknown as { capacity_tonnes_per_year?: number | string | null }).capacity_tonnes_per_year ??
+                       (facility as any)["Annual Processing Capacity (tonnes/year)"]; // legacy CSV / mock field
+
+      // Convert to number in a safe way (handles strings such as "20,000" or "Unknown")
+      const volume: number = typeof rawVolume === 'number'
+        ? rawVolume
+        : parseVolume(rawVolume as unknown as string);
+
       if (volume > 0) {
          capacityByStatus[canonicalStatus] += volume;
          // Add detailed log for aggregation step
