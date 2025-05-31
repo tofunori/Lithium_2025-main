@@ -321,35 +321,78 @@ const HomePage: React.FC = () => {
               // Create popup content dynamically
               const popupContent = document.createElement('div');
               popupContent.className = 'facility-popup'; // Add class for styling
-              // Use correct DB column names
+              
+              // Build popup HTML with minimalist academic design
               let popupHtml = `
-                <strong class="popup-title">${facility.Company || 'Unknown'}</strong><br>
-                <span class="popup-detail">Location: ${facility.Location || 'N/A'}</span><br>
-                <span class="popup-detail">Status: ${statusName || 'N/A'}</span><br>
+                <div class="popup-content-wrapper">
+                  <h3 class="popup-title">${facility.Company || 'Unknown Facility'}</h3>
               `;
               
-              // Add capacity information if available
-              if (facility.capacity_tonnes_per_year) {
-                popupHtml += `<span class="popup-detail">Capacity: ${facility.capacity_tonnes_per_year.toLocaleString()} tonnes/year</span><br>`;
+              // Technology row (always show if available)
+              if (facility.technology_category) {
+                popupHtml += `
+                  <div class="popup-detail-row">
+                    <span class="popup-detail-label">Technology</span>
+                    <span class="popup-detail-value popup-tech-value">${getTechnologyCategoryLabel(facility.technology_category)}</span>
+                  </div>
+                `;
               }
               
-              // Add technology information when color by technology is enabled
-              if (colorByTechnology && facility.technology_category) {
-                popupHtml += `<span class="popup-detail">Technology: ${getTechnologyCategoryLabel(facility.technology_category)}</span><br>`;
+              // Status row
+              const statusClass = canonicalStatus.replace(/\s+/g, '-').toLowerCase();
+              popupHtml += `
+                <div class="popup-detail-row">
+                  <span class="popup-detail-label">Status</span>
+                  <span class="popup-detail-value">
+                    <span class="popup-status status-${statusClass}">${getStatusLabel(canonicalStatus)}</span>
+                  </span>
+                </div>
+              `;
+              
+              // Capacity row if available
+              if (facility.capacity_tonnes_per_year) {
+                popupHtml += `
+                  <div class="popup-detail-row">
+                    <span class="popup-detail-label">Capacity</span>
+                    <span class="popup-detail-value popup-capacity-value">${facility.capacity_tonnes_per_year.toLocaleString()} t/yr</span>
+                  </div>
+                `;
               }
+              
+              // Location row (moved to last)
+              if (facility.Location) {
+                popupHtml += `
+                  <div class="popup-detail-row">
+                    <span class="popup-detail-label">Location</span>
+                    <span class="popup-detail-value">${facility.Location}</span>
+                  </div>
+                `;
+              }
+              
+              // Add divider and link
+              popupHtml += `
+                  <div class="popup-divider"></div>
+                  <a href="#" class="popup-details-link" data-facility-id="${facility.ID}">View full details →</a>
+                </div>
+              `;
               
               popupContent.innerHTML = popupHtml;
-
-              const viewDetailsButton = document.createElement('button');
-              viewDetailsButton.innerText = 'View Details';
-              viewDetailsButton.className = 'popup-details-link';
-              // Use facility.ID for navigation (uppercase)
-              viewDetailsButton.onclick = () => navigate(`/facilities/${facility.ID}`);
-
-              popupContent.appendChild(viewDetailsButton);
+              
+              // Add click handler to the link
+              const link = popupContent.querySelector('.popup-details-link');
+              if (link) {
+                link.addEventListener('click', (e) => {
+                  e.preventDefault();
+                  navigate(`/facilities/${facility.ID}`);
+                });
+              }
 
         marker.addTo(mapInstanceRef.current as Map) // Assert map instance is not null here
-              .bindPopup(popupContent);
+              .bindPopup(popupContent, {
+                maxWidth: 320,
+                minWidth: 260,
+                className: 'academic-popup'
+              });
 
         // Use facility.ID as string key (uppercase)
         markersRef.current[facility.ID] = marker;
