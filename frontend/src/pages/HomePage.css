@@ -117,17 +117,7 @@
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Professional Map Styling */
-.map-area::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary-color) 0%, #3b82f6 50%, var(--primary-color) 100%);
-    z-index: 1001;
-}
+/* Professional Map Styling - removed blue top line */
 
 .map-sidebar {
     width: var(--sidebar-width);
