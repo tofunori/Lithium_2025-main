@@ -1,0 +1,138 @@
+.advanced-search-filter {
+  transition: all 0.3s ease;
+}
+
+.search-bar-section .input-group {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.search-bar-section .form-control {
+  border: none;
+  padding: 0.75rem 1rem;
+}
+
+.search-bar-section .form-control:focus {
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.search-bar-section .btn-primary {
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+}
+
+.advanced-filters-section {
+  animation: slideDown 0.3s ease-out;
+  padding-top: 1rem;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-group {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  height: 100%;
+}
+
+.filter-group .form-label {
+  color: #495057;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-options {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.filter-options.scrollable {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.filter-options::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filter-options::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.filter-options::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.filter-options::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.form-check {
+  margin-bottom: 0.5rem;
+}
+
+.form-check-label {
+  font-size: 0.875rem;
+  color: #495057;
+  cursor: pointer;
+  user-select: none;
+}
+
+.form-check-input:checked ~ .form-check-label {
+  color: #212529;
+  font-weight: 500;
+}
+
+.results-summary {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .filter-group {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] .search-bar-section .input-group {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-bs-theme="dark"] .filter-options::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .filter-options::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+[data-bs-theme="dark"] .filter-options::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filter-group {
+    margin-bottom: 1rem;
+  }
+  
+  .filter-options.scrollable {
+    max-height: 150px;
+  }
+}

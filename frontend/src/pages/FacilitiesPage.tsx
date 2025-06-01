@@ -1,12 +1,13 @@
 // frontend/src/pages/FacilitiesPage.tsx
-import React, { useState, useEffect, ChangeEvent, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useToastContext } from '../context/ToastContext';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { getFacilities, getFacilitiesByStatus, deleteFacility, Facility } from '../services';
+import AdvancedSearchFilter from '../components/AdvancedSearchFilter';
+import { getFacilities, getFacilitiesByStatus, deleteFacility, searchFacilities, Facility, FacilitySearchFilters } from '../services';
 import {
   CanonicalStatus, // Use canonical status type again
   getCanonicalStatus,
@@ -46,11 +47,11 @@ const FacilitiesPage: React.FC = () => {
   // Revert activeFilter to use CanonicalStatus type
   const [activeFilter, setActiveFilter] = useState<CanonicalStatus | 'all'>('all');
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedTechnology, setSelectedTechnology] = useState<string>('all');
   const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [allFacilities, setAllFacilities] = useState<Facility[]>([]); // Store all facilities for client-side filtering
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
   // Default sort by Company ascending
   const [sortColumn, setSortColumn] = useState<keyof Facility | null>('Company'); // State for sort column
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); // State for sort direction
@@ -84,16 +85,6 @@ const FacilitiesPage: React.FC = () => {
     return col.key && visibleColumns.hasOwnProperty(col.key) && visibleColumns[col.key];
   }).length;
 
-  // Compute unique technology categories for the filter dropdown
-  const uniqueTechnologies = React.useMemo(() => {
-    const techSet = new Set<string>();
-    facilities.forEach(facility => {
-      if (facility.technology_category && facility.technology_category.trim() !== '') {
-        techSet.add(facility.technology_category.trim());
-      }
-    });
-    return Array.from(techSet).sort();
-  }, [facilities]);
 
 
   const { showError, showSuccess } = useToastContext();
@@ -112,16 +103,36 @@ const FacilitiesPage: React.FC = () => {
         facilitiesData = await getFacilitiesByStatus(dbStatusString);
       }
       setFacilities(facilitiesData);
+      setAllFacilities(facilitiesData); // Store for client-side filtering
     } catch (err: any) {
       console.error("Error fetching facilities:", err);
       const errorMessage = `Failed to load facilities: ${err.message}`;
       setError(errorMessage);
       showError('Failed to Load Data', errorMessage);
       setFacilities([]);
+      setAllFacilities([]);
     } finally {
       setLoading(false);
     }
   }, [showError]); // Dependency removed as it uses the filter argument directly
+
+  // Handle advanced search
+  const handleAdvancedSearch = useCallback(async (filters: FacilitySearchFilters) => {
+    setIsSearching(true);
+    setError(null);
+    try {
+      const results = await searchFacilities(filters);
+      setFacilities(results);
+      setActiveFilter('all'); // Reset status filter when using advanced search
+    } catch (err: any) {
+      console.error("Error searching facilities:", err);
+      const errorMessage = `Search failed: ${err.message}`;
+      setError(errorMessage);
+      showError('Search Failed', errorMessage);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [showError]);
 
   // Realtime update handler with type
   const handleRealtimeUpdate = (payload: RealtimePostgresChangesPayload<Facility>) => {
@@ -207,32 +218,9 @@ const FacilitiesPage: React.FC = () => {
     setActiveFilter(filter);
   };
 
-  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setSearchTerm(e.target.value);
-  };
 
-  // Add validation to filter out facilities with invalid coordinates before processing
-  const validFacilities = facilities.filter(facility => 
-    facility.Latitude !== null && facility.Longitude !== null &&
-    typeof facility.Latitude === 'number' && typeof facility.Longitude === 'number'
-  );
-
-  // Update the searchFilteredFacilities to use validFacilities
-  const searchFilteredFacilities = validFacilities.filter(facility => {
-    // Filter by technology first
-    if (selectedTechnology !== 'all' && facility.technology_category !== selectedTechnology) {
-      return false;
-    }
-    const term = searchTerm.toLowerCase();
-    if (!term) return true;
-
-    const company = facility.Company?.toLowerCase() || '';
-    const location = facility.Location?.toLowerCase() || '';
-    const category = facility.technology_category?.toLowerCase() || '';
-    const facilityName = facility["Facility Name/Site"]?.toLowerCase() || '';
-
-    return company.includes(term) || location.includes(term) || category.includes(term) || facilityName.includes(term);
-  });
+  // Use facilities directly since advanced search handles all filtering
+  const searchFilteredFacilities = facilities;
 
   // Sorting Logic
   const sortedFacilities = useMemo(() => {
@@ -357,54 +345,18 @@ const FacilitiesPage: React.FC = () => {
   return (
     <div className="row mt-4 fade-in">
       <div className="col-12">
+        {/* Advanced Search and Filter Component */}
+        <AdvancedSearchFilter 
+          onSearch={handleAdvancedSearch}
+          isSearching={isSearching}
+          resultCount={sortedFacilities.length}
+        />
+        
         <div className="facilities-list">
-          {/* Tabs Container - Use VALID_CANONICAL_STATUSES */}
-          <div className="tabs-container d-flex flex-wrap justify-content-center mb-3">
-            <button
-              key="all"
-              className={`tab-button ${activeFilter === 'all' ? 'active' : ''}`}
-              onClick={() => handleFilterClick('all')}
-            >
-              All
-            </button>
-            {VALID_CANONICAL_STATUSES.map(filterKey => (
-                 <button
-                    key={filterKey}
-                    className={`tab-button ${activeFilter === filterKey ? 'active' : ''}`}
-                    onClick={() => handleFilterClick(filterKey)}
-                 >
-                    {getStatusLabel(filterKey)}
-                 </button>
-            ))}
-          </div>
-
-          {/* Add New Facility Button, Search, and Column Toggle */}
+          {/* Add New Facility Button and Column Toggle */}
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-             <div className="input-group search-bar me-2 mb-2 mb-md-0" style={{ maxWidth: '300px' }}>
-                <span className="input-group-text"><i className="fas fa-search"></i></span>
-                 <input
-                     type="text"
-                     className="form-control form-control-sm"
-                     placeholder="Search company, location, category..."
-                     value={searchTerm}
-                     onChange={handleSearchChange}
-                 />
-              </div>
-              {/* Technology Filter Dropdown */}
-              <div className="input-group tech-filter-bar me-2 mb-2 mb-md-0" style={{ maxWidth: '220px' }}>
-                <span className="input-group-text"><i className="fas fa-microchip"></i></span>
-                <select
-                  className="form-select form-select-sm"
-                  value={selectedTechnology}
-                  onChange={e => setSelectedTechnology(e.target.value)}
-                >
-                  <option value="all">All Technologies</option>
-                  {uniqueTechnologies.map(tech => (
-                    <option key={tech} value={tech}>{tech}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="d-flex align-items-center">
+            <div></div> {/* Empty div for spacing */}
+            <div className="d-flex align-items-center">
                 {/* Column Visibility Dropdown */}
                 <div className="dropdown me-2">
                   <button className="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="columnToggleDropdown" data-bs-toggle="dropdown" aria-expanded="false">

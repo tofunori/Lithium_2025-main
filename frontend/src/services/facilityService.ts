@@ -554,3 +554,236 @@ export const getDistinctOperationalStatuses = async (): Promise<string[]> => {
     return [];
   }
 };
+
+// Search and filter options interface
+export interface FacilitySearchFilters {
+  searchTerm?: string;
+  statuses?: string[];
+  technologies?: string[];
+  technologyCategories?: string[];
+  capacityMin?: number;
+  capacityMax?: number;
+  companies?: string[];
+  locations?: string[];
+  hasCoordinates?: boolean;
+  feedstockTypes?: string[];
+  outputProducts?: string[];
+}
+
+// Function to search and filter facilities with advanced options
+export const searchFacilities = async (filters: FacilitySearchFilters): Promise<Facility[]> => {
+  console.log("Attempting to search facilities with filters:", filters);
+  try {
+    const selectString = `
+      ID,
+      Company,
+      "Facility Name/Site",
+      Location,
+      "Operational Status",
+      "Primary Recycling Technology",
+      technology_category,
+      capacity_tonnes_per_year,
+      Latitude,
+      Longitude,
+      facility_details!left(
+        feedstock,
+        product,
+        technology_description,
+        notes
+      )
+    `;
+
+    let query = supabase
+      .from('facilities')
+      .select(selectString);
+
+    // Apply search term across multiple fields if provided
+    if (filters.searchTerm && filters.searchTerm.trim() !== '') {
+      const searchPattern = `%${filters.searchTerm.trim()}%`;
+      
+      // Use OR logic for text search across multiple fields
+      query = query.or(`Company.ilike.${searchPattern},` +
+                      `"Facility Name/Site".ilike.${searchPattern},` +
+                      `Location.ilike.${searchPattern},` +
+                      `"Primary Recycling Technology".ilike.${searchPattern},` +
+                      `technology_category.ilike.${searchPattern}`);
+    }
+
+    // Apply status filters
+    if (filters.statuses && filters.statuses.length > 0) {
+      query = query.in('"Operational Status"', filters.statuses);
+    }
+
+    // Apply technology filters
+    if (filters.technologies && filters.technologies.length > 0) {
+      query = query.in('"Primary Recycling Technology"', filters.technologies);
+    }
+
+    // Apply technology category filters
+    if (filters.technologyCategories && filters.technologyCategories.length > 0) {
+      query = query.in('technology_category', filters.technologyCategories);
+    }
+
+    // Apply capacity range filters
+    if (filters.capacityMin !== undefined && filters.capacityMin !== null) {
+      query = query.gte('capacity_tonnes_per_year', filters.capacityMin);
+    }
+    if (filters.capacityMax !== undefined && filters.capacityMax !== null) {
+      query = query.lte('capacity_tonnes_per_year', filters.capacityMax);
+    }
+
+    // Apply company filters
+    if (filters.companies && filters.companies.length > 0) {
+      query = query.in('Company', filters.companies);
+    }
+
+    // Apply location filters (partial match)
+    if (filters.locations && filters.locations.length > 0) {
+      const locationConditions = filters.locations.map(loc => `Location.ilike.%${loc}%`).join(',');
+      query = query.or(locationConditions);
+    }
+
+    // Apply coordinate filter
+    if (filters.hasCoordinates === true) {
+      query = query.not('Latitude', 'is', null).not('Longitude', 'is', null);
+    } else if (filters.hasCoordinates === false) {
+      query = query.or('Latitude.is.null,Longitude.is.null');
+    }
+
+    const { data, error } = await query;
+
+    handleSupabaseError(error, 'searchFacilities');
+    if (!data) {
+      console.warn("Supabase returned null data for searchFacilities query.");
+      return [];
+    }
+    console.log(`Successfully found ${data.length} facilities matching search criteria.`);
+
+    // Parse numeric fields and filter by feedstock/product if needed
+    const parsedData = data.map(facility => {
+      const parsedFacility: Partial<Facility> = { ...facility };
+      if (typeof parsedFacility.Latitude === 'string') parsedFacility.Latitude = parseFloat(parsedFacility.Latitude);
+      if (typeof parsedFacility.Longitude === 'string') parsedFacility.Longitude = parseFloat(parsedFacility.Longitude);
+      if (typeof parsedFacility.capacity_tonnes_per_year === 'string') parsedFacility.capacity_tonnes_per_year = parseFloat(parsedFacility.capacity_tonnes_per_year);
+
+      parsedFacility.Latitude = isNaN(parsedFacility.Latitude as number) ? null : parsedFacility.Latitude;
+      parsedFacility.Longitude = isNaN(parsedFacility.Longitude as number) ? null : parsedFacility.Longitude;
+      parsedFacility.capacity_tonnes_per_year = isNaN(parsedFacility.capacity_tonnes_per_year as number) ? null : parsedFacility.capacity_tonnes_per_year;
+
+      return parsedFacility;
+    });
+
+    // Post-process for feedstock and product filters if facility_details were included
+    let filteredData = parsedData as Facility[];
+    
+    if (filters.feedstockTypes && filters.feedstockTypes.length > 0 && data[0]?.facility_details) {
+      filteredData = filteredData.filter(facility => {
+        const details = (facility as any).facility_details;
+        if (!details?.feedstock) return false;
+        return filters.feedstockTypes!.some(type => 
+          details.feedstock.toLowerCase().includes(type.toLowerCase())
+        );
+      });
+    }
+
+    if (filters.outputProducts && filters.outputProducts.length > 0 && data[0]?.facility_details) {
+      filteredData = filteredData.filter(facility => {
+        const details = (facility as any).facility_details;
+        if (!details?.product) return false;
+        return filters.outputProducts!.some(product => 
+          details.product.toLowerCase().includes(product.toLowerCase())
+        );
+      });
+    }
+
+    return filteredData;
+  } catch (error: unknown) {
+    console.error("Caught error in searchFacilities:", error instanceof Error ? error.message : error);
+    throw error;
+  }
+};
+
+// Function to get distinct values for filter options
+export const getFilterOptions = async (): Promise<{
+  statuses: string[];
+  technologies: string[];
+  technologyCategories: string[];
+  companies: string[];
+  feedstockTypes: string[];
+  outputProducts: string[];
+}> => {
+  console.log("Attempting to fetch filter options from Supabase...");
+  try {
+    // Fetch all facilities with minimal data to extract unique values
+    const { data: facilities, error: facilitiesError } = await supabase
+      .from('facilities')
+      .select(`
+        "Operational Status",
+        "Primary Recycling Technology",
+        technology_category,
+        Company
+      `);
+
+    handleSupabaseError(facilitiesError, 'getFilterOptions - facilities');
+
+    // Fetch unique feedstock and products from details table
+    const { data: details, error: detailsError } = await supabase
+      .from('facility_details')
+      .select('feedstock, product');
+
+    handleSupabaseError(detailsError, 'getFilterOptions - details');
+
+    // Extract unique values
+    const statuses = new Set<string>();
+    const technologies = new Set<string>();
+    const technologyCategories = new Set<string>();
+    const companies = new Set<string>();
+    const feedstockTypes = new Set<string>();
+    const outputProducts = new Set<string>();
+
+    // Process facilities data
+    facilities?.forEach(facility => {
+      if (facility["Operational Status"]) statuses.add(facility["Operational Status"]);
+      if (facility["Primary Recycling Technology"]) technologies.add(facility["Primary Recycling Technology"]);
+      if (facility.technology_category) technologyCategories.add(facility.technology_category);
+      if (facility.Company) companies.add(facility.Company);
+    });
+
+    // Process details data for feedstock and products
+    details?.forEach(detail => {
+      if (detail.feedstock) {
+        // Split by common delimiters and add each type
+        detail.feedstock.split(/[,;\/]/).forEach((type: string) => {
+          const trimmed = type.trim();
+          if (trimmed) feedstockTypes.add(trimmed);
+        });
+      }
+      if (detail.product) {
+        // Split by common delimiters and add each product
+        detail.product.split(/[,;\/]/).forEach((product: string) => {
+          const trimmed = product.trim();
+          if (trimmed) outputProducts.add(trimmed);
+        });
+      }
+    });
+
+    return {
+      statuses: Array.from(statuses).sort(),
+      technologies: Array.from(technologies).sort(),
+      technologyCategories: Array.from(technologyCategories).sort(),
+      companies: Array.from(companies).sort(),
+      feedstockTypes: Array.from(feedstockTypes).sort(),
+      outputProducts: Array.from(outputProducts).sort()
+    };
+  } catch (error: unknown) {
+    console.error("Caught error in getFilterOptions:", error instanceof Error ? error.message : error);
+    return {
+      statuses: [],
+      technologies: [],
+      technologyCategories: [],
+      companies: [],
+      feedstockTypes: [],
+      outputProducts: []
+    };
+  }
+};
