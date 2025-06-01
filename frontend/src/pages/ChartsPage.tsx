@@ -1,8 +1,9 @@
 // frontend/src/pages/ChartsPage.tsx
 import React, { useState, useEffect, useRef, FC } from 'react';
 import { Chart, registerables, ChartConfiguration, TooltipItem } from 'chart.js';
-// UPDATED: Import Facility from supabaseDataService
-import { getFacilityStats, getFacilities, FacilityStats, Facility } from '../supabaseDataService'; // Changed FacilityData to Facility
+import LoadingSpinner from '../components/LoadingSpinner';
+import { useToastContext } from '../context/ToastContext';
+import { getFacilityStats, getFacilities, FacilityStats, Facility } from '../services';
 import { mockFacilityStats, mockFacilities } from '../mockData/facilityData'; // Assuming mock data matches types or needs adjustment
 import {
   processFacilityData,
@@ -24,6 +25,8 @@ interface ErrorState {
 }
 
 const ChartsPage: FC = () => {
+  const { showError, showWarning } = useToastContext();
+  
   // State for stats and charts data with types
   const [stats, setStats] = useState<FacilityStats>({
     totalFacilities: 0,
@@ -77,10 +80,12 @@ const ChartsPage: FC = () => {
 
     } catch (fetchError: unknown) { // Type error as unknown
       console.error("Error fetching data:", fetchError);
-
+      const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error occurred';
+      
       // If this is the first attempt, try with mock data
       if (!useFallback) {
         console.log('Falling back to mock data');
+        showWarning('Using Mock Data', 'Could not load live data, showing sample data instead.');
         // Assuming mockFacilityStats matches FacilityStats type
         setStats(mockFacilityStats);
 
@@ -290,6 +295,19 @@ const ChartsPage: FC = () => {
   const handleRetry = (): void => {
     fetchData(false); // Try to fetch live data again
   };
+
+  // Early return for loading state
+  if (loading) {
+    return (
+      <div className="container mt-4">
+        <LoadingSpinner 
+          size="lg" 
+          text="Loading facility statistics and charts..."
+          className="justify-content-center"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="charts-container">

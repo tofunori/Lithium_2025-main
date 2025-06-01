@@ -4,8 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-// Import the function to get distinct statuses - NO LONGER NEEDED FOR TABS
-import { getFacilities, getFacilitiesByStatus, deleteFacility, Facility /*, getDistinctOperationalStatuses */ } from '../supabaseDataService';
+import { useToastContext } from '../context/ToastContext';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { getFacilities, getFacilitiesByStatus, deleteFacility, Facility } from '../services';
 import {
   CanonicalStatus, // Use canonical status type again
   getCanonicalStatus,
@@ -95,6 +96,8 @@ const FacilitiesPage: React.FC = () => {
   }, [facilities]);
 
 
+  const { showError, showSuccess } = useToastContext();
+
   // Centralized fetch function - accepts CanonicalStatus or 'all'
   const fetchFacilitiesData = useCallback(async (filter: CanonicalStatus | 'all') => {
     setLoading(true);
@@ -111,12 +114,14 @@ const FacilitiesPage: React.FC = () => {
       setFacilities(facilitiesData);
     } catch (err: any) {
       console.error("Error fetching facilities:", err);
-      setError(`Failed to load facilities: ${err.message}`);
+      const errorMessage = `Failed to load facilities: ${err.message}`;
+      setError(errorMessage);
+      showError('Failed to Load Data', errorMessage);
       setFacilities([]);
     } finally {
       setLoading(false);
     }
-  }, []); // Dependency removed as it uses the filter argument directly
+  }, [showError]); // Dependency removed as it uses the filter argument directly
 
   // Realtime update handler with type
   const handleRealtimeUpdate = (payload: RealtimePostgresChangesPayload<Facility>) => {
@@ -292,9 +297,9 @@ const FacilitiesPage: React.FC = () => {
 
   const handleDelete = async (facilityId: string): Promise<void> => {
     if (!facilityId) {
-        console.error("Delete error: facilityId is missing.");
-        alert('Cannot delete facility: ID is missing.');
-        return;
+      console.error("Delete error: facilityId is missing.");
+      showError('Delete Error', 'Cannot delete facility: ID is missing.');
+      return;
     }
     if (window.confirm('Are you sure you want to delete this facility? This action cannot be undone.')) {
       try {
@@ -302,12 +307,52 @@ const FacilitiesPage: React.FC = () => {
         console.log(`Facility ${facilityId} delete initiated.`);
         // Manually update state immediately for faster UI feedback
         setFacilities(currentFacilities => currentFacilities.filter(f => f.ID !== facilityId));
+        showSuccess('Facility Deleted', 'The facility has been successfully deleted.');
       } catch (error: any) {
         console.error(`Error deleting facility ${facilityId}:`, error);
-        alert(`Failed to delete facility: ${error.message || 'Unknown error'}. Please try again.`);
+        showError('Delete Failed', `Failed to delete facility: ${error.message || 'Unknown error'}. Please try again.`);
       }
     }
   };
+
+  // Early return for loading state
+  if (loading) {
+    return (
+      <div className="row mt-4">
+        <div className="col-12">
+          <LoadingSpinner 
+            size="lg" 
+            text={`Loading ${activeFilter === 'all' ? 'all' : getStatusLabel(activeFilter)} facilities...`}
+            className="justify-content-center"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Early return for error state
+  if (error) {
+    return (
+      <div className="row mt-4">
+        <div className="col-12">
+          <div className="alert alert-danger" role="alert">
+            <h4 className="alert-heading">
+              <i className="fas fa-exclamation-triangle me-2"></i>
+              Error Loading Facilities
+            </h4>
+            <p className="mb-3">{error}</p>
+            <button 
+              className="btn btn-outline-danger"
+              onClick={() => fetchFacilitiesData(activeFilter)}
+            >
+              <i className="fas fa-redo me-1"></i>
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="row mt-4 fade-in">

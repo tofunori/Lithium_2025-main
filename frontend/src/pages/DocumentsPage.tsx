@@ -15,7 +15,7 @@ import {
     TreeNode,
     // renameFolder, // REMOVE old renameFolder
     deleteFolder, // Import deleteFolder
-} from '../supabaseDataService';
+} from '../services';
 import { renameSupabaseFolder } from '../utils/renameSupabaseFolder';
 import { supabase } from '../supabaseClient';
 import FolderTreeView from '../components/FolderTreeView';

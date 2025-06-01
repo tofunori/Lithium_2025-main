@@ -7,7 +7,7 @@ import L, { Map, LeafletMouseEvent, LatLng, Marker as LeafletMarker, DragEndEven
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import { useAuth } from '../context/AuthContext';
 // UPDATED: Import from supabaseDataService
-import { addFacility, FacilityFormData, FacilityTimelineEvent } from '../supabaseDataService'; // Use FacilityFormData
+import { addFacility, FacilityFormData, FacilityTimelineEvent } from '../services'; // Use FacilityFormData
 import { supabase } from '../supabaseClient'; // Import Supabase client for authentication check
 import { AuthChangeEvent } from '@supabase/supabase-js'; // Import type
 import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS

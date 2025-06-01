@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import Select, { SingleValue } from 'react-select';
 import { useTheme } from '../context/ThemeContext';
 // UPDATED: Import Facility and the correct getFacilities function
-import { getFacilities, Facility } from '../supabaseDataService'; // Changed FacilityData to Facility
+import { getFacilities, Facility } from '../services'; // Changed FacilityData to Facility
 import {
   CanonicalStatus,
   getCanonicalStatus,

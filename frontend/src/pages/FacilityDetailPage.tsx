@@ -5,14 +5,13 @@ import { useParams, Link, useLocation, Location } from 'react-router-dom';
 import {
     getFacilityById,
     updateFacility,
-    // Facility, // Base type, might not be needed directly here anymore
-    FullFacilityData, // Combined type for fetched data
-    FacilityFormData, // Type for form state (nested)
-    FacilityTimelineEvent, // Keep for timeline item structure
-    FacilityDocument, // New type
-    FacilityImage, // New type
-    getFilePublicUrl // Import the helper function
-} from '../supabaseDataService';
+    FullFacilityData,
+    FacilityFormData,
+    FacilityTimelineEvent,
+    FacilityDocument,
+    FacilityImage,
+    getFilePublicUrl
+} from '../services';
 import { useAuth } from '../context/AuthContext'; // Assuming AuthContext provides user info
 
 // Import form section components

@@ -1,7 +1,7 @@
 // frontend/src/components/ImageUploader.tsx
 import React, { useState, useCallback, ChangeEvent } from 'react';
 // UPDATED: Import from supabaseDataService
-import { uploadFacilityImage } from '../supabaseDataService';
+import { uploadFacilityImage } from '../services';
 
 // Define the interface for the component props
 interface ImageUploaderProps {

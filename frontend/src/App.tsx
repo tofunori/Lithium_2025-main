@@ -3,6 +3,9 @@ import { Routes, Route } from 'react-router-dom';
 import { DndProvider } from 'react-dnd'; // Import DndProvider
 import { HTML5Backend } from 'react-dnd-html5-backend'; // Import the backend
 import { ThemeProvider } from './context/ThemeContext'; // Import ThemeProvider
+import { ToastProvider, useToastContext } from './context/ToastContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import ToastContainer from './components/ToastContainer';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import FacilitiesPage from './pages/FacilitiesPage';
@@ -16,32 +19,46 @@ import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRou
 import MainLayout from './layouts/MainLayout'; // TS should resolve .tsx/.jsx
 import './App.css';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { toasts, removeToast } = useToastContext();
+
   return (
-    // Wrap the entire app with DndProvider
     <DndProvider backend={HTML5Backend}>
       <div className="App">
-        <ThemeProvider> {/* Wrap Routes with ThemeProvider */}
+        <ThemeProvider>
           <Routes>
             <Route element={<MainLayout />}>
               {/* Public routes */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/facilities" element={<FacilitiesPage />} />
-            <Route path="/charts" element={<ChartsPage />} />
-            <Route path="/documents" element={<DocumentsPage />} />
-            <Route path="/facilities/:id" element={<FacilityDetailPage />} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/facilities" element={<FacilitiesPage />} />
+              <Route path="/charts" element={<ChartsPage />} />
+              <Route path="/documents" element={<DocumentsPage />} />
+              <Route path="/facilities/:id" element={<FacilityDetailPage />} />
 
-            {/* Protected routes - require authentication */}
-            <Route element={<ProtectedRoute redirectPath="/" />}>
-              <Route path="/facilities/new" element={<FacilityCreatePage />} />
-              <Route path="/facilities/edit/:facilityId" element={<FacilityEditPage />} />
-            </Route>
+              {/* Protected routes - require authentication */}
+              <Route element={<ProtectedRoute redirectPath="/" />}>
+                <Route path="/facilities/new" element={<FacilityCreatePage />} />
+                <Route path="/facilities/edit/:facilityId" element={<FacilityEditPage />} />
+              </Route>
             </Route>
           </Routes>
         </ThemeProvider>
+        
+        {/* Global Toast Container */}
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
       </div>
     </DndProvider>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ErrorBoundary>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 };
 

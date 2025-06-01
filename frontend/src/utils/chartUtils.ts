@@ -1,6 +1,6 @@
 // frontend/src/utils/chartUtils.ts
 import { ChartConfiguration, ChartData, ChartOptions, TooltipItem } from 'chart.js';
-import { Facility } from '../supabaseDataService'; // Import the correct Facility interface
+import { Facility } from '../services'; // Import the correct Facility interface
 import {
   CanonicalStatus,
   getCanonicalStatus,

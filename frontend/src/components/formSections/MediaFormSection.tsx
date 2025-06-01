@@ -1,7 +1,7 @@
 import React, { FC, SyntheticEvent, useState, useEffect } from 'react';
 import ImageUploader from '../ImageUploader'; // Adjust path if needed
 // Import the helper function to get public URLs
-import { getFilePublicUrl } from '../../supabaseDataService'; 
+import { getFilePublicUrl } from '../../services'; 
 
 // Define the structure for the media data this section handles
 interface MediaData {
