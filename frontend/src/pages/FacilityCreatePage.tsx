@@ -6,8 +6,9 @@ import L, { Map, LeafletMouseEvent, LatLng, Marker as LeafletMarker, DragEndEven
 // Import leaflet-geosearch types correctly
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 // UPDATED: Import from supabaseDataService
-import { addFacility, FacilityFormData, FacilityTimelineEvent } from '../supabaseDataService'; // Use FacilityFormData
+import { addFacility, FacilityFormData, FacilityTimelineEvent } from '../services'; // Use FacilityFormData
 import { supabase } from '../supabaseClient'; // Import Supabase client for authentication check
 import { AuthChangeEvent } from '@supabase/supabase-js'; // Import type
 import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
@@ -36,6 +37,18 @@ interface GeoSearchResultEvent {
 const FacilityCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { isDarkMode } = useTheme();
+
+  // Theme-aware basemap configuration
+  const basemapConfig = isDarkMode 
+    ? {
+        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      }
+    : {
+        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      };
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null); // Error state as string or null
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -438,8 +451,8 @@ const FacilityCreatePage: React.FC = () => {
                      <div style={{ height: '400px', width: '100%' }}>
                        <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%' }}>
                          <TileLayer
-                           attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-                           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                           attribution={basemapConfig.attribution}
+                           url={basemapConfig.url}
                          />
                          <SearchField />
                          <LocationMarker />

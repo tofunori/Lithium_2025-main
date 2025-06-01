@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'; // Add useRef
 import { useDrop, DropTargetMonitor } from 'react-dnd'; // Import useDrop
 import { ItemTypes } from '../dndItemTypes'; // Import item types
-import { TreeNode, StorageItem } from '../supabaseDataService'; // Import TreeNode and StorageItem
+import { TreeNode, StorageItem } from '../services'; // Import TreeNode and StorageItem
 
 interface FolderTreeViewProps {
   nodes: TreeNode[];

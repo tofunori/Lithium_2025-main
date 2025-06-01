@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Facility } from '../supabaseDataService'; // Assuming Facility type is exported
+import { Facility } from '../services'; // Assuming Facility type is exported
 import './MapFilterSidebar.css';
 
 // Define the structure for filter values

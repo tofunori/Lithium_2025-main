@@ -26,6 +26,8 @@
     box-sizing: border-box;
     max-width: 1400px;
     margin: 0 auto;
+    position: relative;
+    z-index: 1; /* Lower z-index to ensure header stays on top */
 }
 
 .map-area {
@@ -37,19 +39,85 @@
     border: 1px solid var(--border-color);
     background-color: var(--map-bg);
     position: relative;
+    z-index: 1; /* Ensure map stays below header */
 }
 
-/* Professional Map Styling */
-.map-area::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary-color) 0%, #3b82f6 50%, var(--primary-color) 100%);
-    z-index: 1001;
+/* Ensure map controls are above map tiles */
+.map-area .map-controls {
+    z-index: 400; /* Leaflet uses 400 for controls */
 }
+
+/* Modern marker animations */
+.modern-map-marker {
+    animation: marker-appear 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes marker-appear {
+    0% {
+        transform: scale(0) rotate(-180deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1) rotate(10deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.modern-map-marker:hover {
+    animation: marker-hover 0.3s ease-in-out;
+}
+
+@keyframes marker-hover {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1.1);
+    }
+}
+
+/* Modern popup styling */
+.leaflet-popup {
+    animation: popup-appear 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes popup-appear {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.leaflet-popup-content-wrapper {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.1),
+        0 2px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+.leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Professional Map Styling - removed blue top line */
 
 .map-sidebar {
     width: var(--sidebar-width);
@@ -67,19 +135,29 @@
     height: 100%;
     width: 100%;
     line-height: normal;
+    z-index: 1; /* Keep map at low z-index */
 }
 
 /* Professional Legend Design */
 .map-sidebar .legend {
-    background: linear-gradient(135deg, var(--legend-bg) 0%, rgba(255, 255, 255, 0.95) 100%);
+    background: var(--legend-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     padding: 24px;
-    border-radius: var(--card-border-radius);
+    border-radius: 16px;
     box-shadow: var(--subtle-shadow);
     border: 1px solid var(--border-color);
     width: 100%;
     box-sizing: border-box;
-    backdrop-filter: blur(10px);
     position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.map-sidebar .legend:hover {
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.08),
+        0 4px 15px rgba(0, 0, 0, 0.03);
+    transform: translateY(-2px);
 }
 
 .legend::before {
@@ -406,13 +484,13 @@
 
 /* Dark mode support - minimal adjustments */
 .dark-mode .leaflet-popup-content-wrapper {
-    background-color: #1e293b;
-    border-color: #334155;
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
 }
 
 .dark-mode .leaflet-popup-tip {
-    background-color: #1e293b;
-    border-color: #334155;
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
 }
 
 .dark-mode .popup-title {
@@ -682,4 +760,32 @@
   margin: 12px 0; /* More space around separators */
   border-top: 1px solid var(--border-color);
   opacity: 0.5; /* Lighter separator lines */
+}
+
+/* Dark mode adjustments for HomePage */
+.dark-mode .map-container {
+  background-color: var(--map-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .legend {
+  background-color: var(--legend-bg);
+  border-color: var(--border-color);
+  box-shadow: var(--subtle-shadow);
+}
+
+.dark-mode .legend h6 {
+  color: var(--text-color);
+}
+
+.dark-mode .legend-item {
+  color: var(--text-color);
+}
+
+.dark-mode .legend .form-check-label {
+  color: var(--text-color);
+}
+
+.dark-mode .legend hr {
+  border-color: var(--border-color);
 }

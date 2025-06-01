@@ -16,6 +16,7 @@
     "@tiptap/react": "^2.11.7",
     "@tiptap/starter-kit": "^2.11.7",
     "@types/leaflet.heat": "^0.2.4",
+    "@types/react-window": "^1.8.8",
     "bootstrap": "^5.3.5",
     "chart.js": "^4.4.8",
     "leaflet": "^1.9.4",
@@ -29,7 +30,9 @@
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.5.0",
-    "react-select": "^5.10.1"
+    "react-select": "^5.10.1",
+    "react-window": "^1.8.11",
+    "react-window-infinite-loader": "^1.0.10"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

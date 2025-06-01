@@ -1,12 +1,19 @@
-/* Header Styles */
+/* Modern Header Styles */
 .dashboard-header {
-  background-color: var(--card-bg, #ffffff);
-  border-radius: var(--card-border-radius, 8px);
-  padding: 25px;
-  margin-bottom: 25px;
-  box-shadow: var(--subtle-shadow, 0 2px 4px rgba(0, 0, 0, 0.075));
-  border-bottom: 1px solid var(--border-color, #dee2e6);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--card-border-radius);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--subtle-shadow);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-header:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 .dashboard-header h1 {
@@ -29,12 +36,15 @@
 }
 
 
-/* Navigation Menu Styles */
+/* Modern Navigation Menu Styles */
 .navbar {
-  background-color: var(--navbar-bg, #ffffff) !important;
-  box-shadow: none;
-  padding: 0.5rem 1rem !important; /* Keep overall navbar padding */
-  transition: background-color 0.3s ease;
+  background: var(--navbar-bg) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  padding: 1rem 1.5rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Ensure container aligns items and adds space between main sections */
@@ -45,10 +55,26 @@
 }
 
 .navbar .nav-link {
-  color: var(--navbar-link-color, #6c757d);
+  color: var(--navbar-link-color);
   font-weight: 500;
-  padding: 0.5rem 0.8rem; /* Adjusted padding within links */
-  border-radius: 5px;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.navbar .nav-link::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
 }
 
 /* Add space between the navigation links themselves */
@@ -57,14 +83,21 @@
 }
 
 .navbar .nav-link:hover {
-  color: var(--link-hover-color, #0a58ca);
-  background-color: var(--navbar-link-hover-bg, rgba(0, 86, 179, 0.05));
+  color: var(--link-hover-color);
+  background-color: var(--navbar-link-hover-bg);
+  transform: translateY(-1px);
+}
+
+.navbar .nav-link:hover::before {
+  width: 100%;
+  height: 100%;
 }
 
 .navbar .nav-link.active {
-  color: var(--navbar-link-active-color, #0d6efd);
+  color: var(--navbar-link-active-color);
   font-weight: 600;
-  background-color: var(--navbar-link-active-bg, rgba(0, 86, 179, 0.1));
+  background: var(--navbar-link-active-bg);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
 }
 
 #authStatus .btn {
@@ -139,11 +172,17 @@
 
 /* Academic Professional Header */
 .academic-header {
-  background: linear-gradient(135deg, var(--white-bg) 0%, var(--light-bg) 100%);
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  padding: 1.5rem 0;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  padding: 2rem 0;
   margin-bottom: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1020; /* Higher z-index to stay above Leaflet map and popups */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header-content {
@@ -162,40 +201,25 @@
   min-width: 0; /* Prevent overflow */
 }
 
-.research-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--primary-color);
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.75rem;
-}
-
-.badge-icon {
-  font-size: 0.875rem;
-}
-
-.research-title {
-  font-size: 1.75rem;
-  font-weight: 700;
+.modern-title {
+  font-size: 2rem;
+  font-weight: 300;
   color: var(--text-color);
-  margin: 0 0 0.25rem 0;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-.research-subtitle {
-  font-size: 1rem;
+.modern-subtitle {
+  font-size: 0.875rem;
   color: var(--text-muted-color);
   margin: 0;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.075em;
+  opacity: 0.8;
 }
 
 /* Navigation & Controls Section */
@@ -370,29 +394,74 @@
   }
 }
 
-/* Dark mode adjustments */
+/* Enhanced dark mode adjustments */
 .dark-mode .academic-header {
-  background: linear-gradient(135deg, var(--white-bg) 0%, var(--light-bg) 100%);
+  background: var(--card-bg);
   border-bottom-color: var(--border-color);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.8);
 }
 
-.dark-mode .research-title {
+.dark-mode .modern-title {
   color: var(--text-color);
 }
 
-.dark-mode .research-subtitle {
+.dark-mode .modern-subtitle {
   color: var(--text-muted-color);
 }
 
 .dark-mode .academic-nav {
   background: var(--white-bg);
   border-color: var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .nav-link {
+  color: var(--text-muted-color);
+}
+
+.dark-mode .nav-link:hover {
+  color: var(--primary-color);
+  background: var(--navbar-link-hover-bg);
+}
+
+.dark-mode .nav-link.active {
+  color: var(--primary-color);
+  background: var(--navbar-link-active-bg);
 }
 
 .dark-mode .theme-toggle {
   background: var(--white-bg);
   border-color: var(--border-color);
-  color: var(--secondary-color);
+  color: var(--text-muted-color);
+}
+
+.dark-mode .theme-toggle:hover {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  background: var(--navbar-link-hover-bg);
+}
+
+.dark-mode .btn.btn-outline {
+  border-color: var(--border-color);
+  color: var(--text-muted-color);
+  background: transparent;
+}
+
+.dark-mode .btn.btn-outline:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: var(--navbar-link-hover-bg);
+}
+
+.dark-mode .btn.btn-primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.dark-mode .btn.btn-primary:hover {
+  background: var(--link-hover-color);
+  border-color: var(--link-hover-color);
 }
 
 /* Academic Header Styles */

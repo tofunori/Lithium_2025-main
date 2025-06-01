@@ -1,0 +1,107 @@
+/* frontend/src/components/Toast.css */
+
+.toast-container {
+  max-width: 400px;
+}
+
+.toast {
+  margin-bottom: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.toast .toast-body {
+  padding: 0.75rem 1rem;
+}
+
+.toast .fw-bold {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.toast .small {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+/* Custom animations for better UX */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.toast.show {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.toast.hide {
+  animation: slideOutRight 0.3s ease-in;
+}
+
+/* Dark mode toast styles */
+.dark-mode .toast {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.8);
+}
+
+.dark-mode .toast .toast-header {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border-bottom-color: var(--border-color);
+}
+
+.dark-mode .toast .btn-close {
+  filter: invert(1);
+}
+
+.dark-mode .toast.bg-success {
+  background-color: var(--success-color) !important;
+  color: white !important;
+}
+
+.dark-mode .toast.bg-danger {
+  background-color: var(--danger-color) !important;
+  color: white !important;
+}
+
+.dark-mode .toast.bg-warning {
+  background-color: var(--warning-color) !important;
+  color: var(--card-bg) !important;
+}
+
+.dark-mode .toast.bg-info {
+  background-color: var(--info-color) !important;
+  color: white !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .toast-container {
+    max-width: calc(100vw - 2rem);
+    padding: 0 1rem;
+  }
+  
+  .toast {
+    margin-bottom: 0.75rem;
+  }
+}

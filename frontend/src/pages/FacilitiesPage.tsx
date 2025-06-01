@@ -1,11 +1,14 @@
 // frontend/src/pages/FacilitiesPage.tsx
-import React, { useState, useEffect, ChangeEvent, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-// Import the function to get distinct statuses - NO LONGER NEEDED FOR TABS
-import { getFacilities, getFacilitiesByStatus, deleteFacility, Facility /*, getDistinctOperationalStatuses */ } from '../supabaseDataService';
+import { useToastContext } from '../context/ToastContext';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
+import LoadingSpinner from '../components/LoadingSpinner';
+import AdvancedSearchFilter from '../components/AdvancedSearchFilter';
+import { getFacilities, getFacilitiesByStatus, deleteFacility, searchFacilities, Facility, FacilitySearchFilters } from '../services';
 import {
   CanonicalStatus, // Use canonical status type again
   getCanonicalStatus,
@@ -45,11 +48,11 @@ const FacilitiesPage: React.FC = () => {
   // Revert activeFilter to use CanonicalStatus type
   const [activeFilter, setActiveFilter] = useState<CanonicalStatus | 'all'>('all');
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedTechnology, setSelectedTechnology] = useState<string>('all');
   const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [allFacilities, setAllFacilities] = useState<Facility[]>([]); // Store all facilities for client-side filtering
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
   // Default sort by Company ascending
   const [sortColumn, setSortColumn] = useState<keyof Facility | null>('Company'); // State for sort column
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); // State for sort direction
@@ -83,17 +86,9 @@ const FacilitiesPage: React.FC = () => {
     return col.key && visibleColumns.hasOwnProperty(col.key) && visibleColumns[col.key];
   }).length;
 
-  // Compute unique technology categories for the filter dropdown
-  const uniqueTechnologies = React.useMemo(() => {
-    const techSet = new Set<string>();
-    facilities.forEach(facility => {
-      if (facility.technology_category && facility.technology_category.trim() !== '') {
-        techSet.add(facility.technology_category.trim());
-      }
-    });
-    return Array.from(techSet).sort();
-  }, [facilities]);
 
+
+  const { showError, showSuccess } = useToastContext();
 
   // Centralized fetch function - accepts CanonicalStatus or 'all'
   const fetchFacilitiesData = useCallback(async (filter: CanonicalStatus | 'all') => {
@@ -109,17 +104,39 @@ const FacilitiesPage: React.FC = () => {
         facilitiesData = await getFacilitiesByStatus(dbStatusString);
       }
       setFacilities(facilitiesData);
+      setAllFacilities(facilitiesData); // Store for client-side filtering
     } catch (err: any) {
       console.error("Error fetching facilities:", err);
-      setError(`Failed to load facilities: ${err.message}`);
+      const errorMessage = `Failed to load facilities: ${err.message}`;
+      setError(errorMessage);
+      showError('Failed to Load Data', errorMessage);
       setFacilities([]);
+      setAllFacilities([]);
     } finally {
       setLoading(false);
     }
-  }, []); // Dependency removed as it uses the filter argument directly
+  }, [showError]); // Dependency removed as it uses the filter argument directly
+
+  // Handle advanced search
+  const handleAdvancedSearch = useCallback(async (filters: FacilitySearchFilters) => {
+    setIsSearching(true);
+    setError(null);
+    try {
+      const results = await searchFacilities(filters);
+      setFacilities(results);
+      setActiveFilter('all'); // Reset status filter when using advanced search
+    } catch (err: any) {
+      console.error("Error searching facilities:", err);
+      const errorMessage = `Search failed: ${err.message}`;
+      setError(errorMessage);
+      showError('Search Failed', errorMessage);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [showError]);
 
   // Realtime update handler with type
-  const handleRealtimeUpdate = (payload: RealtimePostgresChangesPayload<Facility>) => {
+  const handleRealtimeUpdate = useCallback((payload: RealtimePostgresChangesPayload<Facility>) => {
     console.log('Realtime change received:', payload);
     const { eventType, new: newRecord, old: oldRecord } = payload;
 
@@ -169,65 +186,58 @@ const FacilitiesPage: React.FC = () => {
 
       return updatedFacilities;
     });
-  };
+  }, [activeFilter]);
 
-  // Add error handling for Realtime subscription
+  // Create stable callback references for realtime subscription
+  const handleRealtimeInsert = useCallback((payload: RealtimePostgresChangesPayload<Facility>) => {
+    handleRealtimeUpdate({ ...payload, eventType: 'INSERT' });
+  }, [handleRealtimeUpdate]);
+
+  const handleRealtimeUpdate2 = useCallback((payload: RealtimePostgresChangesPayload<Facility>) => {
+    handleRealtimeUpdate({ ...payload, eventType: 'UPDATE' });
+  }, [handleRealtimeUpdate]);
+
+  const handleRealtimeDelete = useCallback((payload: RealtimePostgresChangesPayload<Facility>) => {
+    handleRealtimeUpdate({ ...payload, eventType: 'DELETE' });
+  }, [handleRealtimeUpdate]);
+
+  const handleReconnect = useCallback(() => {
+    // Refetch data on reconnection to ensure consistency
+    fetchFacilitiesData(activeFilter);
+  }, [fetchFacilitiesData, activeFilter]);
+
+  // Use the new realtime subscription hook
+  const { connectionState, error: realtimeError, reconnect } = useRealtimeSubscription<Facility>({
+    tableName: 'facilities',
+    onInsert: handleRealtimeInsert,
+    onUpdate: handleRealtimeUpdate2,
+    onDelete: handleRealtimeDelete,
+    onReconnect: handleReconnect,
+    enabled: true
+  });
+
+  // Set error state based on realtime connection errors
+  useEffect(() => {
+    if (realtimeError) {
+      setError(realtimeError);
+    } else if (connectionState === 'connected' && error?.includes('Realtime connection error')) {
+      // Clear the error if it was a realtime error and we're now connected
+      setError(null);
+    }
+  }, [realtimeError, connectionState, error]);
+
+  // Fetch facilities data on mount and when filter changes
   useEffect(() => {
     fetchFacilitiesData(activeFilter);
-
-    const channel = supabase
-      .channel('facilities-channel') // Changed channel name
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'facilities' },
-        (payload: RealtimePostgresChangesPayload<Facility>) => handleRealtimeUpdate(payload)
-      )
-      .subscribe((status: string, err?: Error) => {
-         if (status === 'SUBSCRIBED') {
-           console.log('Subscribed to facilities changes!');
-         }
-         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-           console.error(`Realtime subscription error: ${status}`, err);
-           setError(`Realtime connection error: ${err?.message || status}. Data may not be live.`);
-         }
-      });
-
-    return () => {
-      console.log('Unsubscribing from facilities changes.');
-      supabase.removeChannel(channel);
-    };
   }, [activeFilter, fetchFacilitiesData]);
 
   const handleFilterClick = (filter: CanonicalStatus | 'all'): void => {
     setActiveFilter(filter);
   };
 
-  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setSearchTerm(e.target.value);
-  };
 
-  // Add validation to filter out facilities with invalid coordinates before processing
-  const validFacilities = facilities.filter(facility => 
-    facility.Latitude !== null && facility.Longitude !== null &&
-    typeof facility.Latitude === 'number' && typeof facility.Longitude === 'number'
-  );
-
-  // Update the searchFilteredFacilities to use validFacilities
-  const searchFilteredFacilities = validFacilities.filter(facility => {
-    // Filter by technology first
-    if (selectedTechnology !== 'all' && facility.technology_category !== selectedTechnology) {
-      return false;
-    }
-    const term = searchTerm.toLowerCase();
-    if (!term) return true;
-
-    const company = facility.Company?.toLowerCase() || '';
-    const location = facility.Location?.toLowerCase() || '';
-    const category = facility.technology_category?.toLowerCase() || '';
-    const facilityName = facility["Facility Name/Site"]?.toLowerCase() || '';
-
-    return company.includes(term) || location.includes(term) || category.includes(term) || facilityName.includes(term);
-  });
+  // Use facilities directly since advanced search handles all filtering
+  const searchFilteredFacilities = facilities;
 
   // Sorting Logic
   const sortedFacilities = useMemo(() => {
@@ -292,9 +302,9 @@ const FacilitiesPage: React.FC = () => {
 
   const handleDelete = async (facilityId: string): Promise<void> => {
     if (!facilityId) {
-        console.error("Delete error: facilityId is missing.");
-        alert('Cannot delete facility: ID is missing.');
-        return;
+      console.error("Delete error: facilityId is missing.");
+      showError('Delete Error', 'Cannot delete facility: ID is missing.');
+      return;
     }
     if (window.confirm('Are you sure you want to delete this facility? This action cannot be undone.')) {
       try {
@@ -302,64 +312,101 @@ const FacilitiesPage: React.FC = () => {
         console.log(`Facility ${facilityId} delete initiated.`);
         // Manually update state immediately for faster UI feedback
         setFacilities(currentFacilities => currentFacilities.filter(f => f.ID !== facilityId));
+        showSuccess('Facility Deleted', 'The facility has been successfully deleted.');
       } catch (error: any) {
         console.error(`Error deleting facility ${facilityId}:`, error);
-        alert(`Failed to delete facility: ${error.message || 'Unknown error'}. Please try again.`);
+        showError('Delete Failed', `Failed to delete facility: ${error.message || 'Unknown error'}. Please try again.`);
       }
     }
   };
 
-  return (
-    <div className="row mt-4 fade-in">
-      <div className="col-12">
-        <div className="facilities-list">
-          {/* Tabs Container - Use VALID_CANONICAL_STATUSES */}
-          <div className="tabs-container d-flex flex-wrap justify-content-center mb-3">
-            <button
-              key="all"
-              className={`tab-button ${activeFilter === 'all' ? 'active' : ''}`}
-              onClick={() => handleFilterClick('all')}
-            >
-              All
-            </button>
-            {VALID_CANONICAL_STATUSES.map(filterKey => (
-                 <button
-                    key={filterKey}
-                    className={`tab-button ${activeFilter === filterKey ? 'active' : ''}`}
-                    onClick={() => handleFilterClick(filterKey)}
-                 >
-                    {getStatusLabel(filterKey)}
-                 </button>
-            ))}
-          </div>
+  // Early return for loading state
+  if (loading) {
+    return (
+      <div className="row mt-4">
+        <div className="col-12">
+          <LoadingSpinner 
+            size="lg" 
+            text={`Loading ${activeFilter === 'all' ? 'all' : getStatusLabel(activeFilter)} facilities...`}
+            className="justify-content-center"
+          />
+        </div>
+      </div>
+    );
+  }
 
-          {/* Add New Facility Button, Search, and Column Toggle */}
-          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-             <div className="input-group search-bar me-2 mb-2 mb-md-0" style={{ maxWidth: '300px' }}>
-                <span className="input-group-text"><i className="fas fa-search"></i></span>
-                 <input
-                     type="text"
-                     className="form-control form-control-sm"
-                     placeholder="Search company, location, category..."
-                     value={searchTerm}
-                     onChange={handleSearchChange}
-                 />
-              </div>
-              {/* Technology Filter Dropdown */}
-              <div className="input-group tech-filter-bar me-2 mb-2 mb-md-0" style={{ maxWidth: '220px' }}>
-                <span className="input-group-text"><i className="fas fa-microchip"></i></span>
-                <select
-                  className="form-select form-select-sm"
-                  value={selectedTechnology}
-                  onChange={e => setSelectedTechnology(e.target.value)}
+  // Early return for error state
+  if (error) {
+    const isRealtimeError = error.includes('Connection error') || error.includes('Realtime');
+    
+    return (
+      <div className="row mt-4">
+        <div className="col-12">
+          <div className="alert alert-danger" role="alert">
+            <h4 className="alert-heading">
+              <i className="fas fa-exclamation-triangle me-2"></i>
+              Error Loading Facilities
+            </h4>
+            <p className="mb-3">{error}</p>
+            <div className="d-flex gap-2">
+              <button 
+                className="btn btn-outline-danger"
+                onClick={() => fetchFacilitiesData(activeFilter)}
+              >
+                <i className="fas fa-redo me-1"></i>
+                Reload Data
+              </button>
+              {isRealtimeError && connectionState === 'error' && (
+                <button 
+                  className="btn btn-outline-warning"
+                  onClick={reconnect}
                 >
-                  <option value="all">All Technologies</option>
-                  {uniqueTechnologies.map(tech => (
-                    <option key={tech} value={tech}>{tech}</option>
-                  ))}
-                </select>
+                  <i className="fas fa-plug me-1"></i>
+                  Reconnect Live Updates
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="facilities-page">
+      <div className="row mt-4 fade-in">
+        <div className="col-12">
+        {/* Advanced Search and Filter Component */}
+        <AdvancedSearchFilter 
+          onSearch={handleAdvancedSearch}
+          isSearching={isSearching}
+          resultCount={sortedFacilities.length}
+        />
+        
+        <div className="facilities-list">
+          {/* Add New Facility Button and Column Toggle */}
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <div className="d-flex align-items-center">
+              {/* Connection Status Indicator */}
+              <div className={`badge ${
+                connectionState === 'connected' ? 'bg-success' : 
+                connectionState === 'error' ? 'bg-danger' : 
+                connectionState === 'connecting' ? 'bg-warning' : 
+                'bg-secondary'
+              } me-2`}>
+                <i className={`fas ${
+                  connectionState === 'connected' ? 'fa-check-circle' : 
+                  connectionState === 'error' ? 'fa-exclamation-circle' : 
+                  connectionState === 'connecting' ? 'fa-spinner fa-spin' : 
+                  'fa-times-circle'
+                } me-1`}></i>
+                {connectionState === 'connected' ? 'Live Updates Active' : 
+                 connectionState === 'error' ? 'Connection Error' : 
+                 connectionState === 'connecting' ? 'Connecting...' : 
+                 'Disconnected'}
               </div>
-              <div className="d-flex align-items-center">
+            </div>
+            <div className="d-flex align-items-center">
                 {/* Column Visibility Dropdown */}
                 <div className="dropdown me-2">
                   <button className="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="columnToggleDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -499,6 +546,7 @@ const FacilitiesPage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

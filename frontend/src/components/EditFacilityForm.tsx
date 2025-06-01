@@ -6,7 +6,7 @@ import {
     FacilityTimelineEvent,
     updateFacility,
     FacilityFormData // Import the canonical form data type
-} from '../supabaseDataService';
+} from '../services';
 import './EditFacilityForm.css';
 import ImageUploader from './ImageUploader'; // Assuming ImageUploader is JS for now
 import BasicInfoFormSection from './formSections/BasicInfoFormSection'; // Import the section component
