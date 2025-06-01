@@ -17,6 +17,7 @@ const MapControls: React.FC<MapControlsProps> = ({
   const { isDarkMode } = useTheme();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Reset map to default view
   const handleResetView = useCallback(() => {
@@ -102,56 +103,8 @@ const MapControls: React.FC<MapControlsProps> = ({
 
   // Export map as image
   const handleExportMap = useCallback(() => {
-    if (!map) return;
-
-    // Simple approach: open map in new window for printing/saving
-    const center = map.getCenter();
-    const zoom = map.getZoom();
-    
-    // Theme-aware tile layer for export
-    const tileLayerUrl = isDarkMode 
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-    const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
-    
-    // Create a simple HTML page with the current map view
-    const mapHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Lithium Facilities Map Export</title>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-        <style>
-          body { margin: 0; padding: 0; background-color: ${isDarkMode ? '#000000' : '#ffffff'}; }
-          #map { width: 100vw; height: 100vh; }
-          @media print { 
-            #map { height: 800px; } 
-            .leaflet-control { display: none !important; }
-          }
-        </style>
-      </head>
-      <body>
-        <div id="map"></div>
-        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-        <script>
-          const map = L.map('map').setView([${center.lat}, ${center.lng}], ${zoom});
-          L.tileLayer('${tileLayerUrl}', {
-            attribution: '${attribution}'
-          }).addTo(map);
-          setTimeout(() => { window.print(); }, 1000);
-        </script>
-      </body>
-      </html>
-    `;
-    
-    const newWindow = window.open('', 'map-export', 'width=1200,height=800');
-    if (newWindow) {
-      newWindow.document.write(mapHtml);
-      newWindow.document.close();
-    } else {
-      alert('Please allow pop-ups to export the map.');
-    }
-  }, [map, isDarkMode]);
+    setShowExportModal(true);
+  }, []);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
@@ -237,14 +190,6 @@ const MapControls: React.FC<MapControlsProps> = ({
           aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
         >
           <i className={`fas fa-${isFullscreen ? 'compress' : 'expand'}`}></i>
-        </button>
-        <button 
-          className="map-control-button"
-          onClick={handleExportMap}
-          title="Export Map as Image"
-          aria-label="Export Map as Image"
-        >
-          <i className="fas fa-download"></i>
         </button>
       </div>
 
