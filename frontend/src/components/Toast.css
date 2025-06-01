@@ -56,6 +56,44 @@
   animation: slideOutRight 0.3s ease-in;
 }
 
+/* Dark mode toast styles */
+.dark-mode .toast {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.8);
+}
+
+.dark-mode .toast .toast-header {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border-bottom-color: var(--border-color);
+}
+
+.dark-mode .toast .btn-close {
+  filter: invert(1);
+}
+
+.dark-mode .toast.bg-success {
+  background-color: var(--success-color) !important;
+  color: white !important;
+}
+
+.dark-mode .toast.bg-danger {
+  background-color: var(--danger-color) !important;
+  color: white !important;
+}
+
+.dark-mode .toast.bg-warning {
+  background-color: var(--warning-color) !important;
+  color: var(--card-bg) !important;
+}
+
+.dark-mode .toast.bg-info {
+  background-color: var(--info-color) !important;
+  color: white !important;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .toast-container {

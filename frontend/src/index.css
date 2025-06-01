@@ -46,48 +46,69 @@
   --success-color: #059669;
 }
 
-/* Dark Mode Overrides */
+/* Dark Mode Overrides - Toned Down Dark Theme */
 .dark-mode {
-  --primary-color: #4dabf7; /* Lighter blue for dark mode */
-  --secondary-color: #adb5bd; /* Lighter grey */
-  --light-bg: #1a1a1a; /* Very dark grey/black */
-  --white-bg: #2c2c2c; /* Dark grey for cards/elements */
-  --card-bg: var(--white-bg);
-  --text-color: #e9ecef; /* Light grey text */
-  --text-muted-color: var(--secondary-color);
-  --border-color: #495057; /* Darker border */
-  --subtle-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Darker shadow */
-  --link-color: var(--primary-color);
-  --link-hover-color: #74c0fc; /* Even lighter blue for hover */
-  --navbar-bg: var(--white-bg);
-  --navbar-link-color: var(--secondary-color);
-  --navbar-link-hover-bg: rgba(77, 171, 247, 0.1); /* Use primary color base for hover */
-  --navbar-link-active-color: var(--primary-color);
-  --navbar-link-active-bg: rgba(77, 171, 247, 0.15); /* Use primary color base for active */
-  --legend-bg: rgba(44, 44, 44, 0.95); /* Dark legend background */
-  --timeline-line-color: var(--border-color);
+  /* Core colors */
+  --primary-color: #60a5fa; /* Bright blue for dark mode */
+  --secondary-color: #94a3b8; /* Lighter slate grey */
+  --accent-color: #f1f5f9; /* Very light text */
+  
+  /* Backgrounds - Softer Dark */
+  --light-bg: #1a1a1a; /* Soft dark background instead of pure black */
+  --white-bg: #1f1f1f; /* Slightly lighter for cards */
+  --card-bg: #1f1f1f; /* Slightly lighter card background */
+  
+  /* Text colors */
+  --text-color: #f5f5f5; /* Slightly softer white text */
+  --text-muted-color: #a1a1aa; /* More visible muted text */
+  
+  /* Borders and shadows */
+  --border-color: rgba(148, 163, 184, 0.3); /* More visible border */
+  --subtle-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  
+  /* Links */
+  --link-color: #60a5fa;
+  --link-hover-color: #93c5fd;
+  
+  /* Navigation */
+  --navbar-bg: #1f1f1f;
+  --navbar-link-color: #d1d5db;
+  --navbar-link-hover-bg: rgba(96, 165, 250, 0.2);
+  --navbar-link-active-color: #60a5fa;
+  --navbar-link-active-bg: rgba(96, 165, 250, 0.3);
+  
+  /* Components */
+  --legend-bg: #1f1f1f;
+  --timeline-line-color: rgba(148, 163, 184, 0.4);
   --timeline-dot-border: var(--primary-color);
   --timeline-arrow-bg: var(--card-bg);
-  --map-bg: #343a40; /* Dark map background */
-  --tab-bg: #343a40; /* Darker tab background */
-  --tab-active-bg: var(--white-bg);
-  --tab-border: var(--border-color);
-  --tab-color: var(--secondary-color);
-  --tab-active-color: var(--primary-color);
-  --facility-item-hover-bg: #343a40;
-  --form-switch-bg: #495057; /* Dark switch background */
-  --form-switch-focus-shadow-color: rgba(73, 80, 87, 0.5); /* Dark mode focus shadow (derived from border) */
-  --input-group-bg: #495057;
-  --form-focus-border-color: #74c0fc;
-  --form-focus-shadow-color: rgba(77, 171, 247, 0.25);
-  --list-item-hover-bg: #343a40; /* Dark grey hover for lists/trees */
-  --list-item-active-bg: #0d6efd; /* Use primary color for active in dark mode */
-  --primary-contrast-text: #ffffff; /* Text on primary background (often stays white) */
-  --table-row-hover-bg: rgba(255, 255, 255, 0.075); /* Subtle light hover for table rows */
-  --card-header-bg: rgba(255, 255, 255, 0.05); /* Subtle light grey for card headers */
-  --danger-color: #f17c7c; /* Lighter red for dark mode */
-  --warning-color: #ffd761; /* Lighter yellow for dark mode */
-  --info-color: #67d9f3; /* Lighter cyan for dark mode */
+  --map-bg: #1a1a1a;
+  --tab-bg: #1f1f1f;
+  --tab-active-bg: #2a2a2a;
+  --tab-border: rgba(148, 163, 184, 0.3);
+  --tab-color: #a1a1aa;
+  --tab-active-color: #60a5fa;
+  --facility-item-hover-bg: rgba(255, 255, 255, 0.1);
+  
+  /* Form elements */
+  --form-switch-bg: #374151;
+  --form-switch-focus-shadow-color: rgba(96, 165, 250, 0.4);
+  --input-group-bg: #2a2a2a;
+  --form-focus-border-color: #60a5fa;
+  --form-focus-shadow-color: rgba(96, 165, 250, 0.4);
+  
+  /* Lists and tables */
+  --list-item-hover-bg: rgba(255, 255, 255, 0.1);
+  --list-item-active-bg: rgba(96, 165, 250, 0.3);
+  --primary-contrast-text: #f5f5f5;
+  --table-row-hover-bg: rgba(255, 255, 255, 0.1);
+  --card-header-bg: rgba(255, 255, 255, 0.05);
+  
+  /* Status colors */
+  --danger-color: #f87171;
+  --warning-color: #fbbf24;
+  --info-color: #60a5fa;
+  --success-color: #34d399;
 }
 
 /* Ensure form switch icons adapt */

@@ -172,7 +172,7 @@
 
 /* Academic Professional Header */
 .academic-header {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-color);
@@ -394,29 +394,74 @@
   }
 }
 
-/* Dark mode adjustments */
+/* Enhanced dark mode adjustments */
 .dark-mode .academic-header {
-  background: linear-gradient(135deg, var(--white-bg) 0%, var(--light-bg) 100%);
+  background: var(--card-bg);
   border-bottom-color: var(--border-color);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.8);
 }
 
-.dark-mode .research-title {
+.dark-mode .modern-title {
   color: var(--text-color);
 }
 
-.dark-mode .research-subtitle {
+.dark-mode .modern-subtitle {
   color: var(--text-muted-color);
 }
 
 .dark-mode .academic-nav {
   background: var(--white-bg);
   border-color: var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .nav-link {
+  color: var(--text-muted-color);
+}
+
+.dark-mode .nav-link:hover {
+  color: var(--primary-color);
+  background: var(--navbar-link-hover-bg);
+}
+
+.dark-mode .nav-link.active {
+  color: var(--primary-color);
+  background: var(--navbar-link-active-bg);
 }
 
 .dark-mode .theme-toggle {
   background: var(--white-bg);
   border-color: var(--border-color);
-  color: var(--secondary-color);
+  color: var(--text-muted-color);
+}
+
+.dark-mode .theme-toggle:hover {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  background: var(--navbar-link-hover-bg);
+}
+
+.dark-mode .btn.btn-outline {
+  border-color: var(--border-color);
+  color: var(--text-muted-color);
+  background: transparent;
+}
+
+.dark-mode .btn.btn-outline:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: var(--navbar-link-hover-bg);
+}
+
+.dark-mode .btn.btn-primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.dark-mode .btn.btn-primary:hover {
+  background: var(--link-hover-color);
+  border-color: var(--link-hover-color);
 }
 
 /* Academic Header Styles */

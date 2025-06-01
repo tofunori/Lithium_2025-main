@@ -10,6 +10,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
   // Consider throwing an error or handling this case appropriately
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+      heartbeat_interval_ms: 30000, // Send heartbeat every 30 seconds
+    },
+    timeout: 20000, // 20 second timeout for realtime operations
+  },
+  global: {
+    headers: {
+      'x-client-info': 'lithium-facilities-app',
+    },
+  },
+});
 
 console.log("Supabase client initialized.");

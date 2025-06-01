@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Map } from 'leaflet';
+import { useTheme } from '../context/ThemeContext';
 import './MapControls.css';
 
 interface MapControlsProps {
@@ -13,6 +14,7 @@ const MapControls: React.FC<MapControlsProps> = ({
   facilitiesCount = 0,
   filteredCount = 0
 }) => {
+  const { isDarkMode } = useTheme();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
 
@@ -106,6 +108,12 @@ const MapControls: React.FC<MapControlsProps> = ({
     const center = map.getCenter();
     const zoom = map.getZoom();
     
+    // Theme-aware tile layer for export
+    const tileLayerUrl = isDarkMode 
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    
     // Create a simple HTML page with the current map view
     const mapHtml = `
       <!DOCTYPE html>
@@ -114,7 +122,7 @@ const MapControls: React.FC<MapControlsProps> = ({
         <title>Lithium Facilities Map Export</title>
         <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
         <style>
-          body { margin: 0; padding: 0; }
+          body { margin: 0; padding: 0; background-color: ${isDarkMode ? '#000000' : '#ffffff'}; }
           #map { width: 100vw; height: 100vh; }
           @media print { 
             #map { height: 800px; } 
@@ -127,8 +135,8 @@ const MapControls: React.FC<MapControlsProps> = ({
         <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
         <script>
           const map = L.map('map').setView([${center.lat}, ${center.lng}], ${zoom});
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+          L.tileLayer('${tileLayerUrl}', {
+            attribution: '${attribution}'
           }).addTo(map);
           setTimeout(() => { window.print(); }, 1000);
         </script>
@@ -143,7 +151,7 @@ const MapControls: React.FC<MapControlsProps> = ({
     } else {
       alert('Please allow pop-ups to export the map.');
     }
-  }, [map]);
+  }, [map, isDarkMode]);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {

@@ -294,41 +294,6 @@ For facilities with confirmed status, use targeted Google searches:
 - Website URL
 - Key personnel/contacts
 
-## Troubleshooting Common Issues
-
-### "Gemini Found Facility But Can't Verify on Google"
-**Possible Causes**:
-- Facility in very early planning stages
-- Private/confidential operations
-- Incorrect or outdated information from Gemini
-
-**Solutions**:
-1. Try alternative company names or facility names
-2. Search for parent company or industrial park
-3. Mark as "Unverified - Needs Further Research"
-4. Set reminder to re-verify in 3-6 months
-
-### "Conflicting Information Between Sources"
-**Resolution Process**:
-1. Prioritize most recent sources (within 6 months)
-2. Prioritize official company sources over media reports
-3. Note discrepancies in database comments
-4. Mark as "Needs Verification" for follow-up
-
-### "Can't Find Specific Capacity Information"
-**Estimation Methods**:
-1. Look for "equivalent EVs per year" and convert (typical EV battery = 0.5 tonnes)
-2. Use investment amount (roughly $50-100 million per 10,000 tonnes/year)
-3. Compare to similar facilities from same company
-4. Mark estimates clearly as "Estimated based on [method]"
-
-### "Gemini Provides Outdated Information"
-**Verification Steps**:
-1. Always check Google for most recent facility status
-2. Look for "2024" or "2025" in search results for current information
-3. Check company LinkedIn for recent hiring or announcements
-4. Verify with local business news in facility location
-
 ## Success Metrics and Targets
 
 ### Discovery Phase Targets (Gemini Research)

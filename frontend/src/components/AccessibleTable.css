@@ -1,0 +1,248 @@
+/* frontend/src/components/AccessibleTable.css */
+
+.accessible-table-container {
+  width: 100%;
+  overflow: auto;
+  position: relative;
+  background: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.accessible-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.accessible-table.sticky-header thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--card-bg);
+}
+
+/* Table Caption */
+.table-caption {
+  padding: 12px 16px;
+  font-weight: 600;
+  text-align: left;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Table Headers */
+.accessible-table thead th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-color);
+  background: var(--card-bg);
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+  position: relative;
+}
+
+.accessible-table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.accessible-table thead th.sortable:hover {
+  background: var(--hover-bg);
+}
+
+.accessible-table thead th.sortable:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sort-indicator {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.accessible-table thead th.sorted .sort-indicator {
+  color: var(--primary-color);
+}
+
+/* Table Body */
+.accessible-table tbody tr {
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
+}
+
+.accessible-table tbody tr:hover {
+  background: var(--hover-bg);
+}
+
+.accessible-table tbody tr.clickable {
+  cursor: pointer;
+}
+
+.accessible-table tbody tr.selected {
+  background: var(--primary-light-bg);
+}
+
+.accessible-table tbody tr:focus-within {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.accessible-table tbody td {
+  padding: 12px 16px;
+  color: var(--text-color);
+}
+
+.accessible-table tbody td:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+  background: var(--hover-bg);
+}
+
+/* Text Alignment */
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* Select Column */
+.select-column {
+  width: 40px;
+  text-align: center;
+}
+
+.select-column input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+/* Loading State */
+.loading-cell {
+  padding: 60px 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Empty State */
+.empty-cell {
+  padding: 60px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .accessible-table {
+    font-size: 0.8125rem;
+  }
+  
+  .accessible-table thead th,
+  .accessible-table tbody td {
+    padding: 8px 12px;
+  }
+  
+  .th-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .sort-indicator {
+    font-size: 0.625rem;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .accessible-table thead th {
+    border-bottom-width: 3px;
+  }
+  
+  .accessible-table tbody tr {
+    border-bottom-width: 2px;
+  }
+  
+  .accessible-table thead th:focus,
+  .accessible-table tbody td:focus,
+  .accessible-table tbody tr:focus-within {
+    outline-width: 3px;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .accessible-table thead th.sortable,
+  .accessible-table tbody tr,
+  .sort-indicator {
+    transition: none;
+  }
+  
+  .spinner {
+    animation: none;
+    border-top-color: transparent;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .accessible-table-container {
+    box-shadow: none;
+  }
+  
+  .accessible-table thead th {
+    background: white;
+    color: black;
+    border-bottom: 2px solid black;
+  }
+  
+  .accessible-table tbody tr {
+    border-bottom: 1px solid #ccc;
+  }
+  
+  .select-column,
+  .sort-indicator {
+    display: none;
+  }
+}

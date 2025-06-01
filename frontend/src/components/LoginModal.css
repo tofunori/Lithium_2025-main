@@ -21,18 +21,37 @@
   max-width: 500px;
 }
 
-/* Add styles for dark mode if needed */
-body.dark-mode .login-modal-content {
-  background-color: #333; /* Example dark background */
-  color: #f1f1f1; /* Example dark text color */
+/* Enhanced dark mode support */
+.dark-mode .login-modal-content {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
 }
 
-body.dark-mode .login-modal-content .form-control {
-  background-color: #444;
-  color: #f1f1f1;
-  border-color: #555;
+.dark-mode .login-modal-content .form-control {
+  background-color: var(--input-group-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
 }
 
-body.dark-mode .login-modal-content .form-label {
-  color: #ccc;
+.dark-mode .login-modal-content .form-control:focus {
+  background-color: var(--input-group-bg);
+  color: var(--text-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem var(--form-focus-shadow-color);
+}
+
+.dark-mode .login-modal-content .form-label {
+  color: var(--text-color);
+}
+
+.dark-mode .login-modal-content .btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.dark-mode .login-modal-content .btn-secondary {
+  background-color: var(--input-group-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
 }

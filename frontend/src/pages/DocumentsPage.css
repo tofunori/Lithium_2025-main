@@ -706,3 +706,226 @@
   color: var(--danger-color);
   border-left: 4px solid var(--danger-color);
 }
+
+/* Dark mode enhancements for Documents Page */
+.dark-mode .documents-container {
+  background: var(--light-bg);
+  color: var(--text-color);
+}
+
+.dark-mode #folderTreeViewContainer {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode #folderTreeView {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .explorer-tree-node:hover {
+  background-color: var(--list-item-hover-bg);
+}
+
+.dark-mode .explorer-tree-node.active {
+  background-color: var(--list-item-active-bg);
+}
+
+.dark-mode .explorer-tree-container {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .explorer-content {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .explorer-header {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.dark-mode .explorer-toolbar {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .tree-link {
+  color: var(--text-color);
+}
+
+.dark-mode .tree-link:hover {
+  background-color: var(--list-item-hover-bg);
+  color: var(--text-color);
+}
+
+.dark-mode .tree-link.active {
+  background-color: var(--primary-color);
+  color: var(--primary-contrast-text);
+}
+
+.dark-mode .document-table {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.dark-mode .document-table thead th {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.dark-mode .document-table tbody td {
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.dark-mode .document-table tbody tr:hover {
+  background: var(--table-row-hover-bg);
+}
+
+.dark-mode .folder-link {
+  color: var(--link-color);
+}
+
+.dark-mode .folder-link:hover {
+  color: var(--link-hover-color);
+}
+
+.dark-mode .card {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .card-header {
+  background-color: var(--card-header-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.dark-mode .card-body {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+.dark-mode .btn {
+  color: var(--text-color);
+}
+
+.dark-mode .btn-outline-primary {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.dark-mode .btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.dark-mode .btn-outline-secondary {
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.dark-mode .btn-outline-secondary:hover {
+  background-color: var(--text-color);
+  color: var(--card-bg);
+}
+
+.dark-mode .form-select {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.dark-mode .tab-button {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.dark-mode .tab-button:hover {
+  background-color: var(--list-item-hover-bg);
+  color: var(--text-color);
+}
+
+.dark-mode .tab-button.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.dark-mode .breadcrumb-custom {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .breadcrumb-custom .breadcrumb-item.active {
+  color: var(--text-color);
+}
+
+.dark-mode .search-actions-bar .form-control {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.dark-mode .search-actions-bar .form-control:focus {
+  border-color: var(--primary-color);
+  background-color: var(--card-bg);
+}
+
+.dark-mode .progress {
+  background-color: var(--border-color);
+}
+
+.dark-mode .text-muted {
+  color: #f5f5f5 !important;
+  opacity: 1 !important;
+}
+
+.dark-mode .small {
+  color: #f5f5f5 !important;
+}
+
+/* Force all text to be softer white in dark mode */
+.dark-mode * {
+  color: #f5f5f5 !important;
+}
+
+.dark-mode .text-primary {
+  color: var(--primary-color) !important;
+}
+
+.dark-mode .text-danger {
+  color: var(--danger-color) !important;
+}
+
+.dark-mode .text-warning {
+  color: var(--warning-color) !important;
+}
+
+.dark-mode .text-success {
+  color: var(--success-color) !important;
+}
+
+.dark-mode .text-secondary {
+  color: #f5f5f5 !important;
+}
+
+/* Override any remaining pale colors */
+.dark-mode .fa-folder,
+.dark-mode .fa-file-pdf,
+.dark-mode .fa-file-word,
+.dark-mode .fa-file-excel,
+.dark-mode .fa-file-image {
+  /* Keep original icon colors for file types */
+}
+
+.dark-mode .explorer-file-icon,
+.dark-mode .explorer-folder-icon {
+  filter: brightness(1.2);
+}

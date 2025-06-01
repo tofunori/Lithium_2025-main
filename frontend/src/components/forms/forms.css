@@ -202,3 +202,71 @@ input[type="email"].form-control {
   justify-content: center;
   z-index: 10;
 }
+
+/* Dark mode form loading overlay */
+.dark-mode .form-loading::after {
+  background: rgba(2, 6, 23, 0.8);
+}
+
+/* Dark mode form styles */
+.dark-mode .form-control {
+  background-color: var(--input-group-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.dark-mode .form-control:focus {
+  background-color: var(--input-group-bg);
+  border-color: var(--form-focus-border-color);
+  color: var(--text-color);
+  box-shadow: 0 0 0 0.25rem var(--form-focus-shadow-color);
+}
+
+.dark-mode .form-control::placeholder {
+  color: var(--text-muted-color);
+  opacity: 0.7;
+}
+
+.dark-mode .form-select {
+  background-color: var(--input-group-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.dark-mode .form-select:focus {
+  background-color: var(--input-group-bg);
+  border-color: var(--form-focus-border-color);
+  color: var(--text-color);
+  box-shadow: 0 0 0 0.25rem var(--form-focus-shadow-color);
+}
+
+.dark-mode .form-label {
+  color: var(--text-color);
+}
+
+.dark-mode .form-text {
+  color: var(--text-muted-color);
+}
+
+.dark-mode .invalid-feedback {
+  color: var(--danger-color);
+}
+
+.dark-mode .valid-feedback {
+  color: var(--success-color);
+}
+
+.dark-mode .form-check-label {
+  color: var(--text-color);
+}
+
+.dark-mode .form-check-input {
+  background-color: var(--input-group-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .form-check-input:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+}

@@ -5,6 +5,7 @@ import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useToastContext } from '../context/ToastContext';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AdvancedSearchFilter from '../components/AdvancedSearchFilter';
 import { getFacilities, getFacilitiesByStatus, deleteFacility, searchFacilities, Facility, FacilitySearchFilters } from '../services';
@@ -135,7 +136,7 @@ const FacilitiesPage: React.FC = () => {
   }, [showError]);
 
   // Realtime update handler with type
-  const handleRealtimeUpdate = (payload: RealtimePostgresChangesPayload<Facility>) => {
+  const handleRealtimeUpdate = useCallback((payload: RealtimePostgresChangesPayload<Facility>) => {
     console.log('Realtime change received:', payload);
     const { eventType, new: newRecord, old: oldRecord } = payload;
 
@@ -185,33 +186,49 @@ const FacilitiesPage: React.FC = () => {
 
       return updatedFacilities;
     });
-  };
+  }, [activeFilter]);
 
-  // Add error handling for Realtime subscription
+  // Create stable callback references for realtime subscription
+  const handleRealtimeInsert = useCallback((payload: RealtimePostgresChangesPayload<Facility>) => {
+    handleRealtimeUpdate({ ...payload, eventType: 'INSERT' });
+  }, [handleRealtimeUpdate]);
+
+  const handleRealtimeUpdate2 = useCallback((payload: RealtimePostgresChangesPayload<Facility>) => {
+    handleRealtimeUpdate({ ...payload, eventType: 'UPDATE' });
+  }, [handleRealtimeUpdate]);
+
+  const handleRealtimeDelete = useCallback((payload: RealtimePostgresChangesPayload<Facility>) => {
+    handleRealtimeUpdate({ ...payload, eventType: 'DELETE' });
+  }, [handleRealtimeUpdate]);
+
+  const handleReconnect = useCallback(() => {
+    // Refetch data on reconnection to ensure consistency
+    fetchFacilitiesData(activeFilter);
+  }, [fetchFacilitiesData, activeFilter]);
+
+  // Use the new realtime subscription hook
+  const { connectionState, error: realtimeError, reconnect } = useRealtimeSubscription<Facility>({
+    tableName: 'facilities',
+    onInsert: handleRealtimeInsert,
+    onUpdate: handleRealtimeUpdate2,
+    onDelete: handleRealtimeDelete,
+    onReconnect: handleReconnect,
+    enabled: true
+  });
+
+  // Set error state based on realtime connection errors
+  useEffect(() => {
+    if (realtimeError) {
+      setError(realtimeError);
+    } else if (connectionState === 'connected' && error?.includes('Realtime connection error')) {
+      // Clear the error if it was a realtime error and we're now connected
+      setError(null);
+    }
+  }, [realtimeError, connectionState, error]);
+
+  // Fetch facilities data on mount and when filter changes
   useEffect(() => {
     fetchFacilitiesData(activeFilter);
-
-    const channel = supabase
-      .channel('facilities-channel') // Changed channel name
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'facilities' },
-        (payload: RealtimePostgresChangesPayload<Facility>) => handleRealtimeUpdate(payload)
-      )
-      .subscribe((status: string, err?: Error) => {
-         if (status === 'SUBSCRIBED') {
-           console.log('Subscribed to facilities changes!');
-         }
-         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-           console.error(`Realtime subscription error: ${status}`, err);
-           setError(`Realtime connection error: ${err?.message || status}. Data may not be live.`);
-         }
-      });
-
-    return () => {
-      console.log('Unsubscribing from facilities changes.');
-      supabase.removeChannel(channel);
-    };
   }, [activeFilter, fetchFacilitiesData]);
 
   const handleFilterClick = (filter: CanonicalStatus | 'all'): void => {
@@ -320,6 +337,8 @@ const FacilitiesPage: React.FC = () => {
 
   // Early return for error state
   if (error) {
+    const isRealtimeError = error.includes('Connection error') || error.includes('Realtime');
+    
     return (
       <div className="row mt-4">
         <div className="col-12">
@@ -329,13 +348,24 @@ const FacilitiesPage: React.FC = () => {
               Error Loading Facilities
             </h4>
             <p className="mb-3">{error}</p>
-            <button 
-              className="btn btn-outline-danger"
-              onClick={() => fetchFacilitiesData(activeFilter)}
-            >
-              <i className="fas fa-redo me-1"></i>
-              Try Again
-            </button>
+            <div className="d-flex gap-2">
+              <button 
+                className="btn btn-outline-danger"
+                onClick={() => fetchFacilitiesData(activeFilter)}
+              >
+                <i className="fas fa-redo me-1"></i>
+                Reload Data
+              </button>
+              {isRealtimeError && connectionState === 'error' && (
+                <button 
+                  className="btn btn-outline-warning"
+                  onClick={reconnect}
+                >
+                  <i className="fas fa-plug me-1"></i>
+                  Reconnect Live Updates
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -343,8 +373,9 @@ const FacilitiesPage: React.FC = () => {
   }
 
   return (
-    <div className="row mt-4 fade-in">
-      <div className="col-12">
+    <div className="facilities-page">
+      <div className="row mt-4 fade-in">
+        <div className="col-12">
         {/* Advanced Search and Filter Component */}
         <AdvancedSearchFilter 
           onSearch={handleAdvancedSearch}
@@ -355,7 +386,26 @@ const FacilitiesPage: React.FC = () => {
         <div className="facilities-list">
           {/* Add New Facility Button and Column Toggle */}
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-            <div></div> {/* Empty div for spacing */}
+            <div className="d-flex align-items-center">
+              {/* Connection Status Indicator */}
+              <div className={`badge ${
+                connectionState === 'connected' ? 'bg-success' : 
+                connectionState === 'error' ? 'bg-danger' : 
+                connectionState === 'connecting' ? 'bg-warning' : 
+                'bg-secondary'
+              } me-2`}>
+                <i className={`fas ${
+                  connectionState === 'connected' ? 'fa-check-circle' : 
+                  connectionState === 'error' ? 'fa-exclamation-circle' : 
+                  connectionState === 'connecting' ? 'fa-spinner fa-spin' : 
+                  'fa-times-circle'
+                } me-1`}></i>
+                {connectionState === 'connected' ? 'Live Updates Active' : 
+                 connectionState === 'error' ? 'Connection Error' : 
+                 connectionState === 'connecting' ? 'Connecting...' : 
+                 'Disconnected'}
+              </div>
+            </div>
             <div className="d-flex align-items-center">
                 {/* Column Visibility Dropdown */}
                 <div className="dropdown me-2">
@@ -496,6 +546,7 @@ const FacilitiesPage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

@@ -60,6 +60,7 @@ const basemaps: Record<string, BasemapConfig> = {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme(); // Get theme context
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<Map | null>(null);
   const markersRef = useRef<Record<string, Marker>>({}); // Type the markers ref (use facility.id as string key)
@@ -67,9 +68,8 @@ const HomePage: React.FC = () => {
   const [sizeByCapacity, setSizeByCapacity] = useState<boolean>(false);
   const [facilitiesData, setFacilitiesData] = useState<Facility[]>([]);
   const [selectedTechnology, setSelectedTechnology] = useState<string>('all');
-  const [selectedBasemap, setSelectedBasemap] = useState<string>('modern'); // State for selected basemap key
+  const [selectedBasemap, setSelectedBasemap] = useState<string>(isDarkMode ? 'dark' : 'modern'); // State for selected basemap key
   const [colorByTechnology, setColorByTechnology] = useState<boolean>(false); // New state for color mode
-  // Theme context available if needed
 
   // Define react-select option type
   interface OptionType {
@@ -450,59 +450,86 @@ const HomePage: React.FC = () => {
     setSelectedBasemap(selectedOption ? selectedOption.value : 'osm'); // Default to 'osm' if null
   };
 
-  // Custom styles for react-select to match Bootstrap's form-select-sm and control width
+  // Custom styles for react-select to match Bootstrap's form-select-sm with theme support
   const selectStyles = {
     control: (provided: any, state: { isFocused: boolean }) => ({
       ...provided,
-      minHeight: 'calc(1.5em + 0.5rem + 2px)', // Match form-select-sm height
+      minHeight: 'calc(1.5em + 0.5rem + 2px)',
       height: 'calc(1.5em + 0.5rem + 2px)',
-       fontSize: '.875rem', // Match form-select-sm font size
-       borderColor: state.isFocused ? '#86b7fe' : '#ced4da', // Bootstrap focus/default border
-       boxShadow: 'none', // REMOVED focus shadow to prevent layout shift
-       '&:hover': {
-         borderColor: state.isFocused ? '#86b7fe' : '#adb5bd' // Slightly darker border on hover
-       },
-      width: '100%', // Force control width
+      fontSize: '.875rem',
+      borderColor: state.isFocused 
+        ? (isDarkMode ? '#60a5fa' : '#86b7fe') 
+        : (isDarkMode ? '#374151' : '#ced4da'),
+      boxShadow: 'none',
+      '&:hover': {
+        borderColor: state.isFocused 
+          ? (isDarkMode ? '#60a5fa' : '#86b7fe') 
+          : (isDarkMode ? '#4b5563' : '#adb5bd')
+      },
+      backgroundColor: isDarkMode ? '#1f1f1f' : '#ffffff',
+      color: isDarkMode ? '#f5f5f5' : '#000000',
+      width: '100%',
     }),
     valueContainer: (provided: any) => ({
       ...provided,
-      height: 'calc(1.5em + 0.5rem + 2px)', // Match control height
-      padding: '0.25rem 0.5rem', // Match form-select-sm padding
-      top: '50%', // Adjust vertical alignment if needed
+      height: 'calc(1.5em + 0.5rem + 2px)',
+      padding: '0.25rem 0.5rem',
+      top: '50%',
       transform: 'translateY(-50%)'
     }),
     input: (provided: any) => ({
       ...provided,
       margin: '0px',
       padding: '0px',
-      height: 'auto', // Let container control height
+      height: 'auto',
+      color: isDarkMode ? '#f5f5f5' : '#000000',
+    }),
+    singleValue: (provided: any) => ({
+      ...provided,
+      color: isDarkMode ? '#f5f5f5' : '#000000',
     }),
     indicatorSeparator: () => ({
-      display: 'none', // Hide separator
+      display: 'none',
     }),
     indicatorsContainer: (provided: any) => ({
       ...provided,
-      height: 'calc(1.5em + 0.5rem + 2px)', // Match control height
+      height: 'calc(1.5em + 0.5rem + 2px)',
+    }),
+    dropdownIndicator: (provided: any) => ({
+      ...provided,
+      color: isDarkMode ? '#f5f5f5' : '#6c757d',
+      '&:hover': {
+        color: isDarkMode ? '#f5f5f5' : '#495057',
+      },
     }),
     menu: (provided: any) => ({
       ...provided,
-       width: '100%', // Force menu width to match control
-       minWidth: '100%',
-       boxSizing: 'border-box',
-       zIndex: 1001, // Ensure menu appears above legend (legend z-index is 1000)
-      }),
-      // Style the portal itself to ensure it's above other elements like the legend
-      menuPortal: (base: any) => ({
-        ...base,
-        zIndex: 9999 // Use a high z-index for the portal
-      }),
-       option: (provided: any, state: { isSelected: boolean, isFocused: boolean }) => ({
+      width: '100%',
+      minWidth: '100%',
+      boxSizing: 'border-box',
+      zIndex: 1001,
+      backgroundColor: isDarkMode ? '#1f1f1f' : '#ffffff',
+      border: `1px solid ${isDarkMode ? '#374151' : '#ced4da'}`,
+    }),
+    menuPortal: (base: any) => ({
+      ...base,
+      zIndex: 9999
+    }),
+    option: (provided: any, state: { isSelected: boolean, isFocused: boolean }) => ({
       ...provided,
-      fontSize: '.875rem', // Match sm font size
-      backgroundColor: state.isSelected ? '#0d6efd' : state.isFocused ? '#e9ecef' : provided.backgroundColor,
-      color: state.isSelected ? 'white' : provided.color,
+      fontSize: '.875rem',
+      backgroundColor: state.isSelected 
+        ? (isDarkMode ? '#60a5fa' : '#0d6efd')
+        : state.isFocused 
+          ? (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : '#e9ecef')
+          : (isDarkMode ? '#1f1f1f' : '#ffffff'),
+      color: state.isSelected 
+        ? '#ffffff'
+        : (isDarkMode ? '#f5f5f5' : '#000000'),
       '&:active': {
-        backgroundColor: !state.isSelected ? '#dee2e6' : undefined, // Mimic Bootstrap active state
+        backgroundColor: !state.isSelected 
+          ? (isDarkMode ? 'rgba(255, 255, 255, 0.2)' : '#dee2e6')
+          : undefined,
       },
     }),
   };
@@ -528,6 +555,15 @@ const HomePage: React.FC = () => {
     // Object.values(markersRef.current).forEach(marker => marker.bringToFront());
 
   }, [selectedBasemap]); // Dependency on selected basemap
+
+  // Effect to automatically switch basemap based on theme
+  useEffect(() => {
+    if (isDarkMode) {
+      setSelectedBasemap('dark'); // Switch to dark basemap in dark mode
+    } else {
+      setSelectedBasemap('modern'); // Switch to modern light basemap in light mode
+    }
+  }, [isDarkMode]); // Dependency on theme
 
   return (
     <div className="home-page-container"> {/* This will be the flex container */}
