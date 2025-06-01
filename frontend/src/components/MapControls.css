@@ -32,18 +32,21 @@
 .zoom-controls {
   top: 20px;
   right: 20px;
+  z-index: 1000;
 }
 
 /* Location Controls - Top Right Below Zoom */
 .location-controls {
   top: 120px;
   right: 20px;
+  z-index: 1000;
 }
 
 /* View Controls - Top Right Below Location */
 .view-controls {
   top: 220px;
   right: 20px;
+  z-index: 1000;
 }
 
 /* Control Buttons */
@@ -97,6 +100,35 @@
 .map-control-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Export button special styling */
+.map-control-button[title*="Export"] {
+  position: relative;
+}
+
+.map-control-button[title*="Export"]::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
 }
 
 .map-control-button.locating {

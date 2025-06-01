@@ -44,7 +44,8 @@
 
 /* Ensure map controls are above map tiles */
 .map-area .map-controls {
-    z-index: 400; /* Leaflet uses 400 for controls */
+    z-index: 1000; /* Higher z-index to ensure visibility */
+    position: relative;
 }
 
 /* Modern marker animations */
@@ -123,12 +124,33 @@
     width: var(--sidebar-width);
     flex-shrink: 0;
     height: 100%;
-    overflow-y: hidden;
+    overflow-y: auto;
     background-color: transparent;
     border: none;
     box-shadow: none;
     padding: 0;
     box-sizing: border-box;
+    /* Custom scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(59, 130, 246, 0.3) transparent;
+}
+
+/* Webkit scrollbar styling */
+.map-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.map-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.map-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 3px;
+}
+
+.map-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
 }
 
 #map {

@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import Select, { SingleValue } from 'react-select';
 import { useTheme } from '../context/ThemeContext';
 import MapControls from '../components/MapControls';
+import MapExportModal from '../components/MapExportModal';
 // UPDATED: Import Facility and the correct getFacilities function
 import { getFacilities, Facility } from '../services'; // Changed FacilityData to Facility
 import {
@@ -70,6 +71,7 @@ const HomePage: React.FC = () => {
   const [selectedTechnology, setSelectedTechnology] = useState<string>('all');
   const [selectedBasemap, setSelectedBasemap] = useState<string>(isDarkMode ? 'dark' : 'modern'); // State for selected basemap key
   const [colorByTechnology, setColorByTechnology] = useState<boolean>(false); // New state for color mode
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Define react-select option type
   interface OptionType {
@@ -675,8 +677,43 @@ const HomePage: React.FC = () => {
                       aria-label="Select Basemap"
                     />
                   </div>
+                  
+                  {/* Export Map Section */}
+                  <hr />
+                  <div className="export-section">
+                    <h6 className="mb-2" style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>
+                      Export Map
+                    </h6>
+                    <button 
+                      className="btn btn-primary w-100"
+                      onClick={() => setShowExportModal(true)}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        borderRadius: '0.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      <i className="fas fa-download"></i>
+                      Export Map
+                    </button>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted-color)', marginTop: '0.5rem', textAlign: 'center' }}>
+                      Multiple formats & templates available
+                    </div>
+                  </div>
           </div>
         </div>
+        
+        {/* Export Modal */}
+        <MapExportModal 
+          map={mapInstanceRef.current}
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+        />
       </div>
     </div>
   );
