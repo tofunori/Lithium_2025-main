@@ -402,9 +402,9 @@
 }
 
 .popup-status.status-closed {
-    background: #f9fafb;
-    color: #374151;
-    border: 1px solid #d1d5db;
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
 }
 
 .popup-status.status-unknown {
@@ -557,9 +557,9 @@
 }
 
 .dark-mode .popup-status.status-closed {
-    background: #1f2937;
-    color: #9ca3af;
-    border-color: #4b5563;
+    background: #7f1d1d;
+    color: #fca5a5;
+    border-color: #dc2626;
 }
 
 .dark-mode .popup-status.status-unknown {

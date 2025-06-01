@@ -214,8 +214,8 @@ const HomePage: React.FC = () => {
     operating: '#10b981', // Emerald green
     construction: '#f59e0b', // Amber
     planned: '#3b82f6', // Blue
-    closed: '#6b7280', // Gray
-    unknown: '#94a3b8' // Slate
+    closed: '#dc2626', // Red
+    unknown: '#94a3b8' // Slate gray
   };
 
   // Effect to load map and initial facilities
