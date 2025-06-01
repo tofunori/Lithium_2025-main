@@ -1,26 +1,25 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate, Link, useParams } from 'react-router-dom';
+// frontend/src/pages/FacilityCreatePageValidated.tsx
+import React, { useState, useCallback } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToastContext } from '../context/ToastContext';
-import { getFacilityById, updateFacility } from '../services';
+import { addFacility } from '../services';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { facilityValidationSchema, facilityFormOptions, getInitialFacilityFormData } from '../utils/facilityValidation';
 import { ValidatedInput, ValidatedSelect, FormSection, FormValidationSummary } from '../components/forms';
 import LoadingSpinner from '../components/LoadingSpinner';
 import '../components/forms/forms.css';
 
-const FacilityEditPage: React.FC = () => {
+const FacilityCreatePageValidated: React.FC = () => {
   const navigate = useNavigate();
-  const { facilityId } = useParams<{ facilityId: string }>();
   const { currentUser } = useAuth();
   const { showSuccess, showError } = useToastContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [facilityNotFound, setFacilityNotFound] = useState(false);
 
-  // Initialize form validation with empty data first
+  // Initialize form validation
   const {
     formData,
+    validation,
     isValid,
     errors,
     updateField,
@@ -28,69 +27,13 @@ const FacilityEditPage: React.FC = () => {
     markAllFieldsTouched,
     getFieldError,
     isFieldValid,
-    isFieldTouched,
-    setFormData
+    isFieldTouched
   } = useFormValidation({
     validationSchema: facilityValidationSchema,
     initialData: getInitialFacilityFormData(),
     validateOnChange: true,
     validateOnBlur: true
   });
-
-  // Load facility data
-  useEffect(() => {
-    const loadFacility = async () => {
-      if (!facilityId) {
-        setFacilityNotFound(true);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const facility = await getFacilityById(facilityId);
-        if (!facility) {
-          setFacilityNotFound(true);
-          setIsLoading(false);
-          return;
-        }
-
-        // Map the facility data to form data structure
-        const formattedData = {
-          company_name: facility.Company || '',
-          facility_name_site: facility["Facility Name/Site"] || '',
-          address: facility.Location || '',
-          latitude: facility.Latitude || 0,
-          longitude: facility.Longitude || 0,
-          status_name: facility["Operational Status"] || '',
-          technology_name: facility["Primary Recycling Technology"] || '',
-          technology_category: facility.technology_category || '',
-          processing_capacity_mt_year: facility.capacity_tonnes_per_year || 0,
-          details: {
-            status_effective_date_text: facility.facility_details?.status_effective_date_text || '',
-            technology_description: facility.facility_details?.technology_description || '',
-            feedstock: facility.facility_details?.feedstock || '',
-            product: facility.facility_details?.product || '',
-            website: facility.facility_details?.website || '',
-            investment_usd: facility.facility_details?.investment_usd || 0,
-            jobs: facility.facility_details?.jobs || 0,
-            ev_equivalent_per_year: facility.facility_details?.ev_equivalent_per_year || 0,
-            environmental_impact_details: facility.facility_details?.environmental_impact_details || '',
-            notes: facility.facility_details?.notes || ''
-          }
-        };
-
-        setFormData(formattedData);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error loading facility:', error);
-        showError('Loading Failed', 'Failed to load facility data. Please try again.');
-        setFacilityNotFound(true);
-        setIsLoading(false);
-      }
-    };
-
-    loadFacility();
-  }, [facilityId, setFormData, showError]);
 
   // Handle form submission
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -107,24 +50,23 @@ const FacilityEditPage: React.FC = () => {
       return;
     }
 
-    if (!facilityId) {
-      showError('Error', 'Facility ID is missing.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      await updateFacility(facilityId, formData);
-      showSuccess('Facility Updated', 'The facility has been successfully updated.');
-      navigate(`/facilities/${facilityId}`);
+      const result = await addFacility(formData);
+      if (result && result.id) {
+        showSuccess('Facility Created', 'The facility has been successfully created.');
+        navigate(`/facilities/${result.id}`);
+      } else {
+        throw new Error('No facility ID returned from server');
+      }
     } catch (error: any) {
-      console.error('Error updating facility:', error);
-      showError('Update Failed', error.message || 'Failed to update facility. Please try again.');
+      console.error('Error creating facility:', error);
+      showError('Creation Failed', error.message || 'Failed to create facility. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, facilityId, markAllFieldsTouched, validateAllFields, showSuccess, showError, navigate]);
+  }, [formData, markAllFieldsTouched, validateAllFields, showSuccess, showError, navigate]);
 
   // Handle field changes with validation
   const handleFieldChange = useCallback((fieldName: string, value: any) => {
@@ -137,36 +79,9 @@ const FacilityEditPage: React.FC = () => {
       <div className="container mt-4">
         <div className="alert alert-warning" role="alert">
           <h4 className="alert-heading">Authentication Required</h4>
-          <p>You must be logged in to edit facilities.</p>
+          <p>You must be logged in to create a new facility.</p>
           <Link to="/" className="btn btn-primary">
             Return to Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="container mt-4">
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-3">Loading facility data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show not found state
-  if (facilityNotFound) {
-    return (
-      <div className="container mt-4">
-        <div className="alert alert-danger" role="alert">
-          <h4 className="alert-heading">Facility Not Found</h4>
-          <p>The facility you are trying to edit could not be found.</p>
-          <Link to="/facilities" className="btn btn-primary">
-            Back to Facilities
           </Link>
         </div>
       </div>
@@ -181,14 +96,14 @@ const FacilityEditPage: React.FC = () => {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
               <h2>
-                <i className="fas fa-edit text-primary me-2"></i>
-                Edit Facility
+                <i className="fas fa-plus-circle text-primary me-2"></i>
+                Create New Facility
               </h2>
-              <p className="text-muted">Update facility information</p>
+              <p className="text-muted">Add a new lithium battery recycling facility to the database</p>
             </div>
-            <Link to={`/facilities/${facilityId}`} className="btn btn-outline-secondary">
+            <Link to="/facilities" className="btn btn-outline-secondary">
               <i className="fas fa-arrow-left me-1"></i>
-              Back to Details
+              Back to Facilities
             </Link>
           </div>
 
@@ -548,7 +463,7 @@ const FacilityEditPage: React.FC = () => {
 
             {/* Form Actions */}
             <div className="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
-              <Link to={`/facilities/${facilityId}`} className="btn btn-outline-secondary">
+              <Link to="/facilities" className="btn btn-outline-secondary">
                 <i className="fas fa-times me-1"></i>
                 Cancel
               </Link>
@@ -569,12 +484,12 @@ const FacilityEditPage: React.FC = () => {
                   {isSubmitting ? (
                     <>
                       <LoadingSpinner size="sm" className="me-2" />
-                      Updating Facility...
+                      Creating Facility...
                     </>
                   ) : (
                     <>
                       <i className="fas fa-save me-1"></i>
-                      Update Facility
+                      Create Facility
                     </>
                   )}
                 </button>
@@ -587,7 +502,7 @@ const FacilityEditPage: React.FC = () => {
             <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50" style={{ zIndex: 1050 }}>
               <div className="text-center text-white">
                 <LoadingSpinner size="lg" variant="light" />
-                <div className="mt-2">Updating facility...</div>
+                <div className="mt-2">Creating facility...</div>
               </div>
             </div>
           )}
@@ -597,4 +512,4 @@ const FacilityEditPage: React.FC = () => {
   );
 };
 
-export default FacilityEditPage;
+export default FacilityCreatePageValidated;

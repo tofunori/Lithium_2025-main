@@ -458,9 +458,9 @@ const FacilityDetailPage: React.FC = () => {
           <div>
             {/* Edit/Save/Cancel Buttons - Logic based on isEditing state */}
             {isAuthenticated && !isEditing && (
-                <button className="btn btn-outline-primary btn-sm me-2" onClick={handleEdit}>
+                <Link to={`/facilities/edit/${id}`} className="btn btn-outline-primary btn-sm me-2">
                     <i className="fas fa-edit me-1"></i> Edit
-                </button>
+                </Link>
             )}
             {isEditing && (
                 <>
