@@ -7,6 +7,11 @@ import {
   getStatusLabel
 } from './statusUtils';
 import { getTechnologyCategory, getTechnologyCategoryColor } from './technologyUtils';
+import { 
+  createCapacityByTechnologyChartConfig,
+  createYearlyTrendsChartConfig,
+  createStatusDistributionChartConfig
+} from './newChartConfigs';
 
 /**
  * Utility functions for chart data processing and initialization
@@ -29,6 +34,16 @@ export interface ProcessedChartData {
   capacityByStatus: CapacityByStatus;
   technologies: StringCountMap;
   regions: StringCountMap;
+  capacityByTechnology: StringCountMap;
+  yearlyTrends: YearlyTrendsData;
+  statusDistribution: StringCountMap;
+}
+
+interface YearlyTrendsData {
+  years: string[];
+  operatingCapacity: number[];
+  constructionCapacity: number[];
+  plannedCapacity: number[];
 }
 
 interface ChartColors {
@@ -98,25 +113,28 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
 
   const technologies: StringCountMap = {};
   const regions: StringCountMap = {};
+  const capacityByTechnology: StringCountMap = {};
+  const statusDistribution: StringCountMap = {};
+  
+  // For yearly trends - simplified version using operational year if available
+  const yearlyData: { [year: string]: { operating: number; construction: number; planned: number } } = {};
 
   // Use the imported Facility interface
   facilitiesData.forEach((facility: Facility) => {
     // Use correct DB column name "Operational Status"
     const canonicalStatus = getCanonicalStatus(facility["Operational Status"]);
-    // console.log(`Processing facility ${facility.ID} with raw status: ${facility["Operational Status"]}, canonical: ${canonicalStatus}, volume: ${facility["Annual Processing Capacity (tonnes/year)"]}`);
+    
+    // Extract the numeric capacity for all facilities (regardless of status)
+    const rawVolume = (facility as unknown as { capacity_tonnes_per_year?: number | string | null }).capacity_tonnes_per_year ??
+                     (facility as any)["Annual Processing Capacity (tonnes/year)"]; // legacy CSV / mock field
+
+    // Convert to number in a safe way (handles strings such as "20,000" or "Unknown")
+    const volume: number = typeof rawVolume === 'number'
+      ? rawVolume
+      : parseVolume(rawVolume as unknown as string);
 
     // Only aggregate capacity for known, non-'unknown' statuses
     if (canonicalStatus !== 'unknown') {
-      // Extract the numeric capacity. Prefer the new DB column `capacity_tonnes_per_year`,
-      // but fall back to the legacy column name "Annual Processing Capacity (tonnes/year)" if needed.
-      const rawVolume = (facility as unknown as { capacity_tonnes_per_year?: number | string | null }).capacity_tonnes_per_year ??
-                       (facility as any)["Annual Processing Capacity (tonnes/year)"]; // legacy CSV / mock field
-
-      // Convert to number in a safe way (handles strings such as "20,000" or "Unknown")
-      const volume: number = typeof rawVolume === 'number'
-        ? rawVolume
-        : parseVolume(rawVolume as unknown as string);
-
       if (volume > 0) {
          capacityByStatus[canonicalStatus] += volume;
          // Add detailed log for aggregation step
@@ -137,6 +155,25 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
     
     // Count by category rather than individual technology names
     technologies[technologyCategory] = (technologies[technologyCategory] || 0) + 1;
+    
+    // Track capacity by technology
+    if (volume > 0) {
+      capacityByTechnology[technologyCategory] = (capacityByTechnology[technologyCategory] || 0) + volume;
+    }
+    
+    // Track status distribution
+    if (canonicalStatus !== 'unknown') {
+      statusDistribution[getStatusLabel(canonicalStatus)] = (statusDistribution[getStatusLabel(canonicalStatus)] || 0) + 1;
+    }
+    
+    // Track yearly trends (simplified - using current year as example)
+    const currentYear = new Date().getFullYear().toString();
+    if (!yearlyData[currentYear]) {
+      yearlyData[currentYear] = { operating: 0, construction: 0, planned: 0 };
+    }
+    if (volume > 0 && canonicalStatus !== 'unknown') {
+      yearlyData[currentYear][canonicalStatus] += volume;
+    }
 
     // Process geographic distribution
     // Use correct DB column name "Location"
@@ -158,10 +195,22 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
     regions[regionName] = (regions[regionName] || 0) + 1;
   });
 
+  // Process yearly trends data
+  const years = Object.keys(yearlyData).sort();
+  const yearlyTrends: YearlyTrendsData = {
+    years,
+    operatingCapacity: years.map(year => yearlyData[year].operating),
+    constructionCapacity: years.map(year => yearlyData[year].construction),
+    plannedCapacity: years.map(year => yearlyData[year].planned)
+  };
+
   const result: ProcessedChartData = {
     capacityByStatus,
     technologies,
-    regions
+    regions,
+    capacityByTechnology,
+    yearlyTrends,
+    statusDistribution
   };
 
   console.log('Processed data result:', result);
@@ -514,3 +563,6 @@ export const createRegionsChartConfig = (regions: StringCountMap): ChartJsConfig
     }
   };
 };
+
+// Re-export the new chart configurations
+export { createCapacityByTechnologyChartConfig, createYearlyTrendsChartConfig, createStatusDistributionChartConfig };

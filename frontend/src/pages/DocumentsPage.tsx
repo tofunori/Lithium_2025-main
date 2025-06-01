@@ -574,11 +574,15 @@ const DocumentsPage: React.FC = () => {
   const isLoading = loadingItems || loadingTree || isRenaming; // Include isRenaming in general loading
 
   return (
-    <div className="container-fluid mt-4 fade-in">
+    <div className="documents-container">
       <div className="row">
         {/* Left Column: Folder Tree */}
-        <div className="col-md-3 border-end" style={{ minHeight: 'calc(100vh - 200px)', maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
-           <h5>Folders</h5>
+        <div className="col-md-3" style={{ minHeight: 'calc(100vh - 200px)', maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
+          <div id="folderTreeViewContainer">
+            <h5 className="mb-3">
+              <i className="fas fa-folder-tree me-2"></i>
+              Folders
+            </h5>
            {loadingTree ? (
                <div className="text-center p-3"><i className="fas fa-spinner fa-spin"></i> Loading tree...</div>
            ) : error && folderTree.length === 0 ? ( // Show tree-specific error only if tree failed
@@ -591,6 +595,7 @@ const DocumentsPage: React.FC = () => {
                    onDropItem={handleDropItem} // Pass the drop handler
                />
            )}
+          </div>
         </div>
 
         {/* Right Column: Content Area */}

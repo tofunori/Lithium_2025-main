@@ -10,6 +10,9 @@ import {
   createCapacityChartConfig,
   createTechnologiesChartConfig,
   createRegionsChartConfig,
+  createCapacityByTechnologyChartConfig,
+  createYearlyTrendsChartConfig,
+  createStatusDistributionChartConfig,
   ProcessedChartData, // Import type
   parseVolume // Import parseVolume
 } from '../utils/chartUtils';
@@ -45,11 +48,17 @@ const ChartsPage: FC = () => {
   const capacityChartRef = useRef<Chart | null>(null);
   const technologiesChartRef = useRef<Chart | null>(null);
   const regionsChartRef = useRef<Chart | null>(null);
+  const capacityByTechChartRef = useRef<Chart | null>(null);
+  const yearlyTrendsChartRef = useRef<Chart | null>(null);
+  const statusDistributionChartRef = useRef<Chart | null>(null);
 
   // Refs for canvas elements with types
   const capacityCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const technologiesCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const regionsCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const capacityByTechCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const yearlyTrendsCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const statusDistributionCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Function to fetch data with error handling and fallback
   const fetchData = async (useFallback: boolean = false): Promise<void> => {
@@ -142,7 +151,10 @@ const ChartsPage: FC = () => {
       const canvases: (HTMLCanvasElement | null)[] = [
         capacityCanvasRef.current,
         technologiesCanvasRef.current,
-        regionsCanvasRef.current
+        regionsCanvasRef.current,
+        capacityByTechCanvasRef.current,
+        yearlyTrendsCanvasRef.current,
+        statusDistributionCanvasRef.current
       ];
 
       canvases.forEach(canvas => {
@@ -199,6 +211,18 @@ const ChartsPage: FC = () => {
       regionsChartRef.current.destroy();
       regionsChartRef.current = null; // Clear ref
     }
+    if (capacityByTechChartRef.current) {
+      capacityByTechChartRef.current.destroy();
+      capacityByTechChartRef.current = null;
+    }
+    if (yearlyTrendsChartRef.current) {
+      yearlyTrendsChartRef.current.destroy();
+      yearlyTrendsChartRef.current = null;
+    }
+    if (statusDistributionChartRef.current) {
+      statusDistributionChartRef.current.destroy();
+      statusDistributionChartRef.current = null;
+    }
   };
 
   // Function to initialize all charts
@@ -209,7 +233,7 @@ const ChartsPage: FC = () => {
     }
 
     // Ensure chart data components exist
-    const { capacityByStatus, technologies, regions } = chartData;
+    const { capacityByStatus, technologies, regions, capacityByTechnology, yearlyTrends, statusDistribution } = chartData;
     if (!capacityByStatus || !technologies || !regions) {
          console.warn('Cannot initialize charts: chartData is missing required properties');
          return;
@@ -288,6 +312,57 @@ const ChartsPage: FC = () => {
       }
     } else {
       console.warn('Regions canvas element not found');
+    }
+
+    // Initialize capacity by technology chart
+    if (capacityByTechCanvasRef.current && capacityByTechnology) {
+      const capacityByTechCtx = capacityByTechCanvasRef.current.getContext('2d');
+      if (capacityByTechCtx) {
+        if (capacityByTechChartRef.current) {
+          capacityByTechChartRef.current.destroy();
+        }
+        const capacityByTechConfig = createCapacityByTechnologyChartConfig(capacityByTechnology);
+        try {
+          capacityByTechChartRef.current = new Chart(capacityByTechCtx, capacityByTechConfig);
+          console.log('Capacity by technology chart created successfully.');
+        } catch (chartError: unknown) {
+          console.error('Error creating capacity by technology chart:', chartError);
+        }
+      }
+    }
+
+    // Initialize yearly trends chart
+    if (yearlyTrendsCanvasRef.current && yearlyTrends) {
+      const yearlyTrendsCtx = yearlyTrendsCanvasRef.current.getContext('2d');
+      if (yearlyTrendsCtx) {
+        if (yearlyTrendsChartRef.current) {
+          yearlyTrendsChartRef.current.destroy();
+        }
+        const yearlyTrendsConfig = createYearlyTrendsChartConfig(yearlyTrends);
+        try {
+          yearlyTrendsChartRef.current = new Chart(yearlyTrendsCtx, yearlyTrendsConfig);
+          console.log('Yearly trends chart created successfully.');
+        } catch (chartError: unknown) {
+          console.error('Error creating yearly trends chart:', chartError);
+        }
+      }
+    }
+
+    // Initialize status distribution chart
+    if (statusDistributionCanvasRef.current && statusDistribution) {
+      const statusDistributionCtx = statusDistributionCanvasRef.current.getContext('2d');
+      if (statusDistributionCtx) {
+        if (statusDistributionChartRef.current) {
+          statusDistributionChartRef.current.destroy();
+        }
+        const statusDistributionConfig = createStatusDistributionChartConfig(statusDistribution);
+        try {
+          statusDistributionChartRef.current = new Chart(statusDistributionCtx, statusDistributionConfig);
+          console.log('Status distribution chart created successfully.');
+        } catch (chartError: unknown) {
+          console.error('Error creating status distribution chart:', chartError);
+        }
+      }
     }
   };
 
@@ -462,6 +537,73 @@ const ChartsPage: FC = () => {
                 </div>
               )}
               <canvas ref={regionsCanvasRef} id="regionsChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Charts Row */}
+      <div className="row mt-4 mb-4">
+        <div className="col-md-12">
+          <div className="card">
+            <div className="card-header">
+              <h5>
+                <i className="fas fa-chart-line me-2"></i>
+                Capacity Trends Over Time
+              </h5>
+            </div>
+            <div className="card-body chart-container">
+              {loading && (
+                <div className="loading-overlay">
+                  <div className="spinner-border spinner text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              )}
+              <canvas ref={yearlyTrendsCanvasRef} id="yearlyTrendsChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row mt-4 mb-4">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-header">
+              <h5>
+                <i className="fas fa-chart-bar me-2"></i>
+                Capacity by Technology Category
+              </h5>
+            </div>
+            <div className="card-body chart-container">
+              {loading && (
+                <div className="loading-overlay">
+                  <div className="spinner-border spinner text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              )}
+              <canvas ref={capacityByTechCanvasRef} id="capacityByTechChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-header">
+              <h5>
+                <i className="fas fa-chart-pie me-2"></i>
+                Facility Status Overview
+              </h5>
+            </div>
+            <div className="card-body chart-container">
+              {loading && (
+                <div className="loading-overlay">
+                  <div className="spinner-border spinner text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              )}
+              <canvas ref={statusDistributionCanvasRef} id="statusDistributionChart"></canvas>
             </div>
           </div>
         </div>
