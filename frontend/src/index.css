@@ -1,25 +1,25 @@
-/* Global Variables - Academic Professional Design */
+/* Modern Academic Design Variables */
 :root {
-  /* Academic Color Palette */
-  --primary-color: #1e3a8a; /* Deep academic blue */
+  /* Modern Color Palette */
+  --primary-color: #3b82f6; /* Modern blue */
   --secondary-color: #64748b; /* Sophisticated grey */
   --accent-color: #0f172a; /* Deep slate for text */
-  --light-bg: #f8fafc; /* Clean white-blue */
+  --light-bg: #f8fafc; /* Clean background */
   --white-bg: #ffffff;
-  --card-bg: var(--white-bg);
+  --card-bg: rgba(255, 255, 255, 0.95);
   --text-color: #0f172a; /* Rich dark text */
   --text-muted-color: #64748b; /* Professional muted */
-  --border-color: #e2e8f0; /* Soft border */
-  --subtle-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06); /* Academic shadow */
-  --card-border-radius: 6px; /* Subtle radius */
+  --border-color: rgba(226, 232, 240, 0.6); /* Subtle border */
+  --subtle-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02); /* Modern shadow */
+  --card-border-radius: 16px; /* Modern radius */
   --link-color: var(--primary-color);
-  --link-hover-color: #1e40af; /* Darker academic blue */
-  --navbar-bg: var(--white-bg);
+  --link-hover-color: #2563eb; /* Modern blue hover */
+  --navbar-bg: rgba(255, 255, 255, 0.95);
   --navbar-link-color: var(--secondary-color);
-  --navbar-link-hover-bg: rgba(30, 58, 138, 0.05);
+  --navbar-link-hover-bg: rgba(59, 130, 246, 0.05);
   --navbar-link-active-color: var(--primary-color);
-  --navbar-link-active-bg: rgba(30, 58, 138, 0.1);
-  --legend-bg: rgba(255, 255, 255, 0.97);
+  --navbar-link-active-bg: rgba(59, 130, 246, 0.1);
+  --legend-bg: rgba(255, 255, 255, 0.95);
   --timeline-line-color: var(--border-color);
   --timeline-dot-border: var(--primary-color);
   --timeline-arrow-bg: var(--card-bg);

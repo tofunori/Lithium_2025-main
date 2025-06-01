@@ -5,6 +5,7 @@ import L, { Map, TileLayer as LeafletTileLayer, Marker, DivIcon } from 'leaflet'
 import 'leaflet/dist/leaflet.css';
 import Select, { SingleValue } from 'react-select';
 import { useTheme } from '../context/ThemeContext';
+import MapControls from '../components/MapControls';
 // UPDATED: Import Facility and the correct getFacilities function
 import { getFacilities, Facility } from '../services'; // Changed FacilityData to Facility
 import {
@@ -29,22 +30,31 @@ interface BasemapConfig {
 
 // Define available basemaps
 const basemaps: Record<string, BasemapConfig> = {
-  osm: {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    name: 'OpenStreetMap',
+  modern: {
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    name: 'Modern Light',
+  },
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    name: 'Modern Dark',
   },
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
     name: 'Satellite',
   },
-  dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    name: 'Dark Mode',
+  terrain: {
+    url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png',
+    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    name: 'Terrain',
   },
-  // Add more basemaps here if needed
+  watercolor: {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    name: 'Minimal',
+  },
 };
 
 
@@ -57,9 +67,9 @@ const HomePage: React.FC = () => {
   const [sizeByCapacity, setSizeByCapacity] = useState<boolean>(false);
   const [facilitiesData, setFacilitiesData] = useState<Facility[]>([]);
   const [selectedTechnology, setSelectedTechnology] = useState<string>('all');
-  const [selectedBasemap, setSelectedBasemap] = useState<string>('osm'); // State for selected basemap key
+  const [selectedBasemap, setSelectedBasemap] = useState<string>('modern'); // State for selected basemap key
   const [colorByTechnology, setColorByTechnology] = useState<boolean>(false); // New state for color mode
-  const { isDarkMode } = useTheme(); // Keep theme state for potential future use or initial default
+  // Theme context available if needed
 
   // Define react-select option type
   interface OptionType {
@@ -129,36 +139,83 @@ const HomePage: React.FC = () => {
 
   // Function to create the icon HTML
   const createIconHtml = (color: string, size: number): string => {
-    // Calculate proportional border and shadow based on size
-    const borderWidth = Math.max(1, Math.round(size * 0.08)); // 8% of size, minimum 1px
-    const shadowBlur = Math.max(2, Math.round(size * 0.15)); // 15% of size for shadow
-    const shadowSpread = Math.max(1, Math.round(size * 0.05)); // 5% of size for shadow spread
+    // Modern marker with glassmorphism and subtle animations
+    const innerSize = Math.round(size * 0.65);
     
-    // Enhanced colored circle with better visual effects
-    return `<div style="
-      background-color: ${color}; 
-      width: ${size}px; 
-      height: ${size}px; 
-      border-radius: 50%; 
-      border: ${borderWidth}px solid rgba(255,255,255,0.8); 
-      box-shadow: 
-        0 0 ${shadowBlur}px rgba(0,0,0,0.4),
-        0 ${Math.round(shadowSpread/2)}px ${shadowSpread}px rgba(0,0,0,0.2);
-      transition: all 0.2s ease-in-out;
+    return `
+    <div class="modern-map-marker" style="
+      width: ${size}px;
+      height: ${size}px;
+      position: relative;
       cursor: pointer;
-    " 
-    onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 ${shadowBlur * 1.5}px rgba(0,0,0,0.6), 0 ${shadowSpread}px ${shadowSpread * 1.5}px rgba(0,0,0,0.3)';" 
-    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 ${shadowBlur}px rgba(0,0,0,0.4), 0 ${Math.round(shadowSpread/2)}px ${shadowSpread}px rgba(0,0,0,0.2)';"
-    ></div>`;
+    ">
+      <!-- Background glow -->
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: ${size + 4}px;
+        height: ${size + 4}px;
+        background: ${color};
+        opacity: 0.2;
+        border-radius: 50%;
+        filter: blur(4px);
+      "></div>
+      
+      <!-- Main marker -->
+      <div style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: ${size}px;
+        height: ${size}px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        box-shadow: 
+          0 2px 10px rgba(0, 0, 0, 0.1),
+          0 4px 20px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      "></div>
+      
+      <!-- Inner color dot -->
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: ${innerSize}px;
+        height: ${innerSize}px;
+        background: ${color};
+        border-radius: 50%;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      "></div>
+      
+      <!-- Center highlight -->
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: ${Math.round(innerSize * 0.3)}px;
+        height: ${Math.round(innerSize * 0.3)}px;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+        filter: blur(2px);
+      "></div>
+    </div>`;
   };
 
-  // Define status colors using CanonicalStatus keys
+  // Define modern status colors using CanonicalStatus keys
   const statusColors: Record<CanonicalStatus, string> = {
-    operating: '#4CAF50', // Green
-    construction: '#FFC107', // Amber
-    planned: '#2196F3', // Blue
-    closed: '#000000', // Black for closed
-    unknown: '#6c757d' // Grey for unknown
+    operating: '#10b981', // Emerald green
+    construction: '#f59e0b', // Amber
+    planned: '#3b82f6', // Blue
+    closed: '#6b7280', // Gray
+    unknown: '#94a3b8' // Slate
   };
 
   // Effect to load map and initial facilities
@@ -169,6 +226,19 @@ const HomePage: React.FC = () => {
         mapInstanceRef.current = L.map(mapContainerRef.current, {
           center: [40, -95],
           zoom: 4,
+          zoomControl: false, // Disable default zoom control
+        });
+
+        // Add mouse move listener for coordinates
+        mapInstanceRef.current.on('mousemove', (e: L.LeafletMouseEvent) => {
+          const coordsElement = document.getElementById('map-coordinates');
+          if (coordsElement) {
+            const lat = e.latlng.lat.toFixed(4);
+            const lng = e.latlng.lng.toFixed(4);
+            const latDir = e.latlng.lat >= 0 ? 'N' : 'S';
+            const lngDir = e.latlng.lng >= 0 ? 'E' : 'W';
+            coordsElement.textContent = `${Math.abs(parseFloat(lat))}°${latDir}, ${Math.abs(parseFloat(lng))}°${lngDir}`;
+          }
         });
 
         // Initial Tile Layer setup is now handled by the basemap effect below
@@ -208,6 +278,18 @@ const HomePage: React.FC = () => {
   }, []); // Initial map load only
 
 
+  // Filter facilities based on selected technology
+  const filteredFacilities = useMemo(() => {
+    return facilitiesData.filter(facility => {
+      if (selectedTechnology === 'all') {
+         return true; // Show all if 'all' is selected
+       }
+       // Use technology_category for filtering
+       const facilityCategory = facility.technology_category; // Use technology_category
+       return facilityCategory === selectedTechnology;
+     });
+  }, [facilitiesData, selectedTechnology]);
+
   // Effect to update markers based on filters (technology, size) and data changes
   useEffect(() => {
     if (!mapInstanceRef.current || facilitiesData.length === 0) {
@@ -217,16 +299,6 @@ const HomePage: React.FC = () => {
     // Clear existing markers from the map AND the ref
     Object.values(markersRef.current).forEach(marker => marker.remove());
     markersRef.current = {};
-
-    // Filter facilities based on selected technology
-    const filteredFacilities = facilitiesData.filter(facility => {
-      if (selectedTechnology === 'all') {
-         return true; // Show all if 'all' is selected
-       }
-       // Use technology_category for filtering
-       const facilityCategory = facility.technology_category; // Use technology_category
-       return facilityCategory === selectedTechnology;
-     });
 
     // Add markers for filtered facilities
     filteredFacilities.forEach(facility => {
@@ -462,6 +534,11 @@ const HomePage: React.FC = () => {
       {/* Map Area */}
       <div className="map-area">
         <div id="map" ref={mapContainerRef} style={{ height: '100%', width: '100%' }}></div>
+        <MapControls 
+          map={mapInstanceRef.current}
+          facilitiesCount={facilitiesData.length}
+          filteredCount={filteredFacilities.length}
+        />
       </div>
 
       {/* Sidebar Area */}

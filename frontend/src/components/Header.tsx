@@ -36,17 +36,13 @@ const Header: React.FC = () => {
     <>
       <header className="academic-header">
         <div className="header-content">
-          {/* Academic Title Section */}
+          {/* Modern Title Section */}
           <div className="title-section">
-            <div className="research-badge">
-              <span className="badge-icon">⚡</span>
-              <span className="badge-text">Research Platform</span>
-            </div>
-            <h1 className="research-title">
-              Lithium Battery Recycling Networks
+            <h1 className="modern-title">
+              EV Lithium Recycling Networks
             </h1>
-            <p className="research-subtitle">
-              Structure & Capacity Analysis in North America
+            <p className="modern-subtitle">
+              North American Battery Facility Analytics
             </p>
           </div>
 
@@ -56,31 +52,31 @@ const Header: React.FC = () => {
               <ul className="nav-list">
                 <li className="nav-item">
                   <Link className={`nav-link ${isActive('/')}`} to="/">
-                    <span className="nav-icon">🗺️</span>
+                    <span className="nav-icon"><i className="fas fa-map"></i></span>
                     Map
                   </Link>
                 </li>
                 <li className="nav-item">
                   <Link className={`nav-link ${isActive('/facilities')}`} to="/facilities">
-                    <span className="nav-icon">🏭</span>
+                    <span className="nav-icon"><i className="fas fa-industry"></i></span>
                     Facilities
                   </Link>
                 </li>
                 <li className="nav-item">
                   <Link className={`nav-link ${isActive('/charts')}`} to="/charts">
-                    <span className="nav-icon">📊</span>
+                    <span className="nav-icon"><i className="fas fa-chart-bar"></i></span>
                     Analytics
                   </Link>
                 </li>
                 <li className="nav-item">
                   <Link className={`nav-link ${isActive('/documents')}`} to="/documents">
-                    <span className="nav-icon">📄</span>
+                    <span className="nav-icon"><i className="fas fa-file-alt"></i></span>
                     Documents
                   </Link>
                 </li>
                 <li className="nav-item">
                   <Link className={`nav-link ${isActive('/about')}`} to="/about">
-                    <span className="nav-icon">ℹ️</span>
+                    <span className="nav-icon"><i className="fas fa-info-circle"></i></span>
                     About
                   </Link>
                 </li>

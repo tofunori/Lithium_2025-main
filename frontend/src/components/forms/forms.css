@@ -1,40 +1,65 @@
 /* frontend/src/components/forms/forms.css */
 
-/* Form Section Styling */
+/* Modern Form Section Styling */
 .form-section {
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 1.5rem;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-border-radius);
+  padding: 2rem;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--subtle-shadow);
+  margin-bottom: 2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-section:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 .form-section-header {
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e9ecef;
-  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.form-section-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #2563eb 100%);
+  border-radius: 2px;
 }
 
 .form-section-header h5 {
-  color: #495057;
+  color: var(--text-color);
   font-weight: 600;
+  font-size: 1.125rem;
+  margin: 0;
 }
 
 .form-section-content {
   padding-top: 0.5rem;
 }
 
-/* Validation Input Styling */
+/* Modern Validation Input Styling */
 .form-control.is-valid,
 .form-select.is-valid {
-  border-color: #198754;
-  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+  border-color: #10b981;
+  box-shadow: 0 0 0 0.125rem rgba(16, 185, 129, 0.15);
+  background-color: rgba(16, 185, 129, 0.02);
 }
 
 .form-control.is-invalid,
 .form-select.is-invalid {
-  border-color: #dc3545;
-  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  border-color: #ef4444;
+  box-shadow: 0 0 0 0.125rem rgba(239, 68, 68, 0.15);
+  background-color: rgba(239, 68, 68, 0.02);
 }
 
 /* Custom feedback styling */

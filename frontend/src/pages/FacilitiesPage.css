@@ -1,119 +1,195 @@
- page/* Styles migrated from css/styles.css relevant to FacilitiesPage */
+/* Modern Facilities Page Styles */
 
-/* Variables */
-:root {
-  --primary-color: #0d6efd;
-  --secondary-color: #6c757d;
-  --light-bg: #f8f9fa;
+/* Modern Variables - inherits from global CSS variables in index.css */
+.facilities-page {
+  /* Override with modern academic design values */
+  --primary-color: #3b82f6;
+  --secondary-color: #6b7280;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --info-color: #06b6d4;
+  --light-bg: #f8fafc;
   --white-bg: #ffffff;
-  --card-bg: var(--white-bg);
-  --text-color: #212529;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --text-color: #1f2937;
   --text-muted-color: var(--secondary-color);
-  --border-color: #dee2e6;
-  --subtle-shadow: 0 2px 4px rgba(0, 0, 0, 0.075);
-  --card-border-radius: 8px;
+  --border-color: #e5e7eb;
+  --subtle-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --card-border-radius: 16px;
   --link-color: var(--primary-color);
-  --link-hover-color: #0a58ca;
-  --navbar-link-hover-bg: rgba(0, 86, 179, 0.05);
-  --navbar-link-active-bg: rgba(0, 86, 179, 0.1);
-  --tab-bg: var(--light-bg);
-  --tab-active-bg: var(--white-bg);
-  --tab-border: var(--border-color);
-  --tab-color: var(--secondary-color);
-  --tab-active-color: var(--primary-color);
-  --facility-item-hover-bg: var(--light-bg);
+  --link-hover-color: #2563eb;
+  --facility-item-hover-bg: rgba(59, 130, 246, 0.02);
 }
 
-/* Facilities List */
+/* Modern Facilities List */
 .facilities-list {
-  background-color: var(--card-bg);
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: var(--card-border-radius);
-  padding: 15px 20px;
+  padding: 2rem;
   box-shadow: var(--subtle-shadow);
   border: 1px solid var(--border-color);
-  /* animation removed */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 1rem;
 }
 
-/* Tab Navigation */
+.facilities-list:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+/* Modern Tab Navigation */
 .tabs-container {
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--subtle-shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .tab-button {
-  padding: 10px 18px;
-  border: 1px solid var(--tab-border);
-  border-bottom: none;
-  background-color: var(--tab-bg);
-  border-radius: 5px 5px 0 0;
-  margin-right: 3px;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
   cursor: pointer;
-  color: var(--tab-color);
+  color: var(--secondary-color);
   font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
 }
 
 .tab-button:hover {
-  background-color: rgba(0,0,0,0.05);
+  background: rgba(59, 130, 246, 0.05);
   color: var(--link-hover-color);
+  transform: translateY(-1px);
+}
+
+.tab-button:hover::before {
+  width: 100%;
+  height: 100%;
 }
 
 .tab-button.active {
-  background-color: var(--tab-active-bg);
-  color: var(--tab-active-color);
-  font-weight: 600;
-  border-color: var(--tab-border);
-  position: relative;
-  top: 1px;
-}
-
-/* Status Badges */
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  background: var(--primary-color);
   color: white;
-  display: inline-block;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
 }
 
-.status-operating { background-color: #198754; }
-.status-construction { background-color: #ffc107; color: #000; }
-.status-planned { background-color: #0dcaf0; }
-.status-pilot { background-color: #6f42c1; }
+/* Modern Status Badges */
+.status-badge {
+  padding: 0.375rem 0.875rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-.status-closed { background-color: #000000; } /* Changed to black background */
-.status-unknown { background-color: #adb5bd; } /* Added style for unknown */
-/* Facilities List - Column Layout */
+.status-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Modern status colors with gradients */
+.status-operating { 
+  background: linear-gradient(135deg, var(--success-color, #10b981) 0%, #059669 100%); 
+}
+.status-construction { 
+  background: linear-gradient(135deg, var(--warning-color, #f59e0b) 0%, #d97706 100%);
+  color: white;
+}
+.status-planned { 
+  background: linear-gradient(135deg, var(--info-color, #06b6d4) 0%, #0891b2 100%);
+}
+.status-pilot { 
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+.status-closed { 
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+}
+.status-unknown { 
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+/* Modern Facilities Table */
 .facility-list-header,
 .facility-item-content {
   display: flex;
   align-items: center;
-  padding: 0.5rem 0.75rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border-color);
-  gap: 0.5rem;
-  color: var(--text-color); /* Explicitly set text color for table rows */
+  gap: 1rem;
+  color: var(--text-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .facility-list-header {
-  font-weight: bold;
+  font-weight: 600;
   color: var(--text-muted-color);
-  background-color: var(--light-bg);
-  border-top: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--light-bg) 0%, rgba(248, 250, 252, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom: 2px solid var(--border-color);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .facility-item {
   padding: 0;
   border-bottom: none;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .facility-item:hover {
-  background-color: var(--facility-item-hover-bg);
+  background: var(--facility-item-hover-bg);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
 }
 
 .facility-item:last-child .facility-item-content {
   border-bottom: none;
+  border-radius: 0 0 var(--card-border-radius) var(--card-border-radius);
 }
 
 .facility-item-content span {
@@ -138,23 +214,55 @@
   padding: 0.25em 0.6em;
 }
 
-/* Link styling within company column */
+/* Modern link styling within company column */
 .col-company a {
   text-decoration: none;
   color: var(--link-color);
-  font-weight: 500;
+  font-weight: 600;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.col-company a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #2563eb 100%);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .col-company a:hover {
-  text-decoration: underline;
   color: var(--link-hover-color);
+  transform: translateY(-1px);
 }
 
-/* Reduce padding and size on edit button in facility list */
+.col-company a:hover::after {
+  width: 100%;
+}
+
+/* Modern edit button styling */
 .facility-item-content .col-actions .edit-link {
-  padding: 0.1rem 0.4rem;
-  font-size: 0.9em;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
   line-height: 1;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+}
+
+.facility-item-content .col-actions .edit-link:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  border-color: var(--primary-color);
 }
 
 /* Animation */
