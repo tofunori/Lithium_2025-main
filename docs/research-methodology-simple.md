@@ -72,7 +72,7 @@ Mark as Verified if you find:
 ## Phase 3: Clean Up Data
 
 ### Step 9: Standardize Categories
-**Status**: Operating, Construction, Planned, or Uncertain  
+**Status**: Operating, Construction, Planned, or Closed  
 **Technology**: Hydrometallurgy, Mechanical, Pyrometallurgy, or Hybrid  
 **Capacity**: Convert everything to "tonnes/year"
 

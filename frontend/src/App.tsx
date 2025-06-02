@@ -11,7 +11,7 @@ import AboutPage from './pages/AboutPage';
 import FacilitiesPage from './pages/FacilitiesPage';
 import ChartsPage from './pages/ChartsPage'; // TS should resolve .tsx/.jsx
 import DocumentsPage from './pages/DocumentsPage';
-import FacilityDetailPage from './pages/FacilityDetailPage'; // Import the new component
+import FacilityDetailPageAcademic from './pages/FacilityDetailPageAcademic'; // Import the academic component
 import FacilityEditPage from './pages/FacilityEditPage'; // Import the edit page component
 import FacilityCreatePageValidated from './pages/FacilityCreatePageValidated'; // Import the validated create page component
 import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
@@ -34,12 +34,12 @@ const AppContent: React.FC = () => {
               <Route path="/facilities" element={<FacilitiesPage />} />
               <Route path="/charts" element={<ChartsPage />} />
               <Route path="/documents" element={<DocumentsPage />} />
-              <Route path="/facilities/:id" element={<FacilityDetailPage />} />
+              <Route path="/facilities/:id" element={<FacilityDetailPageAcademic />} />
 
               {/* Protected routes - require authentication */}
               <Route element={<ProtectedRoute redirectPath="/" />}>
                 <Route path="/facilities/new" element={<FacilityCreatePageValidated />} />
-                <Route path="/facilities/edit/:facilityId" element={<FacilityEditPage />} />
+                <Route path="/facilities/:id/edit" element={<FacilityEditPage />} />
               </Route>
             </Route>
           </Routes>
