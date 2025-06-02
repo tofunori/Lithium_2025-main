@@ -7,7 +7,11 @@ import { useFormValidation } from '../hooks/useFormValidation';
 import { facilityValidationSchema, facilityFormOptions, getInitialFacilityFormData } from '../utils/facilityValidation';
 import { ValidatedInput, ValidatedSelect, FormSection, FormValidationSummary } from '../components/forms';
 import LoadingSpinner from '../components/LoadingSpinner';
+import FormSkeletonLoader from '../components/FormSkeletonLoader';
+import TimelineFormSection from '../components/formSections/TimelineFormSection';
+import MediaFormSection from '../components/formSections/MediaFormSection';
 import '../components/forms/forms.css';
+import './FacilityEditPage.css';
 
 const FacilityEditPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +25,7 @@ const FacilityEditPage: React.FC = () => {
   // Initialize form validation with empty data first
   const {
     formData,
+    validation,
     isValid,
     errors,
     updateField,
@@ -59,24 +64,27 @@ const FacilityEditPage: React.FC = () => {
           company_name: facility.Company || '',
           facility_name_site: facility["Facility Name/Site"] || '',
           address: facility.Location || '',
-          latitude: facility.Latitude || 0,
-          longitude: facility.Longitude || 0,
+          latitude: facility.Latitude !== null && facility.Latitude !== undefined ? facility.Latitude : '',
+          longitude: facility.Longitude !== null && facility.Longitude !== undefined ? facility.Longitude : '',
           status_name: facility["Operational Status"] || '',
           technology_name: facility["Primary Recycling Technology"] || '',
           technology_category: facility.technology_category || '',
-          processing_capacity_mt_year: facility.capacity_tonnes_per_year || 0,
+          processing_capacity_mt_year: facility.capacity_tonnes_per_year !== null && facility.capacity_tonnes_per_year !== undefined ? facility.capacity_tonnes_per_year : '',
           details: {
             status_effective_date_text: facility.facility_details?.status_effective_date_text || '',
             technology_description: facility.facility_details?.technology_description || '',
             feedstock: facility.facility_details?.feedstock || '',
             product: facility.facility_details?.product || '',
             website: facility.facility_details?.website || '',
-            investment_usd: facility.facility_details?.investment_usd || 0,
-            jobs: facility.facility_details?.jobs || 0,
-            ev_equivalent_per_year: facility.facility_details?.ev_equivalent_per_year || 0,
+            investment_usd: facility.facility_details?.investment_usd !== null && facility.facility_details?.investment_usd !== undefined ? facility.facility_details.investment_usd : '',
+            jobs: facility.facility_details?.jobs !== null && facility.facility_details?.jobs !== undefined ? facility.facility_details.jobs : '',
+            ev_equivalent_per_year: facility.facility_details?.ev_equivalent_per_year !== null && facility.facility_details?.ev_equivalent_per_year !== undefined ? facility.facility_details.ev_equivalent_per_year : '',
             environmental_impact_details: facility.facility_details?.environmental_impact_details || '',
             notes: facility.facility_details?.notes || ''
-          }
+          },
+          timeline: facility.facility_timeline_events || [],
+          documents: facility.facility_documents || [],
+          images: facility.facility_images?.map(img => img.image_url) || []
         };
 
         setFormData(formattedData);
@@ -96,39 +104,108 @@ const FacilityEditPage: React.FC = () => {
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Mark all fields as touched to show validation errors
-    markAllFieldsTouched();
-    
-    // Validate entire form
-    const formIsValid = validateAllFields();
-    
-    if (!formIsValid) {
-      showError('Validation Error', 'Please fix the errors below before submitting.');
+    if (!facilityId) {
+      showError('Error', 'Facility ID is missing.');
       return;
     }
 
-    if (!facilityId) {
-      showError('Error', 'Facility ID is missing.');
+    // Check only required fields manually
+    if (!formData.company_name || formData.company_name.trim() === '') {
+      showError('Validation Error', 'Company name is required.');
+      // Smooth scroll to the company name field
+      const companyField = document.querySelector('[name="company_name"]');
+      if (companyField) {
+        companyField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        (companyField as HTMLInputElement).focus();
+      }
+      return;
+    }
+    
+    if (!formData.status_name || formData.status_name.trim() === '') {
+      showError('Validation Error', 'Operational status is required.');
+      // Smooth scroll to the status field
+      const statusField = document.querySelector('[name="status_name"]');
+      if (statusField) {
+        statusField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        (statusField as HTMLInputElement).focus();
+      }
       return;
     }
 
     setIsSubmitting(true);
 
     try {
+      console.log('[FacilityEditPage] Submitting form data:', JSON.stringify(formData, null, 2));
+      console.log('[FacilityEditPage] Facility ID:', facilityId);
+      
       await updateFacility(facilityId, formData);
       showSuccess('Facility Updated', 'The facility has been successfully updated.');
-      navigate(`/facilities/${facilityId}`);
+      // Stay on the edit page instead of navigating away
+      // navigate(`/facilities/${facilityId}`);
     } catch (error: any) {
-      console.error('Error updating facility:', error);
+      console.error('[FacilityEditPage] Error updating facility:', error);
+      console.error('[FacilityEditPage] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response,
+        data: error.data
+      });
       showError('Update Failed', error.message || 'Failed to update facility. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, facilityId, markAllFieldsTouched, validateAllFields, showSuccess, showError, navigate]);
+  }, [formData, facilityId, showSuccess, showError]);
 
   // Handle field changes with validation
   const handleFieldChange = useCallback((fieldName: string, value: any) => {
     updateField(fieldName, value);
+  }, [updateField]);
+
+  // Handle timeline item changes
+  const handleTimelineChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    // Parse the field name to extract array index and property
+    const match = name.match(/timeline\[(\d+)\]\.(\w+)/);
+    if (!match) return;
+    
+    const [, index, field] = match;
+    const idx = parseInt(index);
+    
+    // Update the formData.timeline array
+    const updatedTimeline = [...(formData.timeline || [])];
+    if (!updatedTimeline[idx]) {
+      updatedTimeline[idx] = { event_date: '', event_name: '', description: '' };
+    }
+    
+    // Map the form field names to the correct property names
+    if (field === 'event_date') {
+      updatedTimeline[idx].event_date = value;
+    } else if (field === 'event_name') {
+      updatedTimeline[idx].event_name = value;
+    }
+    
+    // Use updateField to properly update the timeline array
+    updateField('timeline', updatedTimeline);
+  }, [formData.timeline, updateField]);
+
+  // Handle adding timeline item
+  const handleAddTimelineItem = useCallback(() => {
+    const updatedTimeline = [...(formData.timeline || []), { event_date: '', event_name: '', description: '' }];
+    updateField('timeline', updatedTimeline);
+  }, [formData.timeline, updateField]);
+
+  // Handle removing timeline item
+  const handleRemoveTimelineItem = useCallback((index: number) => {
+    const updatedTimeline = (formData.timeline || []).filter((_, i) => i !== index);
+    updateField('timeline', updatedTimeline);
+  }, [formData.timeline, updateField]);
+
+  // Handle media form changes
+  const handleMediaChange = useCallback((update: { images?: string[] }) => {
+    if (update.images !== undefined) {
+      updateField('images', update.images);
+    }
   }, [updateField]);
 
   // Check if user is authenticated
@@ -146,13 +223,14 @@ const FacilityEditPage: React.FC = () => {
     );
   }
 
-  // Show loading state
+  // Show loading state with skeleton loader
   if (isLoading) {
     return (
       <div className="container mt-4">
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-3">Loading facility data...</p>
+        <div className="row justify-content-center">
+          <div className="col-lg-8">
+            <FormSkeletonLoader />
+          </div>
         </div>
       </div>
     );
@@ -201,9 +279,10 @@ const FacilityEditPage: React.FC = () => {
 
           {/* Main Form */}
           <form onSubmit={handleSubmit} className={isSubmitting ? 'form-loading' : ''}>
-            
-            {/* Basic Information Section */}
-            <FormSection
+            <div className="accordion" id="facilityFormAccordion">
+              
+              {/* Basic Information Section */}
+              <FormSection
               title="Basic Information"
               description="Core details about the facility"
               icon="fas fa-info-circle"
@@ -546,6 +625,50 @@ const FacilityEditPage: React.FC = () => {
               />
             </FormSection>
 
+            {/* Timeline Section */}
+            <FormSection
+              title="Timeline & Milestones"
+              description="Project timeline and key milestones"
+              icon="fas fa-calendar-alt"
+              collapsible
+              initiallyExpanded={false}
+            >
+              <TimelineFormSection
+                data={{
+                  timeline: formData.timeline?.map(item => ({
+                    id: item.id,
+                    date: String(item.event_date || ''),
+                    event: item.event_name || '',
+                    description: item.description || ''
+                  }))
+                }}
+                onChange={handleTimelineChange}
+                onAddItem={handleAddTimelineItem}
+                onRemoveItem={handleRemoveTimelineItem}
+                isSaving={isSubmitting}
+              />
+            </FormSection>
+
+            {/* Media Section */}
+            <FormSection
+              title="Media"
+              description="Facility images and photos"
+              icon="fas fa-images"
+              collapsible
+              initiallyExpanded={false}
+            >
+              <MediaFormSection
+                facilityId={facilityId}
+                data={{
+                  images: formData.images?.map(img => img.image_url || img) || []
+                }}
+                onFormDataChange={handleMediaChange}
+                isSaving={isSubmitting}
+              />
+            </FormSection>
+            
+            </div> {/* End accordion */}
+
             {/* Form Actions */}
             <div className="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
               <Link to={`/facilities/${facilityId}`} className="btn btn-outline-secondary">
@@ -564,7 +687,7 @@ const FacilityEditPage: React.FC = () => {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={isSubmitting || !isValid}
+                  disabled={isSubmitting}
                 >
                   {isSubmitting ? (
                     <>
@@ -582,12 +705,30 @@ const FacilityEditPage: React.FC = () => {
             </div>
           </form>
 
-          {/* Loading Overlay */}
+          {/* Enhanced Loading Overlay */}
           {isSubmitting && (
-            <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50" style={{ zIndex: 1050 }}>
-              <div className="text-center text-white">
+            <div 
+              className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+              style={{ 
+                zIndex: 1050,
+                background: 'rgba(0, 0, 0, 0.7)',
+                backdropFilter: 'blur(4px)',
+                animation: 'fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              <div 
+                className="text-center text-white p-4 rounded-3"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                  animation: 'fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  animationDelay: '0.1s',
+                  animationFillMode: 'both'
+                }}
+              >
                 <LoadingSpinner size="lg" variant="light" />
-                <div className="mt-2">Updating facility...</div>
+                <div className="mt-3 fw-semibold">Updating facility...</div>
+                <div className="mt-2 small opacity-75">Please wait while we save your changes</div>
               </div>
             </div>
           )}

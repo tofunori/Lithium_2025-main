@@ -1,0 +1,556 @@
+/* Facility Edit Page - Smooth Animations & Transitions */
+
+/* ===================================
+   1. Base Transitions & Animations
+   =================================== */
+
+/* Enable smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Base transition for all interactive elements */
+.container button,
+.container input,
+.container select,
+.container textarea,
+.container .form-control,
+.container .btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================
+   2. Form Section Animations
+   =================================== */
+
+/* Smooth collapse/expand for form sections */
+.accordion-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.accordion-button::after {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordion-button:not(.collapsed)::after {
+  transform: rotate(180deg);
+}
+
+/* Ripple effect on section headers */
+.accordion-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.accordion-button:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Smooth height transitions for accordion content */
+.accordion-collapse {
+  transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordion-body {
+  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================
+   3. Form Input Animations
+   =================================== */
+
+/* Input focus animations */
+.form-control,
+.form-select {
+  border: 1px solid #ced4da;
+  background-color: #fff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.form-control:focus,
+.form-select:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+  border-color: #80bdff;
+  background-color: #fff;
+}
+
+/* Floating label effect */
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+  opacity: 0.85;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================
+   4. Button Animations
+   =================================== */
+
+/* Primary button animations */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.25);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Button ripple effect */
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Secondary button animations */
+.btn-outline-secondary {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-outline-secondary:hover {
+  transform: translateX(-2px);
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Icon button animations */
+.btn-sm {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-sm:hover {
+  transform: scale(1.1);
+}
+
+.btn-sm:active {
+  transform: scale(0.95);
+}
+
+/* ===================================
+   5. Validation & Error Animations
+   =================================== */
+
+/* Validation error appearance */
+.invalid-feedback {
+  animation: shakeAndFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+}
+
+@keyframes shakeAndFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  25% {
+    transform: translateX(10px);
+  }
+  50% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Invalid input highlight */
+.is-invalid {
+  animation: pulseRed 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pulseRed {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+/* Form validation summary animation */
+.alert {
+  animation: slideDownFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+
+@keyframes slideDownFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scaleY(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+/* ===================================
+   6. Loading States
+   =================================== */
+
+/* Form loading overlay */
+.form-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 1;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading spinner enhancement */
+.spinner-border {
+  animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===================================
+   7. Timeline Section Animations
+   =================================== */
+
+/* Timeline item appearance */
+.timeline-item {
+  animation: fadeInLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timeline-item:hover {
+  transform: translateX(5px);
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Timeline item removal */
+.timeline-item.removing {
+  animation: fadeOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeOutRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* Add timeline button pulse */
+.btn-outline-success {
+  animation: subtlePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes subtlePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* ===================================
+   8. Image/Media Section Animations
+   =================================== */
+
+/* Image thumbnail animations */
+.img-thumbnail {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.img-thumbnail:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+/* Image container appearance */
+.position-relative {
+  animation: zoomIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes zoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Delete button for images */
+.position-absolute.btn-danger {
+  opacity: 0;
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.position-relative:hover .position-absolute.btn-danger {
+  opacity: 1;
+}
+
+/* ===================================
+   9. Toast Notifications
+   =================================== */
+
+/* Toast slide in animation */
+.toast {
+  animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Toast slide out animation */
+.toast.hiding {
+  animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideOutRight {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* ===================================
+   10. Utility Animations
+   =================================== */
+
+/* Fade in animation */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Fade in up animation */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth color transitions */
+.text-primary,
+.text-danger,
+.text-success,
+.text-warning {
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Icon rotations */
+.fa-spin {
+  animation: spin 1s linear infinite;
+}
+
+.fa-chevron-down {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================
+   11. Performance Optimizations
+   =================================== */
+
+/* Use GPU acceleration for transforms */
+.accordion-button,
+.form-control,
+.btn,
+.timeline-item,
+.img-thumbnail {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===================================
+   12. Page Load Animation
+   =================================== */
+
+/* Stagger form section appearance on load */
+.accordion-item,
+.form-section {
+  opacity: 0;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.accordion-item:nth-child(1),
+.form-section:nth-child(1) { animation-delay: 0.1s; }
+.accordion-item:nth-child(2),
+.form-section:nth-child(2) { animation-delay: 0.2s; }
+.accordion-item:nth-child(3),
+.form-section:nth-child(3) { animation-delay: 0.3s; }
+.accordion-item:nth-child(4),
+.form-section:nth-child(4) { animation-delay: 0.4s; }
+.accordion-item:nth-child(5),
+.form-section:nth-child(5) { animation-delay: 0.5s; }
+.accordion-item:nth-child(6),
+.form-section:nth-child(6) { animation-delay: 0.6s; }
+.accordion-item:nth-child(7),
+.form-section:nth-child(7) { animation-delay: 0.7s; }
+
+/* ===================================
+   13. Additional Micro-interactions
+   =================================== */
+
+/* Smooth focus indicator */
+.form-control:focus,
+.form-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Input field hover effect */
+.form-control:hover:not(:focus),
+.form-select:hover:not(:focus) {
+  border-color: #b8d4f1;
+  background-color: #fafbfc;
+}
+
+/* Checkbox and radio button animations */
+.form-check-input {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-check-input:checked {
+  animation: checkPop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Card hover effects for non-collapsible sections */
+.card.form-section {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card.form-section:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Smooth transitions for validation states */
+.form-control.is-valid,
+.form-control.is-invalid {
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Success checkmark animation */
+.valid-feedback {
+  animation: fadeInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Help text fade in */
+.form-text {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-delay: 0.2s;
+  animation-fill-mode: both;
+}

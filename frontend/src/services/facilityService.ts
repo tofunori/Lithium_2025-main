@@ -443,12 +443,12 @@ export const updateFacility = async (facilityId: string, updatedData: FacilityFo
 
       if (updatedData.images.length > 0) {
         const imageDataToInsert = updatedData.images
-          .filter(img => img.image_url)
+          .filter(img => typeof img === 'string' ? img : img.image_url)
           .map((img, index) => ({
             facility_id: facilityId,
-            image_url: img.image_url,
-            alt_text: img.alt_text ?? null,
-            order: img.order ?? index,
+            image_url: typeof img === 'string' ? img : img.image_url,
+            alt_text: typeof img === 'string' ? null : (img.alt_text ?? null),
+            order: typeof img === 'string' ? index : (img.order ?? index),
           }));
         if (imageDataToInsert.length > 0) {
           const { error: insertImagesError } = await supabase
