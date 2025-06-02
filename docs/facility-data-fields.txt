@@ -1,0 +1,120 @@
+LITHIUM BATTERY RECYCLING FACILITY DATA COLLECTION TEMPLATE
+
+Instructions: Use this template when researching facilities with Gemini Deep Research or other sources. Request information in a structured format matching these fields.
+
+====================================
+EDIT FACILITY PAGE - COMPLETE DESCRIPTION
+====================================
+
+### Overview
+The Edit Facility page allows authenticated users to modify existing lithium battery recycling facility information. It provides a comprehensive form with validation, organized into collapsible sections for better usability.
+
+### Key Features
+1. **Authentication Required**: Only logged-in users can access this page
+2. **Auto-save on Submit**: Saves changes without leaving the edit page
+3. **Real-time Validation**: Shows validation errors as you type
+4. **Collapsible Sections**: Organize lengthy forms into manageable sections
+
+====================================
+FORM SECTIONS & FIELDS
+====================================
+
+### 1. BASIC INFORMATION (Always Visible)
+- Company Name (REQUIRED, min 2 chars, max 100 chars)
+- Facility Name/Site (Optional, max 100 chars)
+- Address/Location (Optional, max 200 chars)
+- Operational Status (REQUIRED dropdown: Operational, Under Construction, Planned, Pilot, Discontinued)
+- Status Effective Date (Optional text field)
+
+### 2. TECHNICAL INFORMATION (Always Visible)
+- Primary Recycling Technology (Optional dropdown, max 500 chars)
+- Technology Category (Optional dropdown: Mechanical, Hydrometallurgy, Pyrometallurgy, Hybrid, Other)
+- Technology Description (Optional textarea, max 1000 chars)
+- Processing Capacity (MT/year) (Optional number, must be positive)
+- Feedstock (Optional, max 200 chars)
+- Output Products (Optional, max 200 chars)
+
+### 3. LOCATION INFORMATION (Always Visible)
+- Latitude (Optional, must be between -90 and 90)
+- Longitude (Optional, must be between -180 and 180)
+
+### 4. BUSINESS INFORMATION (Collapsible, Initially Collapsed)
+- Website (Optional, must be valid URL)
+- Investment Amount USD (Optional positive number)
+- Number of Jobs (Optional positive whole number)
+- EV Equivalent per Year (Optional positive whole number)
+- Environmental Impact Details (Optional textarea, max 1000 chars)
+
+### 5. ADDITIONAL INFORMATION (Collapsible, Initially Collapsed)
+- Notes (Optional textarea, max 2000 chars)
+
+### 6. TIMELINE & MILESTONES (Collapsible, Initially Collapsed)
+- Dynamic list of timeline events
+- Each event has:
+  - Date (date picker)
+  - Event/Milestone name
+- Add/Remove timeline items buttons
+
+====================================
+FORM BEHAVIOR & VALIDATION
+====================================
+
+### Validation Rules
+- Required fields: Company Name and Operational Status only
+- All numeric fields accept empty values but must be positive if filled
+- Coordinates must be within valid ranges
+- Character limits enforced on text fields
+
+### Update Button
+- Always clickable (not disabled by validation)
+- Shows validation errors when clicked if form is invalid
+- Saves and stays on the same page (no redirect)
+- Shows success toast notification when saved
+
+### Data Loading
+- Shows loading spinner while fetching facility data
+- Handles null values by converting to empty strings
+- Maps timeline events from database format
+
+### Error Handling
+- Shows validation summary at top of form
+- Individual field errors shown below each input
+- Network errors shown as toast notifications
+
+### Navigation
+- "Back to Details" button (top right) - returns to facility detail view
+- "Cancel" button (bottom left) - returns to facility detail view without saving
+
+====================================
+GEMINI DEEP RESEARCH PROMPT TEMPLATE
+====================================
+
+Use this prompt structure for comprehensive facility research:
+
+"Research [Company Name]'s lithium battery recycling facility in [Location]. Provide the following information in a structured format:
+
+1. Full facility address and coordinates
+2. Current operational status and when it became effective
+3. Annual processing capacity in metric tonnes
+4. Primary recycling technology and process description
+5. Types of batteries accepted (feedstock) and materials recovered (products)
+6. Total investment amount and number of jobs created
+7. Environmental impact and sustainability features
+8. Key timeline events from announcement to current status
+9. Contact information if available
+10. Links to official sources, press releases, and permits
+
+Include specific details about the technology category (Hydrometallurgy, Pyrometallurgy, Mechanical, or Hybrid) and any unique features of this facility."
+
+====================================
+DATA QUALITY CHECKLIST
+====================================
+Before finalizing facility data, verify:
+□ Company name and location are accurate
+□ Operational status is current (within last 12 months)
+□ Capacity is in metric tonnes/year (convert if needed)
+□ Technology category is correctly classified
+□ At least 2 independent sources confirm the information
+□ Timeline includes major milestones
+□ Investment and jobs data are from official sources
+□ Coordinates can be verified on Google Maps

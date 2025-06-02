@@ -92,9 +92,6 @@ const TimelineFormSection: React.FC<TimelineFormSectionProps> = ({
       >
         <i className="fas fa-plus me-1"></i> Add Timeline Item
       </button>
-       <p className="form-text text-muted mt-2">
-         Note: Adding, removing, and editing individual timeline items requires further implementation via dedicated handlers. Current changes might not save correctly using the generic 'onChange'.
-       </p>
     </fieldset>
   );
 }

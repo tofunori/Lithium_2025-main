@@ -68,7 +68,8 @@ export const validationRules = {
 
   number: (message = 'Please enter a valid number'): ValidationRule => ({
     test: (value) => {
-      if (!value && value !== 0) return true;
+      // Allow empty/null/undefined values
+      if (value === null || value === undefined || value === '') return true;
       const num = Number(value);
       return !isNaN(num) && isFinite(num);
     },
@@ -77,9 +78,10 @@ export const validationRules = {
 
   positiveNumber: (message = 'Please enter a positive number'): ValidationRule => ({
     test: (value) => {
-      if (!value && value !== 0) return true;
+      // Allow empty/null/undefined values
+      if (value === null || value === undefined || value === '') return true;
       const num = Number(value);
-      return !isNaN(num) && isFinite(num) && num > 0;
+      return !isNaN(num) && isFinite(num) && num >= 0;
     },
     message
   }),
@@ -96,7 +98,8 @@ export const validationRules = {
 
   latitude: (message = 'Latitude must be between -90 and 90'): ValidationRule => ({
     test: (value) => {
-      if (!value && value !== 0) return true;
+      // Allow empty/null/undefined values
+      if (value === null || value === undefined || value === '') return true;
       const num = Number(value);
       return !isNaN(num) && num >= -90 && num <= 90;
     },
@@ -105,7 +108,8 @@ export const validationRules = {
 
   longitude: (message = 'Longitude must be between -180 and 180'): ValidationRule => ({
     test: (value) => {
-      if (!value && value !== 0) return true;
+      // Allow empty/null/undefined values
+      if (value === null || value === undefined || value === '') return true;
       const num = Number(value);
       return !isNaN(num) && num >= -180 && num <= 180;
     },

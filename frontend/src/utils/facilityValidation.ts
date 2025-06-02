@@ -23,7 +23,7 @@ export const facilityValidationSchema: { [key: string]: ValidationRule[] } = {
   ],
   
   'technology_name': [
-    validationRules.maxLength(100, 'Technology name must be less than 100 characters')
+    validationRules.maxLength(500, 'Technology name must be less than 500 characters')
   ],
   
   'technology_category': [

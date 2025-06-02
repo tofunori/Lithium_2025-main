@@ -1,0 +1,119 @@
+/* Form Skeleton Loader Styles */
+
+.form-skeleton-loader {
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base skeleton element */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Different skeleton sizes */
+.skeleton-title {
+  height: 32px;
+  width: 200px;
+}
+
+.skeleton-subtitle {
+  height: 20px;
+  width: 150px;
+}
+
+.skeleton-button {
+  height: 38px;
+  width: 120px;
+  border-radius: 6px;
+}
+
+.skeleton-section-header {
+  height: 28px;
+  width: 180px;
+}
+
+.skeleton-label {
+  height: 16px;
+  width: 100px;
+}
+
+.skeleton-input {
+  height: 38px;
+  width: 100%;
+}
+
+.skeleton-textarea {
+  height: 80px;
+  width: 100%;
+}
+
+.skeleton-accordion-header {
+  height: 56px;
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* Section styling */
+.skeleton-section {
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-accordion {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+/* Stagger animation for elements */
+.form-skeleton-loader .skeleton:nth-child(1) { animation-delay: 0s; }
+.form-skeleton-loader .skeleton:nth-child(2) { animation-delay: 0.1s; }
+.form-skeleton-loader .skeleton:nth-child(3) { animation-delay: 0.2s; }
+.form-skeleton-loader .skeleton:nth-child(4) { animation-delay: 0.3s; }
+.form-skeleton-loader .skeleton:nth-child(5) { animation-delay: 0.4s; }
+
+/* Fade in animation */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .skeleton-title {
+    width: 150px;
+  }
+  
+  .skeleton-subtitle {
+    width: 120px;
+  }
+  
+  .skeleton-section-header {
+    width: 140px;
+  }
+}
