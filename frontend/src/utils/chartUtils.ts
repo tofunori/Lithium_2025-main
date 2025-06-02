@@ -98,11 +98,35 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
     return {
       capacityByStatus: { operating: 0, construction: 0, planned: 0 },
       technologies: {},
-      regions: {}
+      regions: {},
+      capacityByTechnology: {},
+      yearlyTrends: { years: [], operatingCapacity: [], constructionCapacity: [], plannedCapacity: [] },
+      statusDistribution: {}
     };
   }
 
   console.log('Processing facility data for charts:', facilitiesData);
+  
+  // Log all unique technology names and categories from database
+  const uniqueTechnologies = [...new Set(facilitiesData.map(f => f["Primary Recycling Technology"]).filter(t => t))];
+  const uniqueCategories = [...new Set(facilitiesData.map(f => f.technology_category).filter(c => c))];
+  
+  console.log('Unique technology names in database:', uniqueTechnologies);
+  console.log('Unique technology categories in database:', uniqueCategories);
+  
+  // Show actual database category distribution
+  const categoryDistribution = {};
+  facilitiesData.forEach(f => {
+    const cat = f.technology_category || 'null';
+    categoryDistribution[cat] = (categoryDistribution[cat] || 0) + 1;
+  });
+  console.log('Database category distribution:', categoryDistribution);
+  
+  // Show sample facilities and their categories
+  console.log('Sample facilities with technology data:');
+  facilitiesData.slice(0, 5).forEach(f => {
+    console.log(`ID: ${f.ID}, Technology: "${f["Primary Recycling Technology"]}", Category: "${f.technology_category}"`);
+  });
 
   // Initialize with types
   const capacityByStatus: CapacityByStatus = {
@@ -111,9 +135,20 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
     planned: 0
   };
 
-  const technologies: StringCountMap = {};
+  // Initialize all 4 technology categories to ensure they all appear in charts
+  const technologies: StringCountMap = {
+    'Mechanical': 0,
+    'Hydrometallurgy': 0,
+    'Pyrometallurgy': 0,
+    'Hybrid': 0
+  };
   const regions: StringCountMap = {};
-  const capacityByTechnology: StringCountMap = {};
+  const capacityByTechnology: StringCountMap = {
+    'Mechanical': 0,
+    'Hydrometallurgy': 0,
+    'Pyrometallurgy': 0,
+    'Hybrid': 0
+  };
   const statusDistribution: StringCountMap = {};
   
   // For yearly trends - simplified version using operational year if available
@@ -146,12 +181,36 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
        // console.log(`Facility ${facility.ID} has status '${facility["Operational Status"]}', mapped to 'unknown'. Skipping capacity aggregation.`);
     }
 
-    // Process technology distribution using standardized categories instead of raw names
-    // Use correct DB column name "Primary Recycling Technology"
+    // Process technology distribution using the database technology_category column
     const technologyName = facility["Primary Recycling Technology"] || 'Unknown Technology';
     
-    // Use the technology_category field if available, otherwise determine it from the technology name
-    const technologyCategory = facility.technology_category || getTechnologyCategory(technologyName);
+    // Use the technology_category column from the database directly
+    let rawCategory = facility.technology_category || 'Mechanical'; // Default to Mechanical if null
+    
+    // Map database category values to standardized names (handle spelling variations and spaces)
+    const categoryMapping = {
+      'Mechanical': 'Mechanical',
+      'Hydrometallurgy': 'Hydrometallurgy',
+      'Hydrometallurgy ': 'Hydrometallurgy', // Handle trailing space
+      'Hydrometallurgical': 'Hydrometallurgy', // Handle variant spelling
+      'Pyrometallurgy': 'Pyrometallurgy', 
+      'Pyrometallurgy ': 'Pyrometallurgy', // Handle trailing space
+      'Pyrometallurgical': 'Pyrometallurgy', // Handle variant spelling
+      'Hybrid': 'Hybrid',
+      'Hybrid ': 'Hybrid' // Handle trailing space
+    };
+    
+    let technologyCategory = categoryMapping[rawCategory] || 'Mechanical';
+    
+    // Validate that we're using one of the 4 main categories
+    const validCategories = ['Hydrometallurgy', 'Pyrometallurgy', 'Mechanical', 'Hybrid'];
+    if (!validCategories.includes(technologyCategory)) {
+      console.warn(`[Tech Debug] Invalid database category "${rawCategory}" for facility ${facility.ID}, defaulting to "Mechanical"`);
+      technologyCategory = 'Mechanical';
+    }
+    
+    // Debug logging to see what's happening
+    console.log(`[Tech Debug] Facility ${facility.ID}: "${technologyName}" -> DB Category: "${rawCategory}" -> Final: "${technologyCategory}"`);
     
     // Count by category rather than individual technology names
     technologies[technologyCategory] = (technologies[technologyCategory] || 0) + 1;
@@ -214,6 +273,8 @@ export const processFacilityData = (facilitiesData: Facility[]): ProcessedChartD
   };
 
   console.log('Processed data result:', result);
+  console.log('Technology categories found:', Object.keys(result.technologies));
+  console.log('Technology counts:', result.technologies);
   return result;
 };
 
@@ -396,10 +457,20 @@ export const createCapacityChartConfig = (capacityByStatus: CapacityByStatus): C
  * @returns {ChartJsConfig} Chart configuration
  */
 export const createTechnologiesChartConfig = (technologies: StringCountMap): ChartJsConfig => {
-  const labels: string[] = Object.keys(technologies);
+  console.log('Creating technologies chart config with RAW data:', technologies);
   
-  console.log('Creating technologies chart config with data:', technologies);
-  console.log('Technology labels:', labels);
+  // Filter out categories with 0 values for the pie chart
+  const filteredTechnologies = Object.entries(technologies)
+    .filter(([category, count]) => count > 0)
+    .reduce((acc, [category, count]) => {
+      acc[category] = count;
+      return acc;
+    }, {} as StringCountMap);
+    
+  const labels: string[] = Object.keys(filteredTechnologies);
+  
+  console.log('Filtered technologies (>0 values):', filteredTechnologies);
+  console.log('Final technology labels for chart:', labels);
 
   // If no technologies data, provide default empty chart
   if (labels.length === 0) {
@@ -434,7 +505,7 @@ export const createTechnologiesChartConfig = (technologies: StringCountMap): Cha
     };
   }
 
-  const dataValues: number[] = Object.values(technologies); // Explicitly type dataValues
+  const dataValues: number[] = Object.values(filteredTechnologies); // Use filtered data
   
   // Generate background colors based on technology category
   const backgroundColors = labels.map(category => {

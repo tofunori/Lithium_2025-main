@@ -1,0 +1,696 @@
+/* Academic/Minimal Facility Detail Page Styles */
+
+/* ===================================
+   1. Base Layout
+   =================================== */
+
+.facility-detail-academic {
+  background-color: #fafbfc;
+  min-height: 100vh;
+}
+
+.facility-header-minimal {
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  padding: 2rem 0;
+  margin-bottom: 1.5rem;
+}
+
+.facility-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.facility-subtitle {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.facility-location-header {
+  color: #495057;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Status Badge - Clean Academic Style */
+.status-badge-academic {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.status-operating { 
+  background-color: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+}
+
+.status-construction { 
+  background-color: #fff3cd;
+  color: #856404;
+  border-color: #ffeaa7;
+}
+
+.status-planned { 
+  background-color: #cce7ff;
+  color: #004085;
+  border-color: #99d3f5;
+}
+
+.status-unknown {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border-color: #dee2e6;
+}
+
+/* ===================================
+   2. Content Sections
+   =================================== */
+
+.section-minimal {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.section-minimal:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.section-header-minimal {
+  padding: 1rem 1.25rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-icon-minimal {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.section-title-minimal {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: #495057;
+}
+
+.section-content-minimal {
+  padding: 1.25rem;
+}
+
+/* ===================================
+   3. Data Display
+   =================================== */
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.data-row:last-child {
+  border-bottom: none;
+}
+
+.data-label {
+  font-weight: 500;
+  color: #495057;
+  font-size: 0.9rem;
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.data-value {
+  color: #212529;
+  font-size: 0.9rem;
+  text-align: right;
+  flex-grow: 1;
+}
+
+.data-value-large {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.data-value-secondary {
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+/* ===================================
+   4. Timeline - Academic Style
+   =================================== */
+
+.timeline-academic {
+  position: relative;
+  padding-left: 0;
+}
+
+.timeline-item-academic {
+  position: relative;
+  padding: 1rem 0;
+  border-bottom: 1px solid #f1f3f4;
+  transition: background-color 0.2s ease;
+}
+
+.timeline-item-academic:last-child {
+  border-bottom: none;
+}
+
+.timeline-item-academic:hover {
+  background-color: #f8f9fa;
+}
+
+.timeline-date-academic {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timeline-event-academic {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+.timeline-description-academic {
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ===================================
+   5. Image Gallery - Clean Grid
+   =================================== */
+
+.image-grid-academic {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.image-item-academic {
+  position: relative;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.image-item-academic:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.image-item-academic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.image-item-academic:hover img {
+  transform: scale(1.05);
+}
+
+/* ===================================
+   6. Key Stats - Minimal Cards
+   =================================== */
+
+.stats-grid-academic {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card-academic {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.stat-card-academic:hover {
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+}
+
+.stat-value-academic {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.stat-label-academic {
+  font-size: 0.8rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+/* ===================================
+   7. Technical Specifications
+   =================================== */
+
+.tech-category-academic {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8f9fa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #495057;
+  border: 1px solid #e9ecef;
+  margin-bottom: 1rem;
+}
+
+.process-flow-academic {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem;
+  align-items: center;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.process-item-academic {
+  text-align: center;
+}
+
+.process-arrow-academic {
+  color: #6c757d;
+  font-size: 1.2rem;
+}
+
+.process-label-academic {
+  font-size: 0.8rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.process-value-academic {
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+/* ===================================
+   8. Location Display
+   =================================== */
+
+.coordinates-academic {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.coordinate-item-academic {
+  background: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  text-align: center;
+}
+
+.coordinate-label-academic {
+  font-size: 0.8rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.coordinate-value-academic {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+.copy-btn-academic {
+  background: none;
+  border: 1px solid #e9ecef;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.copy-btn-academic:hover {
+  background: #f8f9fa;
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.copy-btn-academic.copied {
+  background: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+/* ===================================
+   9. Action Buttons
+   =================================== */
+
+.action-bar-academic {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-academic {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.btn-academic-primary {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.btn-academic-primary:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+  color: white;
+  text-decoration: none;
+}
+
+.btn-academic-secondary {
+  background: white;
+  color: #6c757d;
+  border-color: #e9ecef;
+}
+
+.btn-academic-secondary:hover {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+  color: #495057;
+  text-decoration: none;
+}
+
+/* ===================================
+   10. Responsive Design
+   =================================== */
+
+@media (max-width: 768px) {
+  .facility-title {
+    font-size: 1.5rem;
+  }
+  
+  .stats-grid-academic {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .data-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .data-label {
+    min-width: auto;
+  }
+  
+  .data-value {
+    text-align: left;
+  }
+  
+  .coordinates-academic {
+    grid-template-columns: 1fr;
+  }
+  
+  .process-flow-academic {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .process-arrow-academic {
+    transform: rotate(90deg);
+  }
+  
+  .image-grid-academic {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-grid-academic {
+    grid-template-columns: 1fr;
+  }
+  
+  .image-grid-academic {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-bar-academic {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn-academic {
+    justify-content: center;
+  }
+}
+
+/* ===================================
+   11. Print Styles
+   =================================== */
+
+@media print {
+  .facility-detail-academic {
+    background: white;
+  }
+  
+  .section-minimal {
+    border: 1px solid #ccc;
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+  
+  .action-bar-academic,
+  .btn-academic {
+    display: none;
+  }
+  
+  .section-header-minimal {
+    background: #f5f5f5;
+  }
+}
+
+/* ===================================
+   12. Subtle Animations
+   =================================== */
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+/* ===================================
+   13. Loading & Error States
+   =================================== */
+
+.loading-container-academic,
+.error-container-academic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.loading-spinner-academic {
+  font-size: 2rem;
+  color: #007bff;
+  margin-bottom: 1rem;
+}
+
+.loading-text-academic {
+  color: #6c757d;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.error-icon-academic {
+  font-size: 3rem;
+  color: #dc3545;
+  margin-bottom: 1rem;
+}
+
+.error-container-academic h3 {
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.error-container-academic p {
+  color: #6c757d;
+  margin: 0;
+}
+
+/* ===================================
+   14. Body Layout
+   =================================== */
+
+.facility-body-academic {
+  padding: 1.5rem 0;
+}
+
+/* ===================================
+   15. Document Items
+   =================================== */
+
+.documents-academic {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.document-item-academic {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.document-item-academic:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.document-title-academic {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+/* ===================================
+   16. Images Gallery
+   =================================== */
+
+.images-academic {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.image-item-academic {
+  background: #f8f9fa;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.image-item-academic:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.image-academic {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.image-item-academic:hover .image-academic {
+  transform: scale(1.05);
+}
+
+.image-caption-academic {
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+/* ===================================
+   17. Notes Content
+   =================================== */
+
+.notes-content-academic {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  color: #495057;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}

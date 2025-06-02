@@ -31,19 +31,54 @@ export const getTechnologyCategory = (technologyName: string | null | undefined)
       name.includes('chemical') ||
       name.includes('aqueous') ||
       name.includes('solvent') ||
-      name.includes('extraction')) {
+      name.includes('extraction') ||
+      name.includes('wet chemistry') ||
+      name.includes('acid') ||
+      name.includes('alkaline') ||
+      name.includes('precipitation') ||
+      name.includes('electrowinning') ||
+      name.includes('electrolysis')) {
     return TECHNOLOGY_CATEGORIES.HYDROMETALLURGICAL;
   }
 
-  // Pyrometallurgical processes
+  // Pyrometallurgical processes - be more aggressive in catching thermal processes
   if (name.includes('pyrometallurgical') || 
       name.includes('smelting') || 
       name.includes('furnace') ||
       name.includes('high-temperature') ||
-      name.includes('thermal') ||
+      name.includes('high temperature') ||
+      name.includes('thermal processing') ||
+      name.includes('thermal decomposition') ||
+      name.includes('thermal treatment') ||
+      name.includes('thermal recovery') ||
       name.includes('pyrolysis') ||
       name.includes('incineration') ||
-      name.includes('calcination')) {
+      name.includes('calcination') ||
+      name.includes('roasting') ||
+      name.includes('melting') ||
+      name.includes('plasma') ||
+      name.includes('combustion') ||
+      name.includes('kiln') ||
+      name.includes('firing') ||
+      name.includes('heating') ||
+      name.includes('heat treatment') ||
+      name.includes('sintering') ||
+      name.includes('reduction') ||
+      name.includes('copper smelting') ||
+      name.includes('blast furnace') ||
+      name.includes('electric arc') ||
+      name.includes('refractory') ||
+      name.includes('molten') ||
+      name.includes('slag') ||
+      name.includes('dry processing') ||
+      name.includes('high temp') ||
+      name.includes('burn') ||
+      name.includes('oxidation') ||
+      name.includes('gasification') ||
+      // More specific recycling terms that are thermal
+      name.includes('thermal recovery') ||
+      name.includes('heat recovery') ||
+      name.includes('temperature') && (name.includes('processing') || name.includes('treatment'))) {
     return TECHNOLOGY_CATEGORIES.PYROMETALLURGICAL;
   }
 
@@ -52,8 +87,13 @@ export const getTechnologyCategory = (technologyName: string | null | undefined)
       name.includes('hub') ||
       name.includes('integrated') ||
       name.includes('combined') ||
+      name.includes('hybrid') ||
+      name.includes('multi-step') ||
+      name.includes('followed by') ||
       (name.includes('mechanical') && name.includes('hydro')) ||
-      (name.includes('physical') && name.includes('chemical'))) {
+      (name.includes('physical') && name.includes('chemical')) ||
+      (name.includes('thermal') && name.includes('chemical')) ||
+      (name.includes('shredding') && name.includes('hydrometallurgical'))) {
     return TECHNOLOGY_CATEGORIES.HYBRID;
   }
 

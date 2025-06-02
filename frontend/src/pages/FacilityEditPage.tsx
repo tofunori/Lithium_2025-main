@@ -15,7 +15,7 @@ import './FacilityEditPage.css';
 
 const FacilityEditPage: React.FC = () => {
   const navigate = useNavigate();
-  const { facilityId } = useParams<{ facilityId: string }>();
+  const { id: facilityId } = useParams<{ id: string }>();
   const { currentUser } = useAuth();
   const { showSuccess, showError } = useToastContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
