@@ -6,6 +6,12 @@
 - Spreadsheet (Excel or Google Sheets)
 - 2-3 hours per day for 2-3 weeks
 
+## How to Write Better Gemini Queries
+- Be specific about output format: "List in table format with columns for..."
+- Ask for sources: "Include your sources for each facility"
+- Request completeness: "Be comprehensive and include all known facilities"
+- Specify timeframe: "Include facilities announced or operational as of 2024-2025"
+
 ## Database Setup
 Create a spreadsheet with these columns:
 - Company Name
@@ -17,62 +23,82 @@ Create a spreadsheet with these columns:
 - Sources Found
 - Verified (Yes/No)
 
-## Week 1: Find Facilities with Gemini
+## Phase 1: Find Facilities with Gemini
 
-### Day 1: General Search
+### Step 1: General Search
 Ask Gemini: *"Find all lithium battery recycling facilities in North America. Include company name, location, status, and capacity."*
 
-### Day 2: Search by Technology
+### Step 2: Search by Technology
 Ask Gemini: 
 - *"Find hydrometallurgical lithium battery recycling plants in North America"*
 - *"Find mechanical lithium battery processing facilities in North America"*
 
-### Day 3: Search by Country
+### Step 3: Search by Country
 Ask Gemini:
 - *"Find lithium battery recycling facilities in USA by state"*
 - *"Find lithium battery recycling facilities in Canada"*
 - *"Find lithium battery recycling facilities in Mexico"*
 
-### Day 4-5: Search by Company
+### Step 4: Search by Company
 For major companies (Li-Cycle, Redwood Materials, etc.), ask:
 *"Find all [Company Name] lithium battery recycling facilities in North America"*
 
+### Step 5: Cross-Validation
+Ask Gemini to validate your findings:
+- *"Review this list of facilities [paste your list]. Are there any major facilities I'm missing?"*
+- *"Which of these facilities have been cancelled or postponed?"*
+- *"What are the latest updates on these planned facilities?"*
+
 **Record Everything**: Add every facility Gemini finds to your spreadsheet.
 
-## Week 2: Verify with Google
+## Phase 2: Verify with Google
 
-### For Each Facility:
-
-**Step 1**: Google search: `"[Company Name]" lithium recycling`
+### Step 6: Company Website Verification
+Google search: `"[Company Name]" lithium recycling`
 - Check company website
 - Look for facility information
 
-**Step 2**: Google search: `"[Facility Name]" press release`
+### Step 7: Press Release Verification
+Google search: `"[Facility Name]" press release`
 - Find official announcements
 - Verify details match
 
-**Step 3**: Mark as Verified if you find:
+### Step 8: Mark Verification Status
+Mark as Verified if you find:
 - Company website mentions facility
 - At least one news article or press release confirms it
 - Location and details make sense
 
-## Week 3: Clean Up Data
+## Phase 3: Clean Up Data
 
-### Standardize Everything:
+### Step 9: Standardize Categories
 **Status**: Operating, Construction, Planned, or Uncertain  
 **Technology**: Hydrometallurgy, Mechanical, Pyrometallurgy, or Hybrid  
 **Capacity**: Convert everything to "tonnes/year"
 
-### Final Check:
+### Step 10: Final Quality Check
 - Remove duplicates
 - Fix any missing information
 - Mark unclear items as "Needs More Research"
+- Ask Gemini: *"For each facility in my list, rate the confidence level (High/Medium/Low) based on available information"*
 
 ## Success Target
 - Find 20-30 facilities total
 - Verify 80% of them with Google
 - Cover USA, Canada, and Mexico
 - Include all technology types
+
+## Getting the Most from Gemini Deep Research
+- Use follow-up questions to dig deeper
+- Ask for specific details about unclear facilities
+- Request recent news updates for verification
+- Ask Gemini to fact-check contradictory information
+
+## Common Issues to Avoid
+- Facilities that were announced but never built
+- Pilot plants confused with commercial facilities
+- Battery manufacturing mixed with recycling
+- Outdated information (facilities that closed)
 
 ## Quick Tips
 - Start broad, then get specific
@@ -119,6 +145,7 @@ CREATE TABLE facility_details (
 ```
 
 ---
-**Time Needed**: 2-3 weeks, 2-3 hours daily  
+**Structure**: 10 Sequential Steps across 3 Phases  
+**Time Investment**: 2-3 hours daily  
 **Expected Results**: 20-30 verified facilities  
-**Tools**: Gemini + Google + Spreadsheet (or Supabase)
+**Tools**: Gemini Deep Research + Google + Spreadsheet (or Supabase)
