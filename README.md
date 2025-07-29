@@ -2,7 +2,7 @@
 
 A comprehensive React + Vite application for tracking and analyzing lithium battery recycling facilities across North America with advanced data visualization and management capabilities.
 
-## 🚀 Features
+## Features
 
 ### Core Functionality
 - **Interactive Map Visualization**: Leaflet-based mapping with facility markers sized by capacity
@@ -20,7 +20,7 @@ A comprehensive React + Vite application for tracking and analyzing lithium batt
 - **TypeScript Support**: Full type safety and IntelliSense support
 - **Modern Development**: Hot reload, ESLint, and modern build tools
 
-## 📊 Data Management
+## Data Management
 
 The application manages lithium battery recycling facilities with the following key data points:
 - Facility location and contact information
@@ -29,7 +29,7 @@ The application manages lithium battery recycling facilities with the following 
 - Partnership networks and supply chain data
 - Document storage and retrieval
 
-## 🔧 Technology Stack
+## Technology Stack
 
 ### Frontend
 - **React 19** - Modern React with latest features
@@ -50,7 +50,7 @@ The application manages lithium battery recycling facilities with the following 
 - **TypeScript Compiler** - Type checking
 - **Vite Dev Server** - Hot module replacement
 
-## 🚀 Quick Start
+## Installation and Setup
 
 ### Prerequisites
 
@@ -101,7 +101,7 @@ npm run preview
 
 The application will be available at `http://localhost:5173`
 
-## 🏢 Project Architecture
+## Project Architecture
 
 ```
 Lithium_2025-main/
@@ -123,7 +123,7 @@ Lithium_2025-main/
 └── CHANGELOG.md       # Project changelog
 ```
 
-## 📊 Database Schema
+## Database Schema
 
 The application uses the following main tables:
 - `facilities` - Core facility information
@@ -131,7 +131,7 @@ The application uses the following main tables:
 - `facility_partners` - Partnership information
 - `facility_images` - Image storage references
 
-## 🔧 Development Scripts
+## Development Scripts
 
 ```bash
 # Development
@@ -150,7 +150,7 @@ npm run health-check     # Run project health check
 npm run analyze          # Analyze bundle size
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
@@ -160,14 +160,14 @@ npm run analyze          # Analyze bundle size
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License.
 
-## 📞 Support
+## Support
 
 For support and questions, please open an issue in the GitHub repository.
 
 ---
 
-**Built with ♥️ by the Lithium Recycling Team**
+**Built by the Lithium Recycling Team**
