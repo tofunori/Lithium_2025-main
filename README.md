@@ -170,4 +170,4 @@ For support and questions, please open an issue in the GitHub repository.
 
 ---
 
-**Built by the Lithium Recycling Team**
+**Built by Thierry Laurent from 2025 Chaire de recherche du Canada Économie politique de la transition énergétique. All Rights Reserved. Université du Québec Trois-Rivières**
