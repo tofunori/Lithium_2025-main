@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext'; // Import Auth context
+import { useAuth } from '../context/AuthContext';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import TiptapMenuBar from '../components/TiptapMenuBar'; // Import the menu bar
+import TiptapMenuBar from '../components/TiptapMenuBar';
 import './AboutPage.css';
 
-// Define a simple Page type to structure the data
 interface Page {
   name: string;
   content: string;
 }
 
 const AboutPage: React.FC = () => {
-  const { currentUser } = useAuth(); // Get current user from context
-  const [aboutPageContent, setAboutPageContent] = useState<string>(''); // Type state as string
-  const [originalContent, setOriginalContent] = useState<string>(''); // Store original content for cancel
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Type state as boolean
-  const [isEditing, setIsEditing] = useState<boolean>(false); // Type state as boolean
-  const [isSaving, setIsSaving] = useState<boolean>(false); // Type state as boolean
+  const { currentUser } = useAuth();
+  const [aboutPageContent, setAboutPageContent] = useState<string>('');
+  const [originalContent, setOriginalContent] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const editorInstance = useEditor({
     extensions: [StarterKit],
@@ -30,7 +29,6 @@ const AboutPage: React.FC = () => {
       try {
         console.log("Attempting to fetch 'about' content...");
         
-        // Mock implementation - replace with actual Supabase call if needed
         const mockData = '<p>This page provides information about the Lithium Battery Recycling Project.</p>';
         setAboutPageContent(mockData);
         setOriginalContent(mockData);
@@ -43,7 +41,7 @@ const AboutPage: React.FC = () => {
     };
 
     fetchAboutPageData();
-  }, []); // Fetch data on component mount
+  }, []);
 
   useEffect(() => {
     if (editorInstance) {
@@ -51,90 +49,134 @@ const AboutPage: React.FC = () => {
     }
   }, [isEditing, editorInstance]);
 
-  const handleEditClick = (): void => {
-    if (currentUser) {
-      setIsEditing(true);
-      // Store the current content as original when starting to edit
-      const currentEditorContent = editorInstance?.getHTML() || aboutPageContent;
-      setOriginalContent(currentEditorContent);
-    } else {
-      alert("Please log in to edit the About page.");
+  useEffect(() => {
+    if (editorInstance && !isEditing && aboutPageContent !== editorInstance.getHTML()) {
+      editorInstance.commands.setContent(aboutPageContent);
     }
+  }, [aboutPageContent, editorInstance, isEditing]);
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      const updatedContent = editorInstance?.getHTML() || aboutPageContent;
+      setAboutPageContent(updatedContent);
+    }
+    setIsEditing(!isEditing);
   };
 
-  const handleSaveClick = async (): Promise<void> => {
-    if (!editorInstance) {
-      console.error("Editor instance not available");
-      return;
-    }
+  const handleSaveChanges = async () => {
+    if (!editorInstance) return;
 
-    const contentToSave = editorInstance.getHTML();
     setIsSaving(true);
-
     try {
-      console.log("Attempting to save 'about' content... Data:", contentToSave);
+      const updatedContent = editorInstance.getHTML();
+      console.log('Saving updated about page content:', updatedContent);
       
-      // Mock save implementation - replace with actual Supabase call if needed
-      console.log("About page content save attempted.");
-      
-      setAboutPageContent(contentToSave);
-      setOriginalContent(contentToSave);
+      setAboutPageContent(updatedContent);
+      setOriginalContent(updatedContent);
       setIsEditing(false);
-      alert("About page saved successfully!");
+      console.log('About page content saved successfully');
     } catch (error) {
-      console.error("Error saving about page content:", error);
-      alert("Failed to save changes. Please try again.");
+      console.error('Error saving about page:', error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleCancelClick = async (): Promise<void> => {
-    // Restore the original content
+  const handleCancelEdit = () => {
     if (editorInstance) {
-      console.log("Attempting to refetch 'about' content on cancel...");
       editorInstance.commands.setContent(originalContent);
     }
+    setAboutPageContent(originalContent);
     setIsEditing(false);
   };
 
-  return (
-    <div className="container mt-4 fade-in">
-      {/* Edit/Save Buttons */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h1 className="h3">About</h1>
-        {currentUser && !isEditing && (
-          <button className="btn btn-outline-primary btn-sm" onClick={handleEditClick}>Edit Page</button>
-        )}
-        {isEditing && (
-          <div>
-            <button className="btn btn-success btn-sm me-2" onClick={handleSaveClick}>Save Changes</button>
-            <button className="btn btn-secondary btn-sm" onClick={handleCancelClick}>Cancel</button>
+  if (isLoading) {
+    return (
+      <div className="container-fluid py-5">
+        <div className="row justify-content-center">
+          <div className="col-md-8">
+            <div className="text-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-2 text-muted">Loading page content...</p>
+            </div>
           </div>
-        )}
+        </div>
       </div>
+    );
+  }
 
-      {/* First Card: Project Description */}
-      <div className="row">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-body">
-              {/* Project Description Section */}
-              {isEditing ? (
-                <>
-                  <TiptapMenuBar editor={editorInstance} />
-                  <EditorContent editor={editorInstance} className="tiptap-editor mb-3" />
-                </>
-              ) : (
-                // Render HTML content when not editing
-                <div dangerouslySetInnerHTML={{ __html: aboutPageContent }} />
+  return (
+    <div className="container-fluid py-5">
+      <div className="row justify-content-center">
+        <div className="col-md-8">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-bottom-0 d-flex justify-content-between align-items-center">
+              <h2 className="card-title mb-0 text-primary">About This Project</h2>
+              
+              {currentUser && (
+                <div className="btn-group" role="group">
+                  {!isEditing ? (
+                    <button
+                      className="btn btn-outline-primary btn-sm"
+                      onClick={handleEditToggle}
+                      title="Edit page content"
+                    >
+                      <i className="fas fa-edit me-1"></i>
+                      Edit
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        className="btn btn-success btn-sm"
+                        onClick={handleSaveChanges}
+                        disabled={isSaving}
+                        title="Save changes"
+                      >
+                        {isSaving ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-save me-1"></i>
+                            Save
+                          </>
+                        )}
+                      </button>
+                      <button
+                        className="btn btn-outline-secondary btn-sm"
+                        onClick={handleCancelEdit}
+                        disabled={isSaving}
+                        title="Cancel editing"
+                      >
+                        <i className="fas fa-times me-1"></i>
+                        Cancel
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
+            </div>
+            
+            <div className="card-body">
+              {isEditing && editorInstance && (
+                <div className="mb-3">
+                  <TiptapMenuBar editor={editorInstance} />
+                </div>
+              )}
+              
+              <div className={`editor-content ${isEditing ? 'editing' : ''}`}>
+                <EditorContent editor={editorInstance} />
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default AboutPage;

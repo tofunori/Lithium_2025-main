@@ -1,11 +1,10 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js'; // Import Supabase types
-import { supabase } from '../supabaseClient'; // Import Supabase client
+import { Session, User } from '@supabase/supabase-js';
+import { supabase } from '../supabaseClient';
 
-// Define the context type using Supabase User
 interface AuthContextType {
   currentUser: User | null;
-  session: Session | null; // Expose session as well, might be useful
+  session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{
     error: Error | null;
@@ -22,15 +21,12 @@ interface AuthContextType {
   }>;
 }
 
-// Define Provider props type
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Create context with type and default value (null)
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Update useAuth hook with null check
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === null) {
@@ -39,90 +35,85 @@ export function useAuth() {
   return context;
 }
 
-// Type AuthProvider component
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  // Type useState hooks using Supabase types
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Use Supabase's onAuthStateChange
   useEffect(() => {
-    // Immediately try to get the current session to set the initial state
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setCurrentUser(session?.user ?? null);
-      setLoading(false); // Initial load finished
-    });
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setCurrentUser(session?.user ?? null);
-      // Set loading to false if it wasn't already, e.g., after login/logout
-      if (loading) setLoading(false);
-    });
-
-    // Cleanup subscription on unmount
-    return () => {
-      subscription?.unsubscribe();
+    const getInitialSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('Error getting initial session:', error);
+      } else {
+        setSession(session);
+        setCurrentUser(session?.user ?? null);
+      }
+      setLoading(false);
     };
-  }, [loading]); // Rerun effect if loading state changes (though primarily runs once)
 
-  // Sign up function
+    getInitialSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        setSession(session);
+        setCurrentUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const signUp = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      return { data, error };
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      return { data, error: null };
     } catch (error) {
-      console.error('Error signing up:', error);
+      console.error('Sign up error:', error);
       return { data: null, error: error as Error };
     }
   };
 
-  // Sign in function
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      return { data, error };
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      return { data, error: null };
     } catch (error) {
-      console.error('Error signing in:', error);
+      console.error('Sign in error:', error);
       return { data: null, error: error as Error };
     }
   };
 
-  // Sign out function
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Sign out error:', error);
+      throw error;
     }
   };
 
-  // Reset password function
   const resetPassword = async (email: string) => {
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      return { data, error };
+      if (error) throw error;
+      return { data, error: null };
     } catch (error) {
-      console.error('Error resetting password:', error);
+      console.error('Password reset error:', error);
       return { data: null, error: error as Error };
     }
   };
 
-  // Context value conforming to AuthContextType
   const value: AuthContextType = {
     currentUser,
-    session, // Provide session
+    session,
     loading,
     signUp,
     signIn,
@@ -137,5 +128,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 };
 
-// Keeping original default export style if needed
-export default AuthContext;
+export default AuthProvider;
