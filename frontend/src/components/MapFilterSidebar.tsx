@@ -46,9 +46,24 @@ const MapFilterSidebar: React.FC<MapFilterSidebarProps> = ({ facilities, onFilte
     return Array.from(companies).sort();
   }, [facilities]);
 
-  // TODO: Add memos for Feedstock Types and Output Products when data model is known
-  const uniqueFeedstockTypes = useMemo(() => ['Feedstock A', 'Feedstock B'], []); // Placeholder
-  const uniqueOutputProducts = useMemo(() => ['Product X', 'Product Y'], []); // Placeholder
+  // Get unique feedstock types and output products from facilities
+  const uniqueFeedstockTypes = useMemo(() => {
+    const feedstocks = new Set<string>();
+    facilities.forEach(f => {
+      // Assuming feedstock data might be in a field like 'feedstock_type' or similar
+      if (f.feedstock_type) feedstocks.add(f.feedstock_type);
+    });
+    return Array.from(feedstocks).sort();
+  }, [facilities]);
+
+  const uniqueOutputProducts = useMemo(() => {
+    const products = new Set<string>();
+    facilities.forEach(f => {
+      // Assuming output product data might be in a field like 'output_product' or similar
+      if (f.output_product) products.add(f.output_product);
+    });
+    return Array.from(products).sort();
+  }, [facilities]);
 
 
   // --- Handlers for filter changes ---
@@ -63,7 +78,42 @@ const MapFilterSidebar: React.FC<MapFilterSidebarProps> = ({ facilities, onFilte
     onFilterChange(newFilters);
   };
 
-  // TODO: Add handlers for Company, Capacity, Feedstock, Output Products
+  // Handlers for additional filter types
+  const handleCompanyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value, checked } = event.target;
+    const newCompanies = checked
+      ? [...(filters.companies || []), value]
+      : (filters.companies || []).filter(company => company !== value);
+    const newFilters = { ...filters, companies: newCompanies };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
+
+  const handleCapacityChange = (minCapacity: number, maxCapacity: number) => {
+    const newFilters = { ...filters, capacityMin: minCapacity, capacityMax: maxCapacity };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
+
+  const handleFeedstockChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value, checked } = event.target;
+    const newFeedstocks = checked
+      ? [...(filters.feedstockTypes || []), value]
+      : (filters.feedstockTypes || []).filter(feedstock => feedstock !== value);
+    const newFilters = { ...filters, feedstockTypes: newFeedstocks };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
+
+  const handleOutputProductChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value, checked } = event.target;
+    const newProducts = checked
+      ? [...(filters.outputProducts || []), value]
+      : (filters.outputProducts || []).filter(product => product !== value);
+    const newFilters = { ...filters, outputProducts: newProducts };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
 
   // --- Render filter sections ---
   return (
@@ -94,12 +144,17 @@ const MapFilterSidebar: React.FC<MapFilterSidebarProps> = ({ facilities, onFilte
         {/* Company Filter */}
         <div className="filter-section mb-3">
           <h6>Company</h6>
-          {/* TODO: Implement Company filter UI (e.g., checkboxes or multi-select) */}
           {uniqueCompanies.map(company => (
              <div className="form-check" key={company}>
-               {/* Placeholder - needs handler */}
-               <input type="checkbox" value={company} id={`company-${company}`} />
-               <label htmlFor={`company-${company}`}>{company}</label>
+               <input 
+                 className="form-check-input"
+                 type="checkbox" 
+                 value={company} 
+                 id={`company-${company}`}
+                 checked={filters.companies.includes(company)}
+                 onChange={handleCompanyChange}
+               />
+               <label className="form-check-label" htmlFor={`company-${company}`}>{company}</label>
              </div>
           ))}
         </div>
@@ -107,21 +162,36 @@ const MapFilterSidebar: React.FC<MapFilterSidebarProps> = ({ facilities, onFilte
         {/* Capacity Filter */}
         <div className="filter-section mb-3">
           <h6>Capacity (tonnes/year)</h6>
-          {/* TODO: Implement Capacity filter UI (e.g., range slider or min/max inputs) */}
           <div className="d-flex">
-             <input type="number" placeholder="Min" className="form-control form-control-sm me-1" />
-             <input type="number" placeholder="Max" className="form-control form-control-sm ms-1" />
+             <input 
+               type="number" 
+               placeholder="Min" 
+               className="form-control form-control-sm me-1"
+               onChange={(e) => handleCapacityChange(Number(e.target.value), filters.capacityMax || 0)}
+             />
+             <input 
+               type="number" 
+               placeholder="Max" 
+               className="form-control form-control-sm ms-1"
+               onChange={(e) => handleCapacityChange(filters.capacityMin || 0, Number(e.target.value))}
+             />
           </div>
         </div>
 
         {/* Feedstock Filter */}
         <div className="filter-section mb-3">
           <h6>Feedstock Type</h6>
-          {/* TODO: Implement Feedstock filter UI */}
            {uniqueFeedstockTypes.map(type => (
              <div className="form-check" key={type}>
-               <input type="checkbox" value={type} id={`feedstock-${type}`} />
-               <label htmlFor={`feedstock-${type}`}>{type}</label>
+               <input 
+                 className="form-check-input"
+                 type="checkbox" 
+                 value={type} 
+                 id={`feedstock-${type}`}
+                 checked={filters.feedstockTypes.includes(type)}
+                 onChange={handleFeedstockChange}
+               />
+               <label className="form-check-label" htmlFor={`feedstock-${type}`}>{type}</label>
              </div>
           ))}
         </div>
@@ -129,11 +199,17 @@ const MapFilterSidebar: React.FC<MapFilterSidebarProps> = ({ facilities, onFilte
         {/* Output Products Filter */}
         <div className="filter-section">
           <h6>Output Products</h6>
-          {/* TODO: Implement Output Products filter UI */}
            {uniqueOutputProducts.map(product => (
              <div className="form-check" key={product}>
-               <input type="checkbox" value={product} id={`product-${product}`} />
-               <label htmlFor={`product-${product}`}>{product}</label>
+               <input 
+                 className="form-check-input"
+                 type="checkbox" 
+                 value={product} 
+                 id={`product-${product}`}
+                 checked={filters.outputProducts.includes(product)}
+                 onChange={handleOutputProductChange}
+               />
+               <label className="form-check-label" htmlFor={`product-${product}`}>{product}</label>
              </div>
           ))}
         </div>
