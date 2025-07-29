@@ -1,147 +1,97 @@
-// frontend/src/pages/HomePage.tsx
-import React, { useState, useEffect, useRef, useCallback, ChangeEvent, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import L, { Map, TileLayer as LeafletTileLayer, Marker, DivIcon } from 'leaflet';
+import React, { useEffect, useRef, useState, useMemo, useCallback, ChangeEvent } from 'react';
+import L, { Map, TileLayer, DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useNavigate } from 'react-router-dom';
 import Select, { SingleValue } from 'react-select';
+
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getFacilities } from '../services/dataService';
 import MapControls from '../components/MapControls';
 import MapExportModal from '../components/MapExportModal';
-// UPDATED: Import Facility and the correct getFacilities function
-import { getFacilities, Facility } from '../services'; // Changed FacilityData to Facility
-import {
-  CanonicalStatus,
-  getCanonicalStatus,
-  getStatusLabel,
-  ALL_CANONICAL_STATUSES // Use this to include 'unknown' in legend/colors
-} from '../utils/statusUtils'; // Import status utilities
-import {
-  getTechnologyCategoryColor,
-  getAllTechnologyCategories,
-  getTechnologyCategoryLabel
-} from '../utils/technologyUtils'; // Import technology utilities
-import './HomePage.css';
 
-// Define Basemap configuration type
-interface BasemapConfig {
-  url: string;
-  attribution: string;
-  name: string; // For display in the selector
+import { 
+  Facility, 
+  CanonicalStatus, 
+  ALL_CANONICAL_STATUSES, 
+  getCanonicalStatus, 
+  getStatusLabel,
+  getAllTechnologyCategories,
+  getTechnologyCategoryColor,
+  getTechnologyCategoryLabel,
+} from '../types/Facility';
+
+import { basemaps } from '../utils/basemaps';
+
+export interface OptionType {
+  readonly value: string;
+  readonly label: string;
 }
 
-// Define available basemaps
-const basemaps: Record<string, BasemapConfig> = {
-  modern: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    name: 'Modern Light',
-  },
-  dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    name: 'Modern Dark',
-  },
-  satellite: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-    name: 'Satellite',
-  },
-  terrain: {
-    url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png',
-    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    name: 'Terrain',
-  },
-  watercolor: {
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    name: 'Minimal',
-  },
-};
-
-
-const HomePage: React.FC = () => {
+/**
+ * HomePage component with interactive map and facility filtering
+ */
+function HomePage() {
   const navigate = useNavigate();
-  const { isDarkMode } = useTheme(); // Get theme context
+  const { user } = useAuth();
+  const { isDarkMode } = useTheme();
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<Map | null>(null);
-  const markersRef = useRef<Record<string, Marker>>({}); // Type the markers ref (use facility.id as string key)
-  const tileLayerRef = useRef<LeafletTileLayer | null>(null);
-  const [sizeByCapacity, setSizeByCapacity] = useState<boolean>(false);
+  const tileLayerRef = useRef<TileLayer | null>(null);
+  const markersRef = useRef<{ [key: string]: L.Marker }>({});
+
   const [facilitiesData, setFacilitiesData] = useState<Facility[]>([]);
   const [selectedTechnology, setSelectedTechnology] = useState<string>('all');
-  const [selectedBasemap, setSelectedBasemap] = useState<string>(isDarkMode ? 'dark' : 'modern'); // State for selected basemap key
-  const [colorByTechnology, setColorByTechnology] = useState<boolean>(false); // New state for color mode
+  const [sizeByCapacity, setSizeByCapacity] = useState<boolean>(false);
+  const [colorByTechnology, setColorByTechnology] = useState<boolean>(false);
+  const [selectedBasemap, setSelectedBasemap] = useState<string>('modern');
   const [showExportModal, setShowExportModal] = useState(false);
 
-  // Define react-select option type
-  interface OptionType {
-    value: string; // Can be technology key or basemap key
-    label: string;
-  }
+  const technologyOptions: OptionType[] = useMemo(() => [
+    { value: 'all', label: 'All Technologies' },
+    ...getAllTechnologyCategories().map(category => ({
+      value: category,
+      label: getTechnologyCategoryLabel(category)
+    }))
+  ], []);
 
-  // --- Technology Filter Options ---
-  const technologyOptions = useMemo((): OptionType[] => {
-     const techSet = new Set<string>();
-     facilitiesData.forEach(facility => {
-       const tech = facility.technology_category; // Use technology_category
-       if (tech && typeof tech === 'string' && tech.trim() !== '') {
-         techSet.add(tech.trim());
-       }
-     });
-     // Map to { value, label } format and add 'All' option
-     const options: OptionType[] = Array.from(techSet).sort().map(tech => ({ value: tech, label: tech }));
-     return [{ value: 'all', label: 'All Categories' }, ...options];
-   }, [facilitiesData]);
+  const basemapOptions: OptionType[] = useMemo(() => [
+    { value: 'osm', label: 'OpenStreetMap' },
+    { value: 'satellite', label: 'Satellite' },
+    { value: 'terrain', label: 'Terrain' },
+    { value: 'modern', label: 'Modern Light' },
+    { value: 'dark', label: 'Dark Mode' }
+  ], []);
 
   const currentSelectedTechnologyOption = useMemo(() => {
     return technologyOptions.find(option => option.value === selectedTechnology);
   }, [selectedTechnology, technologyOptions]);
 
-  // --- Basemap Filter Options ---
-  const basemapOptions = useMemo((): OptionType[] => {
-    return Object.keys(basemaps).map(key => ({
-      value: key,
-      label: basemaps[key].name,
-    }));
-  }, []); // No dependencies, basemaps are static
-
   const currentSelectedBasemapOption = useMemo(() => {
     return basemapOptions.find(option => option.value === selectedBasemap);
   }, [selectedBasemap, basemapOptions]);
 
-
-  // Function to calculate marker size based on capacity
-  // UPDATED: Improved scaling algorithm for better visual differentiation
   const calculateMarkerSize = useCallback((capacity: number | null | undefined): number => {
-    const baseSize = 12; // Smaller base size to allow more room for growth
-    const maxSize = 60; // Increased max size for larger capacity facilities
-    const minSize = 8; // Smaller min size for better contrast
+    const baseSize = 12;
+    const maxSize = 60;
+    const minSize = 8;
 
-    // Use capacity directly as it's already number | null | undefined
     const numericCapacity = capacity ?? 0;
 
     if (isNaN(numericCapacity) || numericCapacity <= 0) {
       return minSize;
     }
 
-    // Use a square root scale for better visual differentiation
-    // This provides more balanced scaling across the capacity range
-    // From the data: small facilities ~5,000t, large facilities ~40,000t+
-    const normalizedCapacity = Math.sqrt(numericCapacity / 1000); // Normalize and take square root
-    const scaledSize = baseSize + (normalizedCapacity * 2.5); // Scale factor for visual appeal
+    const normalizedCapacity = Math.sqrt(numericCapacity / 1000);
+    const scaledSize = baseSize + (normalizedCapacity * 2.5);
 
-    // Ensure size is within bounds and round to nearest pixel
     const finalSize = Math.max(minSize, Math.min(maxSize, Math.round(scaledSize)));
-    
-    // Add some visual debugging if needed (can be removed later)
-    // console.log(`Capacity: ${numericCapacity}t -> Size: ${finalSize}px`);
     
     return finalSize;
   }, []);
 
-  // Function to create the icon HTML
   const createIconHtml = (color: string, size: number): string => {
-    // Modern marker with glassmorphism and subtle animations
     const innerSize = Math.round(size * 0.65);
     
     return `
@@ -151,7 +101,6 @@ const HomePage: React.FC = () => {
       position: relative;
       cursor: pointer;
     ">
-      <!-- Background glow -->
       <div style="
         position: absolute;
         top: 50%;
@@ -165,7 +114,6 @@ const HomePage: React.FC = () => {
         filter: blur(4px);
       "></div>
       
-      <!-- Main marker -->
       <div style="
         position: absolute;
         top: 0;
@@ -182,7 +130,6 @@ const HomePage: React.FC = () => {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       "></div>
       
-      <!-- Inner color dot -->
       <div style="
         position: absolute;
         top: 50%;
@@ -196,7 +143,6 @@ const HomePage: React.FC = () => {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       "></div>
       
-      <!-- Center highlight -->
       <div style="
         position: absolute;
         top: 50%;
@@ -211,27 +157,23 @@ const HomePage: React.FC = () => {
     </div>`;
   };
 
-  // Define modern status colors using CanonicalStatus keys
   const statusColors: Record<CanonicalStatus, string> = {
-    operating: '#10b981', // Emerald green
-    construction: '#f59e0b', // Amber
-    planned: '#3b82f6', // Blue
-    closed: '#dc2626', // Red
-    unknown: '#94a3b8' // Slate gray
+    operating: '#10b981',
+    construction: '#f59e0b',
+    planned: '#3b82f6',
+    closed: '#dc2626',
+    unknown: '#94a3b8'
   };
 
-  // Effect to load map and initial facilities
   useEffect(() => {
     const loadMapAndFacilities = async () => {
       if (mapContainerRef.current && !mapInstanceRef.current) {
-        // Create map instance
         mapInstanceRef.current = L.map(mapContainerRef.current, {
           center: [40, -95],
           zoom: 4,
-          zoomControl: false, // Disable default zoom control
+          zoomControl: false,
         });
 
-        // Add mouse move listener for coordinates
         mapInstanceRef.current.on('mousemove', (e: L.LeafletMouseEvent) => {
           const coordsElement = document.getElementById('map-coordinates');
           if (coordsElement) {
@@ -243,23 +185,12 @@ const HomePage: React.FC = () => {
           }
         });
 
-        // Initial Tile Layer setup is now handled by the basemap effect below
-        // tileLayerRef.current = L.tileLayer(...) // Remove initial setup here
-
         try {
-          // Fetch facilities
           const facilities = await getFacilities();
-          setFacilitiesData(facilities); // Store facilities data in state (now Facility[])
+          setFacilitiesData(facilities);
 
-          // Status colors are defined outside useEffect now
-
-          // Clear existing markers before adding new ones (important for re-renders if needed)
           Object.values(markersRef.current).forEach(marker => marker.remove());
-          markersRef.current = {}; // Clear marker references
-
-          // Initial marker rendering (will be updated by filter effect)
-          // We don't need to draw markers here initially if the filter effect handles it
-          // setFacilitiesData(facilities); // Set data, which triggers the filter/marker effect
+          markersRef.current = {};
 
         } catch (error) {
           console.error('Error loading facilities for map:', error);
@@ -269,50 +200,40 @@ const HomePage: React.FC = () => {
 
     loadMapAndFacilities();
 
-    // Cleanup function
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Initial map load only
+  }, []);
 
-
-  // Filter facilities based on selected technology
   const filteredFacilities = useMemo(() => {
     return facilitiesData.filter(facility => {
       if (selectedTechnology === 'all') {
-         return true; // Show all if 'all' is selected
+         return true;
        }
-       // Use technology_category for filtering
-       const facilityCategory = facility.technology_category; // Use technology_category
+       const facilityCategory = facility.technology_category;
        return facilityCategory === selectedTechnology;
      });
   }, [facilitiesData, selectedTechnology]);
 
-  // Effect to update markers based on filters (technology, size) and data changes
   useEffect(() => {
     if (!mapInstanceRef.current || facilitiesData.length === 0) {
-      return; // Don't run if map isn't ready or no data
+      return;
     }
 
-    // Clear existing markers from the map AND the ref
     Object.values(markersRef.current).forEach(marker => marker.remove());
     markersRef.current = {};
 
-    // Add markers for filtered facilities
     filteredFacilities.forEach(facility => {
-      const lat = facility.Latitude; // Use facility.Latitude (uppercase)
-            const lng = facility.Longitude; // Use facility.Longitude (uppercase)
+      const lat = facility.Latitude;
+            const lng = facility.Longitude;
 
       if (lat !== null && lng !== null && typeof lat === 'number' && typeof lng === 'number') {
-        // Use correct DB column name "Operational Status"
-        const statusName = facility["Operational Status"]; // Use DB column name
+        const statusName = facility["Operational Status"];
         const canonicalStatus = getCanonicalStatus(statusName);
         
-        // Determine color based on color mode
         let color: string;
         if (colorByTechnology) {
           const rawCategory = facility.technology_category || 'Mechanical';
@@ -325,14 +246,11 @@ const HomePage: React.FC = () => {
           color = statusColors[canonicalStatus];
         }
 
-        // Determine size based on toggle
-        let size = 16; // Default fixed size
+        let size = 16;
         if (sizeByCapacity) {
-          // Use correct property name from Facility interface
           size = calculateMarkerSize(facility.capacity_tonnes_per_year);
         }
 
-        // Create DivIcon with correct color and size
         const icon: DivIcon = L.divIcon({
           className: 'custom-div-icon',
           html: createIconHtml(color, size),
@@ -342,17 +260,14 @@ const HomePage: React.FC = () => {
 
         const marker = L.marker([lat, lng], { icon: icon });
 
-              // Create popup content dynamically
               const popupContent = document.createElement('div');
-              popupContent.className = 'facility-popup'; // Add class for styling
+              popupContent.className = 'facility-popup';
               
-              // Build popup HTML with minimalist academic design
               let popupHtml = `
                 <div class="popup-content-wrapper">
                   <h3 class="popup-title">${facility.Company || 'Unknown Facility'}</h3>
               `;
               
-              // Technology row (always show if available)
               if (facility.technology_category) {
                 popupHtml += `
                   <div class="popup-detail-row">
@@ -362,7 +277,6 @@ const HomePage: React.FC = () => {
                 `;
               }
               
-              // Status row
               const statusClass = canonicalStatus.replace(/\s+/g, '-').toLowerCase();
               popupHtml += `
                 <div class="popup-detail-row">
@@ -373,7 +287,6 @@ const HomePage: React.FC = () => {
                 </div>
               `;
               
-              // Capacity row if available
               if (facility.capacity_tonnes_per_year) {
                 popupHtml += `
                   <div class="popup-detail-row">
@@ -383,7 +296,6 @@ const HomePage: React.FC = () => {
                 `;
               }
               
-              // Location row (moved to last)
               if (facility.Location) {
                 popupHtml += `
                   <div class="popup-detail-row">
@@ -393,7 +305,6 @@ const HomePage: React.FC = () => {
                 `;
               }
               
-              // Add divider and link
               popupHtml += `
                   <div class="popup-divider"></div>
                   <a href="#" class="popup-details-link" data-facility-id="${facility.ID}">View full details →</a>
@@ -402,7 +313,6 @@ const HomePage: React.FC = () => {
               
               popupContent.innerHTML = popupHtml;
               
-              // Add click handler to the link
               const link = popupContent.querySelector('.popup-details-link');
               if (link) {
                 link.addEventListener('click', (e) => {
@@ -411,34 +321,25 @@ const HomePage: React.FC = () => {
                 });
               }
 
-        marker.addTo(mapInstanceRef.current as Map) // Assert map instance is not null here
+        marker.addTo(mapInstanceRef.current as Map)
               .bindPopup(popupContent, {
                 maxWidth: 320,
                 minWidth: 260,
                 className: 'academic-popup'
               });
 
-        // Use facility.ID as string key (uppercase)
         markersRef.current[facility.ID] = marker;
       } else {
-          // Log the actual lat/lng values that were found to be invalid
-          console.warn(`Facility ${facility.ID} has invalid or incomplete coordinates: lat=${lat}, lng=${lng}`); // Use facility.ID (uppercase)
+          console.warn(`Facility ${facility.ID} has invalid or incomplete coordinates: lat=${lat}, lng=${lng}`);
       }
     });
 
-    // No need to call updateMarkerSizes separately, as sizes are set during creation now
-    // updateMarkerSizes(); // Remove this call
+  }, [filteredFacilities, sizeByCapacity, colorByTechnology, navigate]);
 
-  // Dependencies: map instance, data, filters, and sizing logic
-  }, [mapInstanceRef, facilitiesData, selectedTechnology, sizeByCapacity, calculateMarkerSize, statusColors, navigate, createIconHtml, colorByTechnology]); // Added selectedTechnology
-
-
-  // Handler for the size toggle switch - Type event
   const handleSizeToggle = (event: ChangeEvent<HTMLInputElement>) => {
     setSizeByCapacity(event.target.checked);
   };
 
-  // Handler for the color mode toggle
   const handleColorModeToggle = (event: ChangeEvent<HTMLInputElement>) => {
     setColorByTechnology(event.target.checked);
   };
@@ -447,12 +348,10 @@ const HomePage: React.FC = () => {
     setSelectedTechnology(selectedOption ? selectedOption.value : 'all');
   };
 
-  // Handler for the react-select basemap filter dropdown
   const handleBasemapChange = (selectedOption: SingleValue<OptionType>) => {
-    setSelectedBasemap(selectedOption ? selectedOption.value : 'osm'); // Default to 'osm' if null
+    setSelectedBasemap(selectedOption ? selectedOption.value : 'osm');
   };
 
-  // Custom styles for react-select to match Bootstrap's form-select-sm with theme support
   const selectStyles = {
     control: (provided: any, state: { isFocused: boolean }) => ({
       ...provided,
@@ -536,60 +435,46 @@ const HomePage: React.FC = () => {
     }),
   };
 
-  // Effect to update tile layer based on selectedBasemap
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
-    const basemapConfig = basemaps[selectedBasemap] || basemaps.osm; // Fallback to OSM
+    const basemapConfig = basemaps[selectedBasemap] || basemaps.osm;
 
-    // Remove old layer if it exists
     if (tileLayerRef.current) {
       mapInstanceRef.current.removeLayer(tileLayerRef.current);
     }
 
-    // Add new layer and update ref
     tileLayerRef.current = L.tileLayer(basemapConfig.url, {
       attribution: basemapConfig.attribution,
-      maxZoom: 19, // Adjust as needed
+      maxZoom: 19,
     }).addTo(mapInstanceRef.current);
 
-    // Optional: Bring markers to front if needed after tile change
-    // Object.values(markersRef.current).forEach(marker => marker.bringToFront());
+  }, [selectedBasemap]);
 
-  }, [selectedBasemap]); // Dependency on selected basemap
-
-  // Effect to automatically switch basemap based on theme
   useEffect(() => {
     if (isDarkMode) {
-      setSelectedBasemap('dark'); // Switch to dark basemap in dark mode
+      setSelectedBasemap('dark');
     } else {
-      setSelectedBasemap('modern'); // Switch to modern light basemap in light mode
+      setSelectedBasemap('modern');
     }
-  }, [isDarkMode]); // Dependency on theme
+  }, [isDarkMode]);
 
   return (
-    <div className="home-page-container"> {/* This will be the flex container */}
-      {/* Map Area */}
+    <div className="home-page-container">
       <div className="map-area">
         <div id="map" ref={mapContainerRef} style={{ height: '100%', width: '100%' }}></div>
         <MapControls 
-          map={mapInstanceRef.current}
-          facilitiesCount={facilitiesData.length}
-          filteredCount={filteredFacilities.length}
+          mapInstance={mapInstanceRef.current}
+          isDarkMode={isDarkMode}
         />
       </div>
-
-      {/* Sidebar Area */}
       <div className="map-sidebar">
-        {/* Legend and Filters moved here */}
-        <div className="legend card shadow-sm"> {/* Keep card styling for the content block */}
+        <div className="legend card shadow-sm">
           <div className="card-body p-2">
             <h6 className="mb-2 card-title">
               {colorByTechnology ? 'Technology Categories' : 'Facility Status'}
             </h6>
-            {/* Dynamically generate legend items based on color mode */}
             {colorByTechnology ? (
-              // Show technology categories
               getAllTechnologyCategories().map(techCategory => (
                 <div className="legend-item" key={techCategory}>
                   <div className="legend-color" style={{ backgroundColor: getTechnologyCategoryColor(techCategory) }}></div>
@@ -597,7 +482,6 @@ const HomePage: React.FC = () => {
                 </div>
               ))
             ) : (
-              // Show status categories
               ALL_CANONICAL_STATUSES.map(statusKey => (
                 <div className="legend-item" key={statusKey}>
                   <div className="legend-color" style={{ backgroundColor: statusColors[statusKey] }}></div>
@@ -607,9 +491,7 @@ const HomePage: React.FC = () => {
             )}
                 <hr />
                 
-                {/* Toggle Controls Section */}
                 <div className="toggle-section">
-                  {/* Color Mode Toggle */}
                   <div className="form-check form-switch form-check-sm">
                     <input
                       className="form-check-input"
@@ -624,7 +506,6 @@ const HomePage: React.FC = () => {
                     </label>
                   </div>
                   
-                  {/* Size by Capacity Toggle */}
                   <div className="form-check form-switch form-check-sm">
                     <input
                         className="form-check-input"
@@ -637,7 +518,6 @@ const HomePage: React.FC = () => {
                     <label className="form-check-label" htmlFor="sizeByCapacityToggle" style={{ fontSize: '0.9em' }}>Size by Capacity</label>
                   </div>
                   
-                  {/* Size by Capacity Helper Text */}
                   {sizeByCapacity && (
                     <div className="capacity-helper">
                       <i className="fas fa-info-circle"></i>
@@ -648,13 +528,12 @@ const HomePage: React.FC = () => {
                 
                 <hr />
                 
-                {/* Technology Filter Dropdown using react-select */}
-                  <div className="technology-filter-container"> {/* Keep container for label spacing */}
+                  <div className="technology-filter-container">
                     <label htmlFor="technologySelect" className="form-label mb-1" style={{ fontSize: '0.9em' }}>Category:</label>
                     <Select<OptionType>
                       inputId="technologySelect"
                       options={technologyOptions}
-                     value={currentSelectedTechnologyOption} // Use correct state value
+                     value={currentSelectedTechnologyOption}
                      onChange={handleTechnologyChange}
                       styles={selectStyles}
                       menuPortalTarget={document.body}
@@ -662,7 +541,6 @@ const HomePage: React.FC = () => {
                       aria-label="Select Technology Filter"
                     />
                   </div>
-                  {/* Basemap Filter Dropdown */}
                   <hr />
                   <div className="basemap-filter-container">
                     <label htmlFor="basemapSelect" className="form-label mb-1" style={{ fontSize: '0.9em' }}>Basemap:</label>
@@ -678,9 +556,7 @@ const HomePage: React.FC = () => {
                     />
                   </div>
                   
-                  {/* Export Map Section */}
-                  <hr />
-                  <div className="export-section">
+                  <div className="map-export-section" style={{ marginTop: '1rem' }}>
                     <h6 className="mb-2" style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>
                       Export Map
                     </h6>
@@ -708,7 +584,6 @@ const HomePage: React.FC = () => {
           </div>
         </div>
         
-        {/* Export Modal */}
         <MapExportModal 
           map={mapInstanceRef.current}
           isOpen={showExportModal}
