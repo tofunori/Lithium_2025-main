@@ -7,12 +7,12 @@ import { getFacilityStats, getFacilities, FacilityStats, Facility } from '../ser
 import { mockFacilityStats, mockFacilities } from '../mockData/facilityData'; // Assuming mock data matches types or needs adjustment
 import {
   processFacilityData,
-  createCapacityChartConfig,
-  createTechnologiesChartConfig,
-  createRegionsChartConfig,
-  createCapacityByTechnologyChartConfig,
-  createYearlyTrendsChartConfig,
-  createStatusDistributionChartConfig,
+  createCapacityByStatusChart,
+  createTechnologyDistributionChart,
+  createRegionalDistributionChart,
+  createCapacityByTechnologyChart,
+  createYearlyTrendsChart,
+  createStatusDistributionChart,
   ProcessedChartData, // Import type
   parseVolume // Import parseVolume
 } from '../utils/chartUtils';
@@ -252,7 +252,7 @@ const ChartsPage: FC = () => {
         capacityChartRef.current.destroy();
       }
 
-      const capacityConfig: ChartConfiguration = createCapacityChartConfig(capacityByStatus);
+      const capacityConfig: ChartConfiguration = createCapacityByStatusChart(chartData);
 
       try {
         capacityChartRef.current = new Chart(capacityCtx, capacityConfig);
@@ -277,7 +277,7 @@ const ChartsPage: FC = () => {
         technologiesChartRef.current.destroy();
       }
 
-      const technologiesConfig: ChartConfiguration = createTechnologiesChartConfig(technologies);
+      const technologiesConfig: ChartConfiguration = createTechnologyDistributionChart(chartData);
 
       try {
         technologiesChartRef.current = new Chart(technologiesCtx, technologiesConfig);
@@ -302,7 +302,7 @@ const ChartsPage: FC = () => {
         regionsChartRef.current.destroy();
       }
 
-      const regionsConfig: ChartConfiguration = createRegionsChartConfig(regions);
+      const regionsConfig: ChartConfiguration = createRegionalDistributionChart(chartData);
 
       try {
         regionsChartRef.current = new Chart(regionsCtx, regionsConfig);
@@ -321,7 +321,7 @@ const ChartsPage: FC = () => {
         if (capacityByTechChartRef.current) {
           capacityByTechChartRef.current.destroy();
         }
-        const capacityByTechConfig = createCapacityByTechnologyChartConfig(capacityByTechnology);
+        const capacityByTechConfig = createCapacityByTechnologyChart(chartData);
         try {
           capacityByTechChartRef.current = new Chart(capacityByTechCtx, capacityByTechConfig);
           console.log('Capacity by technology chart created successfully.');
@@ -338,7 +338,7 @@ const ChartsPage: FC = () => {
         if (yearlyTrendsChartRef.current) {
           yearlyTrendsChartRef.current.destroy();
         }
-        const yearlyTrendsConfig = createYearlyTrendsChartConfig(yearlyTrends);
+        const yearlyTrendsConfig = createYearlyTrendsChart(chartData);
         try {
           yearlyTrendsChartRef.current = new Chart(yearlyTrendsCtx, yearlyTrendsConfig);
           console.log('Yearly trends chart created successfully.');
@@ -355,7 +355,7 @@ const ChartsPage: FC = () => {
         if (statusDistributionChartRef.current) {
           statusDistributionChartRef.current.destroy();
         }
-        const statusDistributionConfig = createStatusDistributionChartConfig(statusDistribution);
+        const statusDistributionConfig = createStatusDistributionChart(chartData);
         try {
           statusDistributionChartRef.current = new Chart(statusDistributionCtx, statusDistributionConfig);
           console.log('Status distribution chart created successfully.');
