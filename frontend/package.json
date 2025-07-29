@@ -1,13 +1,32 @@
 {
-  "name": "frontend",
+  "name": "lithium-recycling-dashboard",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "A comprehensive React application for tracking and analyzing lithium battery recycling facilities",
+  "keywords": [
+    "lithium",
+    "battery",
+    "recycling",
+    "dashboard",
+    "react",
+    "typescript",
+    "vite",
+    "supabase"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build:production": "NODE_ENV=production vite build",
+    "lint": "eslint . --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules/.vite",
+    "analyze": "npm run build && npx vite-bundle-analyzer dist/assets/*.js",
+    "health-check": "node ../scripts/health-check.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
