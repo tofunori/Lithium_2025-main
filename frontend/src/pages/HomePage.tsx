@@ -1,72 +1,99 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback, ChangeEvent } from 'react';
-import L, { Map, TileLayer, DivIcon } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useState, useEffect, useRef, useCallback, ChangeEvent, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import L, { Map, TileLayer as LeafletTileLayer, Marker, DivIcon } from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import Select, { SingleValue } from 'react-select';
-
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { getFacilities } from '../services/dataService';
 import MapControls from '../components/MapControls';
 import MapExportModal from '../components/MapExportModal';
-
-import { 
-  Facility, 
-  CanonicalStatus, 
-  ALL_CANONICAL_STATUSES, 
-  getCanonicalStatus, 
+import { getFacilities, Facility } from '../services';
+import {
+  CanonicalStatus,
+  getCanonicalStatus,
   getStatusLabel,
-  getAllTechnologyCategories,
+  ALL_CANONICAL_STATUSES
+} from '../utils/statusUtils';
+import {
   getTechnologyCategoryColor,
-  getTechnologyCategoryLabel,
-} from '../types/Facility';
+  getAllTechnologyCategories,
+  getTechnologyCategoryLabel
+} from '../utils/technologyUtils';
 
-import { basemaps } from '../utils/basemaps';
-
-export interface OptionType {
-  readonly value: string;
-  readonly label: string;
+interface BasemapConfig {
+  url: string;
+  attribution: string;
+  name: string;
 }
 
-/**
- * HomePage component with interactive map and facility filtering
- */
-function HomePage() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { isDarkMode } = useTheme();
+const basemaps: Record<string, BasemapConfig> = {
+  modern: {
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    name: 'Modern Light',
+  },
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    name: 'Modern Dark',
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    name: 'Satellite',
+  },
+  terrain: {
+    url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png',
+    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    name: 'Terrain',
+  },
+  osm: {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    name: 'Minimal',
+  },
+};
 
+const HomePage: React.FC = () => {
+  const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<Map | null>(null);
-  const tileLayerRef = useRef<TileLayer | null>(null);
-  const markersRef = useRef<{ [key: string]: L.Marker }>({});
-
+  const markersRef = useRef<Record<string, Marker>>({});
+  const tileLayerRef = useRef<LeafletTileLayer | null>(null);
+  const [sizeByCapacity, setSizeByCapacity] = useState<boolean>(false);
   const [facilitiesData, setFacilitiesData] = useState<Facility[]>([]);
   const [selectedTechnology, setSelectedTechnology] = useState<string>('all');
-  const [sizeByCapacity, setSizeByCapacity] = useState<boolean>(false);
+  const [selectedBasemap, setSelectedBasemap] = useState<string>(isDarkMode ? 'dark' : 'modern');
   const [colorByTechnology, setColorByTechnology] = useState<boolean>(false);
-  const [selectedBasemap, setSelectedBasemap] = useState<string>('modern');
   const [showExportModal, setShowExportModal] = useState(false);
 
-  const technologyOptions: OptionType[] = useMemo(() => [
-    { value: 'all', label: 'All Technologies' },
-    ...getAllTechnologyCategories().map(category => ({
-      value: category,
-      label: getTechnologyCategoryLabel(category)
-    }))
-  ], []);
+  interface OptionType {
+    value: string;
+    label: string;
+  }
 
-  const basemapOptions: OptionType[] = useMemo(() => [
-    { value: 'osm', label: 'OpenStreetMap' },
-    { value: 'satellite', label: 'Satellite' },
-    { value: 'terrain', label: 'Terrain' },
-    { value: 'modern', label: 'Modern Light' },
-    { value: 'dark', label: 'Dark Mode' }
-  ], []);
+  const technologyOptions = useMemo((): OptionType[] => {
+     const techSet = new Set<string>();
+     facilitiesData.forEach(facility => {
+       const tech = facility.technology_category;
+       if (tech && typeof tech === 'string' && tech.trim() !== '') {
+         techSet.add(tech.trim());
+       }
+     });
+     const options: OptionType[] = Array.from(techSet).sort().map(tech => ({ value: tech, label: tech }));
+     return [{ value: 'all', label: 'All Categories' }, ...options];
+   }, [facilitiesData]);
 
   const currentSelectedTechnologyOption = useMemo(() => {
     return technologyOptions.find(option => option.value === selectedTechnology);
   }, [selectedTechnology, technologyOptions]);
+
+  const basemapOptions = useMemo((): OptionType[] => {
+    return Object.keys(basemaps).map(key => ({
+      value: key,
+      label: basemaps[key].name,
+    }));
+  }, []);
 
   const currentSelectedBasemapOption = useMemo(() => {
     return basemapOptions.find(option => option.value === selectedBasemap);
@@ -228,7 +255,7 @@ function HomePage() {
 
     filteredFacilities.forEach(facility => {
       const lat = facility.Latitude;
-            const lng = facility.Longitude;
+      const lng = facility.Longitude;
 
       if (lat !== null && lng !== null && typeof lat === 'number' && typeof lng === 'number') {
         const statusName = facility["Operational Status"];
@@ -260,66 +287,66 @@ function HomePage() {
 
         const marker = L.marker([lat, lng], { icon: icon });
 
-              const popupContent = document.createElement('div');
-              popupContent.className = 'facility-popup';
-              
-              let popupHtml = `
-                <div class="popup-content-wrapper">
-                  <h3 class="popup-title">${facility.Company || 'Unknown Facility'}</h3>
-              `;
-              
-              if (facility.technology_category) {
-                popupHtml += `
-                  <div class="popup-detail-row">
-                    <span class="popup-detail-label">Technology</span>
-                    <span class="popup-detail-value popup-tech-value">${getTechnologyCategoryLabel(facility.technology_category)}</span>
-                  </div>
-                `;
-              }
-              
-              const statusClass = canonicalStatus.replace(/\s+/g, '-').toLowerCase();
-              popupHtml += `
-                <div class="popup-detail-row">
-                  <span class="popup-detail-label">Status</span>
-                  <span class="popup-detail-value">
-                    <span class="popup-status status-${statusClass}">${getStatusLabel(canonicalStatus)}</span>
-                  </span>
-                </div>
-              `;
-              
-              if (facility.capacity_tonnes_per_year) {
-                popupHtml += `
-                  <div class="popup-detail-row">
-                    <span class="popup-detail-label">Capacity</span>
-                    <span class="popup-detail-value popup-capacity-value">${facility.capacity_tonnes_per_year.toLocaleString()} t/yr</span>
-                  </div>
-                `;
-              }
-              
-              if (facility.Location) {
-                popupHtml += `
-                  <div class="popup-detail-row">
-                    <span class="popup-detail-label">Location</span>
-                    <span class="popup-detail-value">${facility.Location}</span>
-                  </div>
-                `;
-              }
-              
-              popupHtml += `
-                  <div class="popup-divider"></div>
-                  <a href="#" class="popup-details-link" data-facility-id="${facility.ID}">View full details →</a>
-                </div>
-              `;
-              
-              popupContent.innerHTML = popupHtml;
-              
-              const link = popupContent.querySelector('.popup-details-link');
-              if (link) {
-                link.addEventListener('click', (e) => {
-                  e.preventDefault();
-                  navigate(`/facilities/${facility.ID}`);
-                });
-              }
+        const popupContent = document.createElement('div');
+        popupContent.className = 'facility-popup';
+        
+        let popupHtml = `
+          <div class="popup-content-wrapper">
+            <h3 class="popup-title">${facility.Company || 'Unknown Facility'}</h3>
+        `;
+        
+        if (facility.technology_category) {
+          popupHtml += `
+            <div class="popup-detail-row">
+              <span class="popup-detail-label">Technology</span>
+              <span class="popup-detail-value popup-tech-value">${getTechnologyCategoryLabel(facility.technology_category)}</span>
+            </div>
+          `;
+        }
+        
+        const statusClass = canonicalStatus.replace(/\s+/g, '-').toLowerCase();
+        popupHtml += `
+          <div class="popup-detail-row">
+            <span class="popup-detail-label">Status</span>
+            <span class="popup-detail-value">
+              <span class="popup-status status-${statusClass}">${getStatusLabel(canonicalStatus)}</span>
+            </span>
+          </div>
+        `;
+        
+        if (facility.capacity_tonnes_per_year) {
+          popupHtml += `
+            <div class="popup-detail-row">
+              <span class="popup-detail-label">Capacity</span>
+              <span class="popup-detail-value popup-capacity-value">${facility.capacity_tonnes_per_year.toLocaleString()} t/yr</span>
+            </div>
+          `;
+        }
+        
+        if (facility.Location) {
+          popupHtml += `
+            <div class="popup-detail-row">
+              <span class="popup-detail-label">Location</span>
+              <span class="popup-detail-value">${facility.Location}</span>
+            </div>
+          `;
+        }
+        
+        popupHtml += `
+            <div class="popup-divider"></div>
+            <a href="#" class="popup-details-link" data-facility-id="${facility.ID}">View full details →</a>
+          </div>
+        `;
+        
+        popupContent.innerHTML = popupHtml;
+        
+        const link = popupContent.querySelector('.popup-details-link');
+        if (link) {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigate(`/facilities/${facility.ID}`);
+          });
+        }
 
         marker.addTo(mapInstanceRef.current as Map)
               .bindPopup(popupContent, {
@@ -464,10 +491,12 @@ function HomePage() {
       <div className="map-area">
         <div id="map" ref={mapContainerRef} style={{ height: '100%', width: '100%' }}></div>
         <MapControls 
-          mapInstance={mapInstanceRef.current}
-          isDarkMode={isDarkMode}
+          map={mapInstanceRef.current}
+          facilitiesCount={facilitiesData.length}
+          filteredCount={filteredFacilities.length}
         />
       </div>
+
       <div className="map-sidebar">
         <div className="legend card shadow-sm">
           <div className="card-body p-2">
@@ -556,7 +585,8 @@ function HomePage() {
                     />
                   </div>
                   
-                  <div className="map-export-section" style={{ marginTop: '1rem' }}>
+                  <hr />
+                  <div className="export-section">
                     <h6 className="mb-2" style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>
                       Export Map
                     </h6>
