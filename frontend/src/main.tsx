@@ -1,30 +1,26 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { DndProvider } from 'react-dnd'; // Import DndProvider
-import { HTML5Backend } from 'react-dnd-html5-backend'; // Import the backend
-import { AuthProvider } from './context/AuthContext'; // Import AuthProvider (remove .tsx)
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { AuthProvider } from './context/AuthContext';
 
-// Import Bootstrap CSS
 import 'bootstrap/dist/css/bootstrap.min.css';
-// Import Bootstrap JS
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-// Import Font Awesome
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
-import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
-import 'leaflet-geosearch/dist/geosearch.css'; // Import GeoSearch CSS
-
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-geosearch/dist/geosearch.css';
 
 import './index.css';
-import App from './App'; // Updated import path
+import App from './App';
 
-const container = document.getElementById('root')!; // Add non-null assertion
-const root = createRoot(container); // Create root using the container
+const container = document.getElementById('root')!;
+const root = createRoot(container);
 
 root.render(
   <StrictMode>
-    <DndProvider backend={HTML5Backend}> {/* Wrap with DndProvider */}
+    <DndProvider backend={HTML5Backend}>
       <BrowserRouter>
         <AuthProvider>
           <App />
