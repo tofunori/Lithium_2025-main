@@ -1,6 +1,6 @@
 # Lithium Battery Recycling Dashboard
 
-A comprehensive React + Vite application for tracking and analyzing lithium battery recycling facilities across North America with advanced data visualization and management capabilities.
+A comprehensive React + Vite application for tracking and analyzing lithium battery recycling facilities across North America with data visualization and management capabilities.
 
 ## Features
 
